@@ -67,7 +67,6 @@ class FileBrowser extends Widget {
     if (event.type === 'mousedown') {
       var el = event.target as HTMLElement;
       var text = el.textContent;
-      console.log('text', text);
       if (text[text.length - 1] === "/") {
         this._currentDir += text;
         this.listDir();
