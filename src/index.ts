@@ -15,6 +15,7 @@ import './index.css';
 /**
  * A widget which hosts a file browser.
  */
+export
 class FileBrowser extends Widget {
 
   /**
