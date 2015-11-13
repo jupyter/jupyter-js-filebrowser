@@ -25,9 +25,9 @@ class FileBrowser extends Widget {
   static createNode(): HTMLElement {
     var node = document.createElement('div');
     node.innerHTML = (
-      '<div class="files_inner">' +
-        '<div class="files_header">Files</div>' +
-        '<div class="list_container"></div>' +
+      '<div class="jp-FileBrowser-FilesInner">' +
+        '<div class="jp-FileBrowser-FilesHeader">Files</div>' +
+        '<div class="jp-FileBrowser-ListContainer"></div>' +
       '</div>'
     );
     return node;
@@ -38,7 +38,7 @@ class FileBrowser extends Widget {
    */
   constructor(baseUrl: string, currentDir: string, contents?: IContents) {
     super();
-    this.addClass('FileBrowser');
+    this.addClass('jp-FileBrowser');
     this._contents = contents || new Contents(baseUrl);
     document.addEventListener('mousedown', this, true);
     this._currentDir = currentDir;
@@ -75,7 +75,7 @@ class FileBrowser extends Widget {
     if (event.type === 'mousedown') {
       var el = event.target as HTMLElement;
       var text = el.textContent;
-      if (text[text.length - 1] === "/") {
+      if (text[text.length - 1] === '/') {
         this._currentDir += text;
         this.listDir();
       } else if (text === '..') {
@@ -89,7 +89,7 @@ class FileBrowser extends Widget {
         this.listDir();
       } else {
         var path = this._currentDir + (event.target as HTMLElement).textContent;
-        this._contents.get(path, "file", {}).then((msg: any) => {
+        this._contents.get(path, 'file', {}).then((msg: any) => {
           var onClick = this._onClick;
           if (onClick) { onClick(msg.path, msg.content); }
         });
@@ -110,10 +110,10 @@ class FileBrowser extends Widget {
     var path = this._currentDir.slice(0, this._currentDir.length - 1);
     this._contents.listContents(path).then((msg: any) => {
       for (var i = 0; i < msg.content.length; i++) {
-        if ((<any>msg).content[i].length) {
-          this._addItem((<any>msg).content[i].name + '/', true);
+        if ((msg as any).content[i].length) {
+          this._addItem((msg as any).content[i].name + '/', true);
         } else {
-          this._addItem((<any>msg).content[i].name, false);
+          this._addItem((msg as any).content[i].name, false);
         }
       }
     });
@@ -121,7 +121,7 @@ class FileBrowser extends Widget {
 
   private _addItem(text: string, isDirectory: boolean): void {
     var top = document.createElement('div');
-    top.className = 'list_item';
+    top.className = 'jp-FileBrowser-ListItem';
     top.classList.add('row');
     var node = document.createElement('div');
     node.classList.add('col-md-12');
