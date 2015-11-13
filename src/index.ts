@@ -3,7 +3,7 @@
 'use-strict';
 
 import {
-  Contents
+  Contents, IContents
 } from 'jupyter-js-services';
 
 import {
@@ -11,6 +11,7 @@ import {
 } from 'phosphor-widget';
 
 import './index.css';
+
 
 /**
  * A widget which hosts a file browser.
@@ -35,10 +36,10 @@ class FileBrowser extends Widget {
   /**
    * Construct a new file browser widget.
    */
-  constructor(baseUrl: string, currentDir: string) {
+  constructor(baseUrl: string, currentDir: string, contents?: IContents) {
     super();
     this.addClass('FileBrowser');
-    this._contents = new Contents(baseUrl);
+    this._contents = contents || new Contents(baseUrl);
     document.addEventListener('mousedown', this, true);
     this._currentDir = currentDir;
   }
@@ -58,10 +59,17 @@ class FileBrowser extends Widget {
   }
 
   /**
-   * Handle the events on the file browser.
+   * Handle the DOM events for the file browser.
+   *
+   * @param event - The DOM event sent to the panel.
+   *
+   * #### Notes
+   * This method implements the DOM `EventListener` interface and is
+   * called in response to events on the panel's DOM node. It should
+   * not be called directly by user code.
    */
   handleEvent(event: Event): void {
-    if (!this.node.contains((<any>event).target)) {
+    if (!this.node.contains((event as any).target)) {
       return;
     }
     if (event.type === 'mousedown') {
@@ -80,8 +88,8 @@ class FileBrowser extends Widget {
         }
         this.listDir();
       } else {
-        var path = this._currentDir + (<HTMLElement>event.target).textContent;
-        this._contents.get(path, {type:"file"}).then((msg: any) => {
+        var path = this._currentDir + (event.target as HTMLElement).textContent;
+        this._contents.get(path, "file", {}).then((msg: any) => {
           var onClick = this._onClick;
           if (onClick) { onClick(msg.path, msg.content); }
         });
@@ -93,7 +101,7 @@ class FileBrowser extends Widget {
    * Set the file browser contents to the items in the
    * current directory.
    */
-  listDir() {
+  listDir(): void {
     this.node.firstChild.lastChild.textContent = '';
     if (this._currentDir.lastIndexOf('/') !== -1) {
       this._addItem('..', true);
@@ -111,7 +119,7 @@ class FileBrowser extends Widget {
     });
   }
 
-  private _addItem(text: string, isDirectory: boolean) {
+  private _addItem(text: string, isDirectory: boolean): void {
     var top = document.createElement('div');
     top.className = 'list_item';
     top.classList.add('row');
@@ -138,5 +146,5 @@ class FileBrowser extends Widget {
 
   private _currentDir = '';
   private _onClick: (name: string, contents: string) => void = null;
-  private _contents: Contents = null;
+  private _contents: IContents = null;
 }
