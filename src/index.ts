@@ -67,7 +67,7 @@ class FileBrowser extends Widget {
    * @param path - The path of the new directory.
    *
    * #### Note
-   * This does not call [listDirectoryectory].
+   * This does not call [[listDirectory]].
    */
   set directory(path: string) {
     this._currentDir = path;
