@@ -46,6 +46,29 @@
 }
 
 
+.jp-file-icon:before {
+  display: inline-block;
+  font: normal normal normal 14px/1 FontAwesome;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  content: "\f016";
+  position: relative;
+  top: -2px;
+}
+
+
+.jp-file-icon:before.pull-left {
+  margin-right: .3em;
+}
+
+
+.jp-file-icon:before.pull-right {
+  margin-left: .3em;
+}
+
+
 .col-md-12 {
   position: relative;
   min-height: 1px;
