@@ -1,7 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n.jp-FileBrowser-row {\n  margin-left: 0px;\n  margin-right: 0px;\n}\n.jp-item-icon {\n  font-size: 14px;\n  color: #5e5e5e;\n  margin-right: 7px;\n  margin-left: 7px;\n  line-height: 22px;\n  vertical-align: baseline;\n}\n.jp-item-link {\n  margin-left: -1px;\n  vertical-align: baseline;\n  line-height: 22px;\n}\n.jp-folder-icon:before {\n  display: inline-block;\n  font: normal normal normal 14px/1 FontAwesome;\n  font-size: inherit;\n  text-rendering: auto;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n  content: \"\\f114\";\n}\n.jp-folder-icon:before.pull-left {\n  margin-right: .3em;\n}\n.jp-folder-icon:before.pull-right {\n  margin-left: .3em;\n}\n.col-md-12 {\n  position: relative;\n  min-height: 1px;\n  padding-left: 0px;\n  padding-right: 0px;\n  width: 100%;\n  float: left;\n}\n.jp-FileBrowser-row:before,\n.jp-FileBroswer-row:after {\n  content: \" \";\n  display: table;\n}\n.jp-FileBrowser-row:after {\n  clear: both;\n}\n"; (require("browserify-css").createStyle(css, { "href": "example/index.css"})); module.exports = css;
+var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n.jp-FileBrowser-row {\n  margin-left: 0px;\n  margin-right: 0px;\n}\n.jp-item-icon {\n  font-size: 14px;\n  color: #5e5e5e;\n  margin-right: 7px;\n  margin-left: 7px;\n  line-height: 22px;\n  vertical-align: baseline;\n}\n.jp-item-link {\n  margin-left: -1px;\n  vertical-align: baseline;\n  line-height: 22px;\n}\n.jp-folder-icon:before {\n  display: inline-block;\n  font: normal normal normal 14px/1 FontAwesome;\n  font-size: inherit;\n  text-rendering: auto;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n  content: \"\\f114\";\n}\n.jp-folder-icon:before.pull-left {\n  margin-right: .3em;\n}\n.jp-folder-icon:before.pull-right {\n  margin-left: .3em;\n}\n.jp-file-icon:before {\n  display: inline-block;\n  font: normal normal normal 14px/1 FontAwesome;\n  font-size: inherit;\n  text-rendering: auto;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n  content: \"\\f016\";\n  position: relative;\n  top: -2px;\n}\n.jp-file-icon:before.pull-left {\n  margin-right: .3em;\n}\n.jp-file-icon:before.pull-right {\n  margin-left: .3em;\n}\n.col-md-12 {\n  position: relative;\n  min-height: 1px;\n  padding-left: 0px;\n  padding-right: 0px;\n  width: 100%;\n  float: left;\n}\n.jp-FileBrowser-row:before,\n.jp-FileBroswer-row:after {\n  content: \" \";\n  display: table;\n}\n.jp-FileBrowser-row:after {\n  clear: both;\n}\n"; (require("browserify-css").createStyle(css, { "href": "example/index.css"})); module.exports = css;
 },{"browserify-css":4}],2:[function(require,module,exports){
-var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n.jp-FileBrowser-item {\n  color: #2F2F2F;\n  display: inline-block;\n  font: 14px Helvetica, Arial, sans-serif;\n}\n.jp-FileBrowser-list-item > div {\n  white-space: nowrap;\n}\n.jp-FileBrowser {\n  min-width: 200px;\n}\n.jp-FileBrowser-files-inner {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 2px;\n  bottom: 2px;\n  padding: 5px;\n  display: flex;\n  flex-direction: column;\n  background-color: white;\n  border: 1px solid #C0C0C0;\n  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);\n}\n.jp-FileBrowser-files-header {\n  flex-grow: 0;\n  margin-bottom: 5px;\n}\n.jp-FileBrowser-list-container {\n  flex-grow: 1;\n  overflow: auto;\n  margin: 0;\n  border-radius: 0;\n}\n"; (require("browserify-css").createStyle(css, { "href": "lib/index.css"})); module.exports = css;
+var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n.jp-FileBrowser-item {\n  color: #2F2F2F;\n  display: inline-block;\n  font: 14px Helvetica, Arial, sans-serif;\n}\n.jp-FileBrowser-list-item {\n  white-space: nowrap;\n}\n.jp-FileBrowser {\n  min-width: 200px;\n}\n.jp-FileBrowser-files-inner {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 2px;\n  bottom: 2px;\n  padding: 5px;\n  display: flex;\n  flex-direction: column;\n  background-color: white;\n  border: 1px solid #C0C0C0;\n  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);\n}\n.jp-FileBrowser-files-header {\n  flex-grow: 0;\n  margin-bottom: 5px;\n}\n.jp-FileBrowser-list-container {\n  flex-grow: 1;\n  overflow: auto;\n  margin: 0;\n  border-radius: 0;\n}\n"; (require("browserify-css").createStyle(css, { "href": "lib/index.css"})); module.exports = css;
 },{"browserify-css":4}],3:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
@@ -38,9 +38,10 @@ var FileBrowser = (function (_super) {
         this._onClick = null;
         this._contents = null;
         this.addClass('jp-FileBrowser');
+        baseUrl = defaultBaseUrl(baseUrl);
         this._contents = contents || new jupyter_js_services_1.Contents(baseUrl);
-        document.addEventListener('mousedown', this, true);
-        this._currentDir = currentDir;
+        document.addEventListener('mousedown', this);
+        this._currentDir = currentDir || '';
     }
     /**
      * Create a new node for the file list.
@@ -128,7 +129,7 @@ var FileBrowser = (function (_super) {
         var path = this._currentDir.slice(0, this._currentDir.length - 1);
         this._contents.listContents(path).then(function (msg) {
             for (var i = 0; i < msg.content.length; i++) {
-                if (msg.content[i].length) {
+                if (msg.content[i].type === 'directory') {
                     _this._addItem(msg.content[i].name + '/', true);
                 }
                 else {
@@ -143,10 +144,7 @@ var FileBrowser = (function (_super) {
     FileBrowser.prototype._evtMouseDown = function (event) {
         var _this = this;
         var el = event.target;
-        if (!this.node.contains(el)) {
-            return;
-        }
-        if (this.node.firstChild.firstChild.contains(el)) {
+        if (el.className.indexOf('jp-item-link') === -1) {
             return;
         }
         var text = el.textContent;
@@ -210,6 +208,23 @@ var FileBrowser = (function (_super) {
     return FileBrowser;
 })(phosphor_widget_1.Widget);
 exports.FileBrowser = FileBrowser;
+/**
+ * Handle default logic for baseUrl.
+ */
+function defaultBaseUrl(baseUrl) {
+    if (baseUrl !== undefined) {
+        if (baseUrl[baseUrl.length - 1] !== '/') {
+            baseUrl += '/';
+        }
+        return baseUrl;
+    }
+    if (typeof location === undefined) {
+        return 'http://localhost:8888/';
+    }
+    else {
+        return location.origin + '/';
+    }
+}
 
 },{"./index.css":2,"jupyter-js-services":8,"phosphor-widget":23}],4:[function(require,module,exports){
 'use strict';
