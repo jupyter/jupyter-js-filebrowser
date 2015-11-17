@@ -143,6 +143,9 @@ class FileBrowser extends Widget {
     if (!this.node.contains(el)) {
       return;
     }
+    if ((this.node.firstChild.firstChild as HTMLElement).contains(el)) {
+      return
+    }
     let text = el.textContent;
     // Handle a directory target.
     if (text[text.length - 1] === '/') {
@@ -186,7 +189,6 @@ class FileBrowser extends Widget {
     inode.classList.add('jp-icon-fixed-width');
     let lnode = document.createElement('div');
     lnode.className = 'jp-item-link';
-    lnode.classList.add('jp-FileBrowser-file-item');
     lnode.textContent = text;
     // Add the appropriate icon based on whether it is a directory.
     if (isDirectory) {

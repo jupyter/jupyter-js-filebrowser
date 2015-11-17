@@ -5,10 +5,11 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "dependencies": {
-    "jupyter-js-services": "^0.0.1",
-    "phosphor-widget": "^0.9.13"
+    "jupyter-js-services": "^0.2.1",
+    "phosphor-widget": "^1.0.0-beta.1"
   },
   "devDependencies": {
+    "browserify-css": "^0.8.1",
     "expect.js": "^0.3.1",
     "glob-copy": "^0.1.0",
     "istanbul": "^0.3.18",
@@ -26,7 +27,9 @@
   },
   "scripts": {
     "clean": "rimraf docs && rimraf lib && rimraf test/build",
+    "clean:example": "rimraf example/*.js",
     "build:src": "tsc --project src && node scripts/copycss.js",
+    "build:example": "tsc --project example && browserify -t browserify-css example/index.js -o example/bundle.js",
     "build:test": "tsc --project test",
     "build": "npm run build:src && npm run build:test",
     "docs": "typedoc --options scripts/tdoptions.json",
