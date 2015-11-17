@@ -50,7 +50,7 @@ class FileBrowser extends Widget {
     super();
     this.addClass('jp-FileBrowser');
     this._contents = contents || new Contents(baseUrl);
-    document.addEventListener('mousedown', this, true);
+    document.addEventListener('mousedown', this);
     this._currentDir = currentDir;
   }
 
@@ -126,7 +126,7 @@ class FileBrowser extends Widget {
     let path = this._currentDir.slice(0, this._currentDir.length - 1);
     this._contents.listContents(path).then((msg: any) => {
       for (let i = 0; i < msg.content.length; i++) {
-        if ((msg as any).content[i].length) {
+        if ((msg as any).content[i].type === 'directory') {
           this._addItem((msg as any).content[i].name + '/', true);
         } else {
           this._addItem((msg as any).content[i].name, false);
@@ -140,7 +140,7 @@ class FileBrowser extends Widget {
    */
   private _evtMouseDown(event: MouseEvent): void {
     let el =  event.target as HTMLElement;
-    if (!this.node.contains(el)) {
+    if (el.className.indexOf('jp-item-link') === -1) {
       return;
     }
     let text = el.textContent;
@@ -186,7 +186,6 @@ class FileBrowser extends Widget {
     inode.classList.add('jp-icon-fixed-width');
     let lnode = document.createElement('div');
     lnode.className = 'jp-item-link';
-    lnode.classList.add('jp-FileBrowser-file-item');
     lnode.textContent = text;
     // Add the appropriate icon based on whether it is a directory.
     if (isDirectory) {

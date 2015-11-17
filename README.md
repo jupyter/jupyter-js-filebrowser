@@ -60,6 +60,19 @@ npm run docs
 Navigate to `docs/index.html`.
 
 
+Build Example
+-------------
+
+Follow the source build instructions first.
+Requires a Python install with the Jupyter notebook.
+
+```bash
+npm run build:example
+```
+
+Change to `example` directory and run `python main.py`.
+
+
 Supported Runtimes
 ------------------
 

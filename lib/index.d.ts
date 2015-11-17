@@ -31,7 +31,7 @@ export declare class FileBrowser extends Widget {
      * @param path - The path of the new directory.
      *
      * #### Note
-     * This does not call [listDirectoryectory].
+     * This does not call [[listDirectory]].
      */
     directory: string;
     /**
