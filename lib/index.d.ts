@@ -21,7 +21,7 @@ export declare class FileBrowser extends Widget {
      *
      * @param contents - An existing Contents API object.
      */
-    constructor(baseUrl: string, currentDir: string, contents?: IContents);
+    constructor(baseUrl?: string, currentDir?: string, contents?: IContents);
     /**
      * Get the current directory of the file browser.
      */

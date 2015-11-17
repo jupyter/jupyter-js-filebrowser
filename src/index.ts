@@ -46,12 +46,13 @@ class FileBrowser extends Widget {
    *
    * @param contents - An existing Contents API object.
    */
-  constructor(baseUrl: string, currentDir: string, contents?: IContents) {
+  constructor(baseUrl?: string, currentDir?: string, contents?: IContents) {
     super();
     this.addClass('jp-FileBrowser');
+    baseUrl = defaultBaseUrl(baseUrl);
     this._contents = contents || new Contents(baseUrl);
     document.addEventListener('mousedown', this);
-    this._currentDir = currentDir;
+    this._currentDir = currentDir || '';
   }
 
   /**
@@ -202,4 +203,22 @@ class FileBrowser extends Widget {
   private _currentDir = '';
   private _onClick: (name: string, contents: string) => void = null;
   private _contents: IContents = null;
+}
+
+
+/**
+ * Handle default logic for baseUrl.
+ */
+function defaultBaseUrl(baseUrl?: string): string {
+  if (baseUrl !== undefined) {
+    if (baseUrl[baseUrl.length - 1] !== '/') {
+      baseUrl += '/';
+    }
+    return baseUrl;
+  }
+  if (typeof location === undefined) {
+    return 'http://localhost:8888/';
+  } else {
+    return location.origin + '/';
+  }
 }
