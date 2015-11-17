@@ -9,7 +9,7 @@
 }
 
 
-.jp-FileBrowser-list-item > div {
+.jp-FileBrowser-list-item {
   white-space: nowrap;
 }
 
