@@ -1,5 +1,31 @@
-import { IContents } from 'jupyter-js-services';
+import { IContents, INotebookSession, ISessionId } from 'jupyter-js-services';
+import { Message } from 'phosphor-messaging';
 import { Widget } from 'phosphor-widget';
+/**
+ * A view model associated with a Jupyter FileBrowser.
+ */
+export interface IFileBrowserViewModel {
+    /**
+     * Get a list of running session models.
+     */
+    listRunningSessions: () => Promise<ISessionId[]>;
+    /**
+     * Connect to a session by session id.
+     */
+    connectToSession: (id: string) => Promise<INotebookSession>;
+    /**
+     * Contents provider.
+     */
+    contents: IContents;
+    /**
+     * The current directory path.
+     */
+    currentDirectory: string;
+    /**
+     * The selected items in the current directory.
+     */
+    selectedItems: string[];
+}
 /**
  * A widget which hosts a file browser.
  *
@@ -15,13 +41,9 @@ export declare class FileBrowser extends Widget {
     /**
      * Construct a new file browser widget.
      *
-     * @param baseUrl - The base url for the Contents API.
-     *
-     * @param currentDir - The name of the current directory.
-     *
-     * @param contents - An existing Contents API object.
+     * @param model - File browser view model instance.
      */
-    constructor(baseUrl?: string, currentDir?: string, contents?: IContents);
+    constructor(model: IFileBrowserViewModel);
     /**
      * Get the current directory of the file browser.
      */
@@ -29,28 +51,19 @@ export declare class FileBrowser extends Widget {
      * Set the current directory of the file browser.
      *
      * @param path - The path of the new directory.
-     *
-     * #### Note
-     * This does not call [[listDirectory]].
      */
     directory: string;
     /**
-     * Get the onClick handler for the file browser.
+     * Get the selected items for the file browser.
      *
-     * This is called in response to a user clicking on a file target.
-     * The contents of the file are retrieved, and the name and contents
-     * of the file are passed to the handler.
+     * #### Notes
+     * This is a read-only property.
      */
+    selectedItems: string[];
     /**
-     * Set the onClick handler for the file browser.
-     *
-     * @param cb - The callback for an onclick event.
-     *
-     * This is called in response to a user clicking on a file target.
-     * The contents of the file are retrieved, and the name and contents
-     * of the file are passed to the handler.
+     * Open the currently selected item(s).
      */
-    onClick: (name: string, contents: any) => void;
+    open(): void;
     /**
      * Handle the DOM events for the file browser.
      *
@@ -63,15 +76,27 @@ export declare class FileBrowser extends Widget {
      */
     handleEvent(event: Event): void;
     /**
-     * Set the file browser contents based on the current directory.
+     * A message handler invoked on an `'after-attach'` message.
      */
-    listDirectory(): void;
+    protected onAfterAttach(msg: Message): void;
     /**
-     * Handle the `'mousedown'` event for the file browser.
+     * A message handler invoked on a `'before-detach'` message.
      */
-    private _evtMouseDown(event);
+    protected onBeforeDetach(msg: Message): void;
+    /**
+     * Handle the `'click'` event for the file browser.
+     */
+    private _evtClick(event);
+    /**
+     * Handle the `'dblclick'` event for the file browser.
+     */
+    private _evtDblClick(event);
+    private _handleMultiSelect(node);
+    private _findTarget(event);
+    /**
+     * List the contents of the current directory.
+     */
+    private _listContents();
     private _addItem(text, isDirectory);
-    private _currentDir;
-    private _onClick;
-    private _contents;
+    private _model;
 }

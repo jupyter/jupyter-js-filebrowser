@@ -6,11 +6,15 @@
 'use-strict';
 
 import {
+  Contents, listRunningSessions, connectToSession, ISessionOptions
+} from 'jupyter-js-services';
+
+import {
   Widget
 } from 'phosphor-widget';
 
 import {
-  FileBrowser
+  FileBrowser, IFileBrowserViewModel
 } from '../lib/index';
 
 import './index.css';
@@ -18,15 +22,36 @@ import './index.css';
 
 function main(): void {
 
-  var fileBrowser = new FileBrowser('http://localhost:8888', '');
+  let baseUrl = 'http://localhost:8888'
+
+  let contents = new Contents(baseUrl);
+
+  let items: string[] = [];
+
+  let listSessions = function() {
+    return listRunningSessions(baseUrl);
+  }
+
+  let connectSession = function(id: string) {
+    let options = {
+       baseUrl: baseUrl,
+       notebookPath: 'foo.ipynb',
+       kernelName: 'baz'
+    }
+    return connectToSession(id, options);
+  }
+
+  let model = {
+    listRunningSessions: listSessions,
+    connectToSession: connectSession,
+    contents: contents,
+    currentDirectory: '',
+    selectedItems: items
+  }
+
+  let fileBrowser = new FileBrowser(model);
 
   Widget.attach(fileBrowser, document.body);
-
-  fileBrowser.listDirectory();
-
-  fileBrowser.onClick = (name, contents) => {
-    console.log(name);
-  }
 
   window.onresize = () => fileBrowser.update();
 }

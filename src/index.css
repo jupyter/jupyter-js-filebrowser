@@ -14,6 +14,17 @@
 }
 
 
+.jp-FileBrowser-row:after {
+  content: " ";
+  display: block;
+  clear: both;
+}
+
+
+.jp-mod-selected {
+  background-color: #FFC0CB;
+}
+
 .jp-FileBrowser {
   min-width: 200px;
 }

@@ -1,7 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n.jp-FileBrowser-row {\n  margin-left: 0px;\n  margin-right: 0px;\n}\n.jp-item-icon {\n  font-size: 14px;\n  color: #5e5e5e;\n  margin-right: 7px;\n  margin-left: 7px;\n  line-height: 22px;\n  vertical-align: baseline;\n}\n.jp-item-link {\n  margin-left: -1px;\n  vertical-align: baseline;\n  line-height: 22px;\n}\n.jp-folder-icon:before {\n  display: inline-block;\n  font: normal normal normal 14px/1 FontAwesome;\n  font-size: inherit;\n  text-rendering: auto;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n  content: \"\\f114\";\n}\n.jp-folder-icon:before.pull-left {\n  margin-right: .3em;\n}\n.jp-folder-icon:before.pull-right {\n  margin-left: .3em;\n}\n.jp-file-icon:before {\n  display: inline-block;\n  font: normal normal normal 14px/1 FontAwesome;\n  font-size: inherit;\n  text-rendering: auto;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n  content: \"\\f016\";\n  position: relative;\n  top: -2px;\n}\n.jp-file-icon:before.pull-left {\n  margin-right: .3em;\n}\n.jp-file-icon:before.pull-right {\n  margin-left: .3em;\n}\n.col-md-12 {\n  position: relative;\n  min-height: 1px;\n  padding-left: 0px;\n  padding-right: 0px;\n  width: 100%;\n  float: left;\n}\n.jp-FileBrowser-row:before,\n.jp-FileBroswer-row:after {\n  content: \" \";\n  display: table;\n}\n.jp-FileBrowser-row:after {\n  clear: both;\n}\n"; (require("browserify-css").createStyle(css, { "href": "example/index.css"})); module.exports = css;
 },{"browserify-css":4}],2:[function(require,module,exports){
-var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n.jp-FileBrowser-item {\n  color: #2F2F2F;\n  display: inline-block;\n  font: 14px Helvetica, Arial, sans-serif;\n}\n.jp-FileBrowser-list-item {\n  white-space: nowrap;\n}\n.jp-FileBrowser {\n  min-width: 200px;\n}\n.jp-FileBrowser-files-inner {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 2px;\n  bottom: 2px;\n  padding: 5px;\n  display: flex;\n  flex-direction: column;\n  background-color: white;\n  border: 1px solid #C0C0C0;\n  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);\n}\n.jp-FileBrowser-files-header {\n  flex-grow: 0;\n  margin-bottom: 5px;\n}\n.jp-FileBrowser-list-container {\n  flex-grow: 1;\n  overflow: auto;\n  margin: 0;\n  border-radius: 0;\n}\n"; (require("browserify-css").createStyle(css, { "href": "lib/index.css"})); module.exports = css;
+var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n.jp-FileBrowser-item {\n  color: #2F2F2F;\n  display: inline-block;\n  font: 14px Helvetica, Arial, sans-serif;\n}\n.jp-FileBrowser-list-item {\n  white-space: nowrap;\n}\n.jp-FileBrowser-row:after {\n  content: \" \";\n  display: block;\n  clear: both;\n}\n.jp-mod-selected {\n  background-color: #FFC0CB;\n}\n.jp-FileBrowser {\n  min-width: 200px;\n}\n.jp-FileBrowser-files-inner {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 2px;\n  bottom: 2px;\n  padding: 5px;\n  display: flex;\n  flex-direction: column;\n  background-color: white;\n  border: 1px solid #C0C0C0;\n  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);\n}\n.jp-FileBrowser-files-header {\n  flex-grow: 0;\n  margin-bottom: 5px;\n}\n.jp-FileBrowser-list-container {\n  flex-grow: 1;\n  overflow: auto;\n  margin: 0;\n  border-radius: 0;\n}\n"; (require("browserify-css").createStyle(css, { "href": "lib/index.css"})); module.exports = css;
 },{"browserify-css":4}],3:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
@@ -11,9 +11,25 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-var jupyter_js_services_1 = require('jupyter-js-services');
+var phosphor_domutil_1 = require('phosphor-domutil');
 var phosphor_widget_1 = require('phosphor-widget');
 require('./index.css');
+/**
+ * The class name added to FileBrowser instances.
+ */
+var FILE_BROWSER_CLASS = 'jp-FileBrowser';
+/**
+ * The class name added to FileBrowser rows.
+ */
+var LIST_AREA_CLASS = 'jp-FileBrowser-list-area';
+/**
+ * The class name added to FileBrowser rows.
+ */
+var ROW_CLASS = 'jp-FileBrowser-row';
+/**
+ * The class name added to selected rows.
+ */
+var SELECTED_CLASS = 'jp-mod-selected';
 /**
  * A widget which hosts a file browser.
  *
@@ -26,32 +42,22 @@ var FileBrowser = (function (_super) {
     /**
      * Construct a new file browser widget.
      *
-     * @param baseUrl - The base url for the Contents API.
-     *
-     * @param currentDir - The name of the current directory.
-     *
-     * @param contents - An existing Contents API object.
+     * @param model - File browser view model instance.
      */
-    function FileBrowser(baseUrl, currentDir, contents) {
+    function FileBrowser(model) {
         _super.call(this);
-        this._currentDir = '';
-        this._onClick = null;
-        this._contents = null;
-        this.addClass('jp-FileBrowser');
-        baseUrl = defaultBaseUrl(baseUrl);
-        this._contents = contents || new jupyter_js_services_1.Contents(baseUrl);
-        document.addEventListener('mousedown', this);
-        this._currentDir = currentDir || '';
+        this._model = null;
+        this._model = model;
+        this.addClass(FILE_BROWSER_CLASS);
     }
     /**
      * Create a new node for the file list.
      */
     FileBrowser.createNode = function () {
         var node = document.createElement('div');
-        node.innerHTML = ('<div class="jp-FileBrowser-files-inner">' +
-            '<div class="jp-FileBrowser-files-header">Files</div>' +
-            '<div class="jp-FileBrowser-list-container"></div>' +
-            '</div>');
+        var child = document.createElement('div');
+        child.classList.add(LIST_AREA_CLASS);
+        node.appendChild(child);
         return node;
     };
     Object.defineProperty(FileBrowser.prototype, "directory", {
@@ -59,48 +65,38 @@ var FileBrowser = (function (_super) {
          * Get the current directory of the file browser.
          */
         get: function () {
-            return this._currentDir;
+            return this._model.currentDirectory;
         },
         /**
          * Set the current directory of the file browser.
          *
          * @param path - The path of the new directory.
-         *
-         * #### Note
-         * This does not call [[listDirectory]].
          */
         set: function (path) {
-            this._currentDir = path;
+            this._model.currentDirectory = path;
         },
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(FileBrowser.prototype, "onClick", {
+    Object.defineProperty(FileBrowser.prototype, "selectedItems", {
         /**
-         * Get the onClick handler for the file browser.
+         * Get the selected items for the file browser.
          *
-         * This is called in response to a user clicking on a file target.
-         * The contents of the file are retrieved, and the name and contents
-         * of the file are passed to the handler.
+         * #### Notes
+         * This is a read-only property.
          */
         get: function () {
-            return this._onClick;
-        },
-        /**
-         * Set the onClick handler for the file browser.
-         *
-         * @param cb - The callback for an onclick event.
-         *
-         * This is called in response to a user clicking on a file target.
-         * The contents of the file are retrieved, and the name and contents
-         * of the file are passed to the handler.
-         */
-        set: function (cb) {
-            this._onClick = cb;
+            return this._model.selectedItems;
         },
         enumerable: true,
         configurable: true
     });
+    /**
+     * Open the currently selected item(s).
+     */
+    FileBrowser.prototype.open = function () {
+        console.log('open');
+    };
     /**
      * Handle the DOM events for the file browser.
      *
@@ -112,22 +108,129 @@ var FileBrowser = (function (_super) {
      * not be called directly by user code.
      */
     FileBrowser.prototype.handleEvent = function (event) {
-        if (event.type === 'mousedown') {
-            this._evtMouseDown(event);
+        switch (event.type) {
+            case 'click':
+                this._evtClick(event);
+                break;
+            case 'dblclick':
+                this._evtDblClick(event);
+                break;
         }
     };
     /**
-     * Set the file browser contents based on the current directory.
+     * A message handler invoked on an `'after-attach'` message.
      */
-    FileBrowser.prototype.listDirectory = function () {
+    FileBrowser.prototype.onAfterAttach = function (msg) {
+        _super.prototype.onAfterAttach.call(this, msg);
+        var node = this.node;
+        node.addEventListener('click', this);
+        node.addEventListener('dblclick', this);
+        this._listContents();
+    };
+    /**
+     * A message handler invoked on a `'before-detach'` message.
+     */
+    FileBrowser.prototype.onBeforeDetach = function (msg) {
+        _super.prototype.onBeforeDetach.call(this, msg);
+        var node = this.node;
+        node.removeEventListener('click', this);
+        node.removeEventListener('dblclick', this);
+    };
+    /**
+     * Handle the `'click'` event for the file browser.
+     */
+    FileBrowser.prototype._evtClick = function (event) {
+        var node = this._findTarget(event);
+        if (!node) {
+            return;
+        }
+        // handle toggles
+        if (event.metaKey || event.ctrlKey) {
+            console.log('toggle select', node);
+            if (node.classList.contains(SELECTED_CLASS)) {
+                node.classList.remove(SELECTED_CLASS);
+            }
+            else {
+                node.classList.add(SELECTED_CLASS);
+            }
+        }
+        else if (event.shiftKey) {
+            console.log('multi select', node);
+            // find the "nearest selected"
+            var nearestIndex = -1;
+            var index = -1;
+            var rows = this.node.querySelectorAll("." + ROW_CLASS);
+            for (var i = 0; i < rows.length; i++) {
+                if (rows[i] === node) {
+                    index = i;
+                    continue;
+                }
+                if (rows[i].classList.contains(SELECTED_CLASS)) {
+                    if (nearestIndex === -1) {
+                        nearestIndex = i;
+                    }
+                    else {
+                        if (Math.abs(index - i) < Math.abs(nearestIndex - i)) {
+                            nearestIndex = i;
+                        }
+                    }
+                }
+            }
+            if (nearestIndex === -1) {
+                nearestIndex = 0;
+            }
+            for (var i = 0; i < rows.length; i++) {
+                if (nearestIndex >= i && index <= i ||
+                    nearestIndex <= i && index >= i) {
+                    rows[i].classList.add(SELECTED_CLASS);
+                }
+            }
+        }
+        else {
+            var rows = this.node.querySelectorAll("." + ROW_CLASS);
+            for (var i_1 = 0; i_1 < rows.length; i_1++) {
+                rows[i_1].classList.remove(SELECTED_CLASS);
+            }
+            node.classList.add(SELECTED_CLASS);
+        }
+    };
+    /**
+     * Handle the `'dblclick'` event for the file browser.
+     */
+    FileBrowser.prototype._evtDblClick = function (event) {
+        var node = this._findTarget(event);
+        if (!node) {
+            return;
+        }
+        this.open();
+    };
+    FileBrowser.prototype._handleMultiSelect = function (node) {
+        console.log('handleMultiSelect');
+    };
+    FileBrowser.prototype._findTarget = function (event) {
+        var rows = this.node.querySelectorAll("." + ROW_CLASS);
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            if (phosphor_domutil_1.hitTest(row, event.clientX, event.clientY)) {
+                return row;
+            }
+        }
+        return void 0;
+    };
+    /**
+     * List the contents of the current directory.
+     */
+    FileBrowser.prototype._listContents = function () {
         var _this = this;
-        this.node.firstChild.lastChild.textContent = '';
+        var currentDir = this._model.currentDirectory;
+        var contents = this._model.contents;
+        this.node.firstChild.textContent = '';
         // Add a parent link if not at the root.
-        if (this._currentDir.lastIndexOf('/') !== -1) {
+        if (currentDir.lastIndexOf('/') !== -1) {
             this._addItem('..', true);
         }
-        var path = this._currentDir.slice(0, this._currentDir.length - 1);
-        this._contents.listContents(path).then(function (msg) {
+        var path = currentDir.slice(0, currentDir.length - 1);
+        contents.listContents(path).then(function (msg) {
             for (var i = 0; i < msg.content.length; i++) {
                 if (msg.content[i].type === 'directory') {
                     _this._addItem(msg.content[i].name + '/', true);
@@ -138,42 +241,6 @@ var FileBrowser = (function (_super) {
             }
         });
     };
-    /**
-     * Handle the `'mousedown'` event for the file browser.
-     */
-    FileBrowser.prototype._evtMouseDown = function (event) {
-        var _this = this;
-        var el = event.target;
-        if (el.className.indexOf('jp-item-link') === -1) {
-            return;
-        }
-        var text = el.textContent;
-        // Handle a directory target.
-        if (text[text.length - 1] === '/') {
-            this._currentDir += text;
-            this.listDirectory();
-        }
-        else if (text === '..') {
-            var parts = this._currentDir.split('/');
-            parts = parts.slice(0, parts.length - 2);
-            if (parts.length === 0) {
-                this._currentDir = '';
-            }
-            else {
-                this._currentDir = parts.join('/') + '/';
-            }
-            this.listDirectory();
-        }
-        else {
-            var path = this._currentDir + text;
-            this._contents.get(path, 'file', {}).then(function (msg) {
-                var onClick = _this._onClick;
-                if (onClick) {
-                    onClick(msg.path, msg.content);
-                }
-            });
-        }
-    };
     /*
      * Add an item to the file browser display.
      *
@@ -182,8 +249,7 @@ var FileBrowser = (function (_super) {
      */
     FileBrowser.prototype._addItem = function (text, isDirectory) {
         var top = document.createElement('div');
-        top.className = 'jp-FileBrowser-list-item';
-        top.classList.add('jp-FileBrowser-row');
+        top.classList.add(ROW_CLASS);
         var node = document.createElement('div');
         node.classList.add('col-md-12');
         var inode = document.createElement('i');
@@ -203,30 +269,13 @@ var FileBrowser = (function (_super) {
         node.appendChild(inode);
         node.appendChild(lnode);
         top.appendChild(node);
-        this.node.firstChild.lastChild.appendChild(top);
+        this.node.firstChild.appendChild(top);
     };
     return FileBrowser;
 })(phosphor_widget_1.Widget);
 exports.FileBrowser = FileBrowser;
-/**
- * Handle default logic for baseUrl.
- */
-function defaultBaseUrl(baseUrl) {
-    if (baseUrl !== undefined) {
-        if (baseUrl[baseUrl.length - 1] !== '/') {
-            baseUrl += '/';
-        }
-        return baseUrl;
-    }
-    if (typeof location === undefined) {
-        return 'http://localhost:8888/';
-    }
-    else {
-        return location.origin + '/';
-    }
-}
 
-},{"./index.css":2,"jupyter-js-services":8,"phosphor-widget":23}],4:[function(require,module,exports){
+},{"./index.css":2,"phosphor-domutil":18,"phosphor-widget":25}],4:[function(require,module,exports){
 'use strict';
 // For more information about browser field, check out the browser field at https://github.com/substack/browserify-handbook#browser-field.
 
@@ -2206,7 +2255,7 @@ var Comm = (function (_super) {
     return Comm;
 })(phosphor_disposable_1.DisposableDelegate);
 
-},{"./ikernel":7,"./serialize":11,"./utils":13,"./validate":14,"phosphor-disposable":16,"phosphor-signaling":21}],11:[function(require,module,exports){
+},{"./ikernel":7,"./serialize":11,"./utils":13,"./validate":14,"phosphor-disposable":16,"phosphor-signaling":23}],11:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 'use strict';
@@ -2613,7 +2662,7 @@ function onSessionError(error) {
     throw Error(error.statusText);
 }
 
-},{"./ikernel":7,"./kernel":10,"./utils":13,"./validate":14,"phosphor-signaling":21}],13:[function(require,module,exports){
+},{"./ikernel":7,"./kernel":10,"./utils":13,"./validate":14,"phosphor-signaling":23}],13:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 'use strict';
@@ -3809,6 +3858,251 @@ var DisposableSet = (function () {
 exports.DisposableSet = DisposableSet;
 
 },{}],17:[function(require,module,exports){
+var css = "/*-----------------------------------------------------------------------------\r\n| Copyright (c) 2014-2015, PhosphorJS Contributors\r\n|\r\n| Distributed under the terms of the BSD 3-Clause License.\r\n|\r\n| The full license is in the file LICENSE, distributed with this software.\r\n|----------------------------------------------------------------------------*/\nbody.p-mod-override-cursor * {\n  cursor: inherit !important;\n}\n"; (require("browserify-css").createStyle(css, { "href": "node_modules/phosphor-domutil/lib/index.css"})); module.exports = css;
+},{"browserify-css":4}],18:[function(require,module,exports){
+/*-----------------------------------------------------------------------------
+| Copyright (c) 2014-2015, PhosphorJS Contributors
+|
+| Distributed under the terms of the BSD 3-Clause License.
+|
+| The full license is in the file LICENSE, distributed with this software.
+|----------------------------------------------------------------------------*/
+'use strict';
+var phosphor_disposable_1 = require('phosphor-disposable');
+require('./index.css');
+/**
+ * The class name added to the document body during cursor override.
+ */
+var OVERRIDE_CURSOR_CLASS = 'p-mod-override-cursor';
+/**
+ * The id for the active cursor override.
+ */
+var overrideID = 0;
+/**
+ * Override the cursor for the entire document.
+ *
+ * @param cursor - The string representing the cursor style.
+ *
+ * @returns A disposable which will clear the override when disposed.
+ *
+ * #### Notes
+ * The most recent call to `overrideCursor` takes precendence. Disposing
+ * an old override is a no-op and will not effect the current override.
+ *
+ * #### Example
+ * ```typescript
+ * import { overrideCursor } from 'phosphor-domutil';
+ *
+ * // force the cursor to be 'wait' for the entire document
+ * var override = overrideCursor('wait');
+ *
+ * // clear the override by disposing the return value
+ * override.dispose();
+ * ```
+ */
+function overrideCursor(cursor) {
+    var id = ++overrideID;
+    var body = document.body;
+    body.style.cursor = cursor;
+    body.classList.add(OVERRIDE_CURSOR_CLASS);
+    return new phosphor_disposable_1.DisposableDelegate(function () {
+        if (id === overrideID) {
+            body.style.cursor = '';
+            body.classList.remove(OVERRIDE_CURSOR_CLASS);
+        }
+    });
+}
+exports.overrideCursor = overrideCursor;
+/**
+ * Test whether a client position lies within a node.
+ *
+ * @param node - The DOM node of interest.
+ *
+ * @param clientX - The client X coordinate of interest.
+ *
+ * @param clientY - The client Y coordinate of interest.
+ *
+ * @returns `true` if the node covers the position, `false` otherwise.
+ *
+ * #### Example
+ * ```typescript
+ * import { hitTest } from 'phosphor-domutil';
+ *
+ * var div = document.createElement('div');
+ * div.style.position = 'absolute';
+ * div.style.left = '0px';
+ * div.style.top = '0px';
+ * div.style.width = '100px';
+ * div.style.height = '100px';
+ * document.body.appendChild(div);
+ *
+ * hitTest(div, 50, 50);   // true
+ * hitTest(div, 150, 150); // false
+ * ```
+ */
+function hitTest(node, clientX, clientY) {
+    var rect = node.getBoundingClientRect();
+    return (clientX >= rect.left &&
+        clientX < rect.right &&
+        clientY >= rect.top &&
+        clientY < rect.bottom);
+}
+exports.hitTest = hitTest;
+/**
+ * Compute the box sizing for a DOM node.
+ *
+ * @param node - The DOM node for which to compute the box sizing.
+ *
+ * @returns The box sizing data for the specified DOM node.
+ *
+ * #### Example
+ * ```typescript
+ * import { boxSizing } from 'phosphor-domutil';
+ *
+ * var div = document.createElement('div');
+ * div.style.borderTop = 'solid 10px black';
+ * document.body.appendChild(div);
+ *
+ * var sizing = boxSizing(div);
+ * sizing.borderTop;    // 10
+ * sizing.paddingLeft;  // 0
+ * // etc...
+ * ```
+ */
+function boxSizing(node) {
+    var cstyle = window.getComputedStyle(node);
+    var bt = parseInt(cstyle.borderTopWidth, 10) || 0;
+    var bl = parseInt(cstyle.borderLeftWidth, 10) || 0;
+    var br = parseInt(cstyle.borderRightWidth, 10) || 0;
+    var bb = parseInt(cstyle.borderBottomWidth, 10) || 0;
+    var pt = parseInt(cstyle.paddingTop, 10) || 0;
+    var pl = parseInt(cstyle.paddingLeft, 10) || 0;
+    var pr = parseInt(cstyle.paddingRight, 10) || 0;
+    var pb = parseInt(cstyle.paddingBottom, 10) || 0;
+    var hs = bl + pl + pr + br;
+    var vs = bt + pt + pb + bb;
+    return {
+        borderTop: bt,
+        borderLeft: bl,
+        borderRight: br,
+        borderBottom: bb,
+        paddingTop: pt,
+        paddingLeft: pl,
+        paddingRight: pr,
+        paddingBottom: pb,
+        horizontalSum: hs,
+        verticalSum: vs,
+    };
+}
+exports.boxSizing = boxSizing;
+/**
+ * Compute the size limits for a DOM node.
+ *
+ * @param node - The node for which to compute the size limits.
+ *
+ * @returns The size limit data for the specified DOM node.
+ *
+ * #### Example
+ * ```typescript
+ * import { sizeLimits } from 'phosphor-domutil';
+ *
+ * var div = document.createElement('div');
+ * div.style.minWidth = '90px';
+ * document.body.appendChild(div);
+ *
+ * var limits = sizeLimits(div);
+ * limits.minWidth;   // 90
+ * limits.maxHeight;  // Infinity
+ * // etc...
+ * ```
+ */
+function sizeLimits(node) {
+    var cstyle = window.getComputedStyle(node);
+    return {
+        minWidth: parseInt(cstyle.minWidth, 10) || 0,
+        minHeight: parseInt(cstyle.minHeight, 10) || 0,
+        maxWidth: parseInt(cstyle.maxWidth, 10) || Infinity,
+        maxHeight: parseInt(cstyle.maxHeight, 10) || Infinity,
+    };
+}
+exports.sizeLimits = sizeLimits;
+/**
+ * The internal MIME type used to store the custom drag data.
+ */
+var DRAG_MIME_TYPE = 'application/x-phosphor-internal-drag-data';
+/**
+ * The internal cache that holds the custom drag data.
+ */
+var dragCache = {
+    data: Object.create(null),
+    id: 0
+};
+/**
+ * Get the custom data associated with a drag and drop operation.
+ *
+ * @param event - The DragEvent generated by a user interaction.
+ *
+ * @param mime - The MIME type whose data is being retrieved.
+ *
+ * @returns The value associated with a DragEvent and a MIME type,
+ *   or `undefined` if not data has been set for the combination.
+ *
+ * #### Notes
+ * The native drag and drop life cycle ends for the drop target with
+ * a `drop` event where the value associated with a particular MIME
+ * should be retrieved. One example is a Widget being dropped on a
+ * target that will clone it using a retrieved factory function.
+ */
+function getDragData(event, mime) {
+    var id = event.dataTransfer.getData(DRAG_MIME_TYPE);
+    return id && dragCache.data[id] && dragCache.data[id][mime];
+}
+exports.getDragData = getDragData;
+/**
+ * Set custom drag data for a specific drag event.
+ *
+ * @param event - The DragEvent generated by a user interaction.
+ *
+ * @param mime - The MIME type whose data is being retrieved.
+ *
+ * @param data - The value to stored for the DragEvent and MIME
+ *   combination. This can be any object, not just string data.
+ *
+ * #### Notes
+ * The native drag and drop life cycle begins with a `dragstart` event
+ * on the draggable node. The value associated with a particular MIME
+ * should be set in this event handler.
+ */
+function setDragData(event, mime, data) {
+    var id = event.dataTransfer.getData(DRAG_MIME_TYPE);
+    if (!id) {
+        id = "drag-" + ++dragCache.id;
+        event.dataTransfer.setData(DRAG_MIME_TYPE, id);
+    }
+    if (!dragCache.data[id]) {
+        dragCache.data[id] = Object.create(null);
+    }
+    dragCache.data[id][mime] = data;
+}
+exports.setDragData = setDragData;
+/**
+ * Clear the data being held for a specific drag event.
+ *
+ * @param event - The DragEvent generated by a user interaction.
+ *
+ * #### Notes
+ * The native drag and drop life cycle ends with a `dragend` event on
+ * the draggable node. The values associated with a particular event
+ * should be cleared in this event handler.
+ */
+function clearDragData(event) {
+    var id = event.dataTransfer.getData(DRAG_MIME_TYPE);
+    if (id)
+        delete dragCache.data[id];
+}
+exports.clearDragData = clearDragData;
+
+},{"./index.css":17,"phosphor-disposable":16}],19:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -4193,7 +4487,7 @@ var MessageDispatcher = (function () {
     return MessageDispatcher;
 })();
 
-},{"phosphor-queue":20}],18:[function(require,module,exports){
+},{"phosphor-queue":22}],20:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -4318,7 +4612,7 @@ var NodeWrapper = (function () {
 })();
 exports.NodeWrapper = NodeWrapper;
 
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -4600,7 +4894,7 @@ function lookupHash(owner) {
     return hash;
 }
 
-},{"phosphor-signaling":21}],20:[function(require,module,exports){
+},{"phosphor-signaling":23}],22:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -4956,7 +5250,7 @@ var Queue = (function () {
 })();
 exports.Queue = Queue;
 
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -5393,9 +5687,9 @@ function removeFromSendersList(conn) {
     conn.nextSender = null;
 }
 
-},{}],22:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 var css = "/*-----------------------------------------------------------------------------\r\n| Copyright (c) 2014-2015, PhosphorJS Contributors\r\n|\r\n| Distributed under the terms of the BSD 3-Clause License.\r\n|\r\n| The full license is in the file LICENSE, distributed with this software.\r\n|----------------------------------------------------------------------------*/\n.p-Widget {\n  box-sizing: border-box;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none;\n  overflow: hidden;\n  cursor: default;\n}\n.p-Widget.p-mod-hidden {\n  display: none;\n}\n"; (require("browserify-css").createStyle(css, { "href": "node_modules/phosphor-widget/lib/index.css"})); module.exports = css;
-},{"browserify-css":4}],23:[function(require,module,exports){
+},{"browserify-css":4}],25:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -5411,7 +5705,7 @@ __export(require('./title'));
 __export(require('./widget'));
 require('./index.css');
 
-},{"./index.css":22,"./title":24,"./widget":25}],24:[function(require,module,exports){
+},{"./index.css":24,"./title":26,"./widget":27}],26:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -5642,7 +5936,7 @@ var Title = (function () {
 })();
 exports.Title = Title;
 
-},{"phosphor-properties":19}],25:[function(require,module,exports){
+},{"phosphor-properties":21}],27:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -6704,25 +6998,43 @@ function sendToShown(widgets, msg) {
         phosphor_messaging_1.sendMessage(w, msg); });
 }
 
-},{"./title":24,"phosphor-arrays":15,"phosphor-messaging":17,"phosphor-nodewrapper":18,"phosphor-properties":19,"phosphor-signaling":21}],26:[function(require,module,exports){
+},{"./title":26,"phosphor-arrays":15,"phosphor-messaging":19,"phosphor-nodewrapper":20,"phosphor-properties":21,"phosphor-signaling":23}],28:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, Jupyter Development Team.
 |
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
 'use-strict';
+var jupyter_js_services_1 = require('jupyter-js-services');
 var phosphor_widget_1 = require('phosphor-widget');
 var index_1 = require('../lib/index');
 require('./index.css');
 function main() {
-    var fileBrowser = new index_1.FileBrowser('http://localhost:8888', '');
-    phosphor_widget_1.Widget.attach(fileBrowser, document.body);
-    fileBrowser.listDirectory();
-    fileBrowser.onClick = function (name, contents) {
-        console.log(name);
+    var baseUrl = 'http://localhost:8888';
+    var contents = new jupyter_js_services_1.Contents(baseUrl);
+    var items = [];
+    var listSessions = function () {
+        return jupyter_js_services_1.listRunningSessions(baseUrl);
     };
+    var connectSession = function (id) {
+        var options = {
+            baseUrl: baseUrl,
+            notebookPath: 'foo.ipynb',
+            kernelName: 'baz'
+        };
+        return jupyter_js_services_1.connectToSession(id, options);
+    };
+    var model = {
+        listRunningSessions: listSessions,
+        connectToSession: connectSession,
+        contents: contents,
+        currentDirectory: '',
+        selectedItems: items
+    };
+    var fileBrowser = new index_1.FileBrowser(model);
+    phosphor_widget_1.Widget.attach(fileBrowser, document.body);
     window.onresize = function () { return fileBrowser.update(); };
 }
 window.onload = main;
 
-},{"../lib/index":3,"./index.css":1,"phosphor-widget":23}]},{},[26]);
+},{"../lib/index":3,"./index.css":1,"jupyter-js-services":8,"phosphor-widget":25}]},{},[28]);

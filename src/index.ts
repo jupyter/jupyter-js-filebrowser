@@ -3,14 +3,77 @@
 'use-strict';
 
 import {
-  Contents, IContents
+  IContents, INotebookSession, ISessionId
 } from 'jupyter-js-services';
+
+import {
+  hitTest
+} from 'phosphor-domutil';
+
+import {
+  Message
+} from 'phosphor-messaging';
 
 import {
   Widget
 } from 'phosphor-widget';
 
 import './index.css';
+
+
+/**
+ * The class name added to FileBrowser instances.
+ */
+const FILE_BROWSER_CLASS = 'jp-FileBrowser';
+
+
+/**
+ * The class name added to FileBrowser rows.
+ */
+const LIST_AREA_CLASS = 'jp-FileBrowser-list-area';
+
+/**
+ * The class name added to FileBrowser rows.
+ */
+const ROW_CLASS = 'jp-FileBrowser-row';
+
+/**
+ * The class name added to selected rows.
+ */
+const SELECTED_CLASS = 'jp-mod-selected';
+
+
+/**
+ * A view model associated with a Jupyter FileBrowser.
+ */
+export
+interface IFileBrowserViewModel {
+  /**
+   * Get a list of running session models.
+   */
+  listRunningSessions: () => Promise<ISessionId[]>;
+
+  /**
+   * Connect to a session by session id.
+   */
+  connectToSession: (id: string) => Promise<INotebookSession>;
+
+  /**
+   * Contents provider.
+   */
+  contents: IContents;
+
+  /**
+   * The current directory path.
+   */
+  currentDirectory: string;
+
+  /**
+   * The selected items in the current directory.
+   */
+  selectedItems: string[];
+}
+
 
 
 /**
@@ -28,74 +91,54 @@ class FileBrowser extends Widget {
    */
   static createNode(): HTMLElement {
     let node = document.createElement('div');
-    node.innerHTML = (
-      '<div class="jp-FileBrowser-files-inner">' +
-        '<div class="jp-FileBrowser-files-header">Files</div>' +
-        '<div class="jp-FileBrowser-list-container"></div>' +
-      '</div>'
-    );
+    let child = document.createElement('div');
+    child.classList.add(LIST_AREA_CLASS);
+    node.appendChild(child);
     return node;
   }
 
   /**
    * Construct a new file browser widget.
    *
-   * @param baseUrl - The base url for the Contents API.
-   *
-   * @param currentDir - The name of the current directory.
-   *
-   * @param contents - An existing Contents API object.
+   * @param model - File browser view model instance.
    */
-  constructor(baseUrl?: string, currentDir?: string, contents?: IContents) {
+  constructor(model: IFileBrowserViewModel) {
     super();
-    this.addClass('jp-FileBrowser');
-    baseUrl = defaultBaseUrl(baseUrl);
-    this._contents = contents || new Contents(baseUrl);
-    document.addEventListener('mousedown', this);
-    this._currentDir = currentDir || '';
+    this._model = model;
+    this.addClass(FILE_BROWSER_CLASS);
   }
 
   /**
    * Get the current directory of the file browser.
    */
   get directory(): string {
-    return this._currentDir;
+    return this._model.currentDirectory;
   }
 
   /**
    * Set the current directory of the file browser.
    *
    * @param path - The path of the new directory.
-   *
-   * #### Note
-   * This does not call [[listDirectory]].
    */
   set directory(path: string) {
-    this._currentDir = path;
+    this._model.currentDirectory = path;
   }
 
   /**
-   * Get the onClick handler for the file browser.
+   * Get the selected items for the file browser.
    *
-   * This is called in response to a user clicking on a file target.
-   * The contents of the file are retrieved, and the name and contents
-   * of the file are passed to the handler.
+   * #### Notes
+   * This is a read-only property.
    */
-  get onClick(): (name: string, contents: any) => void {
-    return this._onClick;
+  get selectedItems(): string[] {
+    return this._model.selectedItems;
   }
 
   /**
-   * Set the onClick handler for the file browser.
-   *
-   * @param cb - The callback for an onclick event.
-   *
-   * This is called in response to a user clicking on a file target.
-   * The contents of the file are retrieved, and the name and contents
-   * of the file are passed to the handler.
+   * Open the currently selected item(s).
    */
-  set onClick(cb: (name: string, contents: any) => void) {
-    this._onClick = cb;
+  open(): void {
+    console.log('open');
   }
 
   /**
@@ -109,23 +152,137 @@ class FileBrowser extends Widget {
    * not be called directly by user code.
    */
   handleEvent(event: Event): void {
-    if (event.type === 'mousedown') {
-      this._evtMouseDown(event as MouseEvent);
+    switch (event.type) {
+    case 'click':
+      this._evtClick(event as MouseEvent);
+      break;
+    case 'dblclick':
+      this._evtDblClick(event as MouseEvent);
+      break;
     }
   }
 
   /**
-   * Set the file browser contents based on the current directory.
+   * A message handler invoked on an `'after-attach'` message.
    */
-  listDirectory(): void {
-    this.node.firstChild.lastChild.textContent = '';
+  protected onAfterAttach(msg: Message): void {
+    super.onAfterAttach(msg);
+    let node = this.node;
+    node.addEventListener('click', this);
+    node.addEventListener('dblclick', this);
+    this._listContents();
+  }
+
+  /**
+   * A message handler invoked on a `'before-detach'` message.
+   */
+  protected onBeforeDetach(msg: Message): void {
+    super.onBeforeDetach(msg);
+    let node = this.node;
+    node.removeEventListener('click', this);
+    node.removeEventListener('dblclick', this);
+  }
+
+  /**
+   * Handle the `'click'` event for the file browser.
+   */
+  private _evtClick(event: MouseEvent) {
+    let node = this._findTarget(event);
+    if (!node) {
+      return;
+    }
+    // handle toggles
+    if (event.metaKey || event.ctrlKey) {
+      console.log('toggle select', node);
+      if (node.classList.contains(SELECTED_CLASS)) {
+        node.classList.remove(SELECTED_CLASS);
+      } else {
+        node.classList.add(SELECTED_CLASS);
+      }
+    // handle multiple select
+    } else if (event.shiftKey) {
+      console.log('multi select', node);
+      // find the "nearest selected"
+      let nearestIndex = -1;
+      let index = -1;
+      let rows = this.node.querySelectorAll(`.${ROW_CLASS}`);
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i] === node) {
+          index = i;
+          continue;
+        }
+        if (rows[i].classList.contains(SELECTED_CLASS)) {
+          if (nearestIndex === -1) {
+            nearestIndex = i;
+          } else {
+            if (Math.abs(index - i) < Math.abs(nearestIndex - i)) {
+              nearestIndex = i;
+            }
+          }
+        }
+      }
+      if (nearestIndex === -1) {
+        nearestIndex = 0;
+      }
+
+      for (var i = 0; i < rows.length; i++) {
+        if (nearestIndex >= i && index <= i ||
+            nearestIndex <= i && index >= i) {
+          rows[i].classList.add(SELECTED_CLASS);
+        }
+      }
+
+    // default to selecting the only the item.
+    } else {
+      let rows = this.node.querySelectorAll(`.${ROW_CLASS}`);
+      for (let i = 0; i < rows.length; i++) {
+         rows[i].classList.remove(SELECTED_CLASS);
+      }
+      node.classList.add(SELECTED_CLASS);
+    }
+  }
+
+  /**
+   * Handle the `'dblclick'` event for the file browser.
+   */
+  private _evtDblClick(event: MouseEvent) {
+    let node = this._findTarget(event);
+    if (!node) {
+      return;
+    }
+    this.open();
+  }
+
+  private _handleMultiSelect(node: HTMLElement) {
+    console.log('handleMultiSelect');
+  }
+
+  private _findTarget(event: MouseEvent): HTMLElement {
+    let rows = this.node.querySelectorAll(`.${ROW_CLASS}`);
+    for (let i = 0; i < rows.length; i++) {
+      let row = rows[i] as HTMLElement;
+      if (hitTest(row, event.clientX, event.clientY)) {
+        return row;
+      }
+    }
+    return void 0;
+  }
+
+  /**
+   * List the contents of the current directory.
+   */
+  private _listContents() {
+    let currentDir = this._model.currentDirectory;
+    let contents = this._model.contents;
+
+    this.node.firstChild.textContent = '';
     // Add a parent link if not at the root.
-    if (this._currentDir.lastIndexOf('/') !== -1) {
+    if (currentDir.lastIndexOf('/') !== -1) {
       this._addItem('..', true);
     }
 
-    let path = this._currentDir.slice(0, this._currentDir.length - 1);
-    this._contents.listContents(path).then((msg: any) => {
+    let path = currentDir.slice(0, currentDir.length - 1);
+    contents.listContents(path).then((msg: any) => {
       for (let i = 0; i < msg.content.length; i++) {
         if ((msg as any).content[i].type === 'directory') {
           this._addItem((msg as any).content[i].name + '/', true);
@@ -136,39 +293,6 @@ class FileBrowser extends Widget {
     });
   }
 
-  /**
-   * Handle the `'mousedown'` event for the file browser.
-   */
-  private _evtMouseDown(event: MouseEvent): void {
-    let el =  event.target as HTMLElement;
-    if (el.className.indexOf('jp-item-link') === -1) {
-      return;
-    }
-    let text = el.textContent;
-    // Handle a directory target.
-    if (text[text.length - 1] === '/') {
-      this._currentDir += text;
-      this.listDirectory();
-    // Handle a parent directory target.
-    } else if (text === '..') {
-      let parts = this._currentDir.split('/');
-      parts = parts.slice(0, parts.length-2);
-      if (parts.length === 0) {
-        this._currentDir = '';
-      } else {
-        this._currentDir = parts.join('/') + '/';
-      }
-      this.listDirectory();
-    // Handle a file target.
-    } else {
-      let path = this._currentDir + text;
-      this._contents.get(path, 'file', { }).then((msg: any) => {
-        let onClick = this._onClick;
-        if (onClick) { onClick(msg.path, msg.content); }
-      });
-    }
-  }
-
   /*
    * Add an item to the file browser display.
    *
@@ -177,8 +301,7 @@ class FileBrowser extends Widget {
    */
   private _addItem(text: string, isDirectory: boolean): void {
     let top = document.createElement('div');
-    top.className = 'jp-FileBrowser-list-item';
-    top.classList.add('jp-FileBrowser-row');
+    top.classList.add(ROW_CLASS);
     let node = document.createElement('div');
     node.classList.add('col-md-12');
     let inode = document.createElement('i');
@@ -197,28 +320,8 @@ class FileBrowser extends Widget {
     node.appendChild(inode);
     node.appendChild(lnode);
     top.appendChild(node);
-    this.node.firstChild.lastChild.appendChild(top);
+    this.node.firstChild.appendChild(top);
   }
 
-  private _currentDir = '';
-  private _onClick: (name: string, contents: string) => void = null;
-  private _contents: IContents = null;
-}
-
-
-/**
- * Handle default logic for baseUrl.
- */
-function defaultBaseUrl(baseUrl?: string): string {
-  if (baseUrl !== undefined) {
-    if (baseUrl[baseUrl.length - 1] !== '/') {
-      baseUrl += '/';
-    }
-    return baseUrl;
-  }
-  if (typeof location === undefined) {
-    return 'http://localhost:8888/';
-  } else {
-    return location.origin + '/';
-  }
+  private _model: IFileBrowserViewModel = null;
 }
