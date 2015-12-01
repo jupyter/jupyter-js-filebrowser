@@ -191,18 +191,16 @@ class FileBrowser extends Widget {
     if (!node) {
       return;
     }
-    // handle toggles
+    // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
-      console.log('toggle select', node);
       if (node.classList.contains(SELECTED_CLASS)) {
         node.classList.remove(SELECTED_CLASS);
       } else {
         node.classList.add(SELECTED_CLASS);
       }
-    // handle multiple select
+    // Handle multiple select.
     } else if (event.shiftKey) {
-      console.log('multi select', node);
-      // find the "nearest selected"
+      // Find the "nearest selected".
       let nearestIndex = -1;
       let index = -1;
       let rows = this.node.querySelectorAll(`.${ROW_CLASS}`);
@@ -232,7 +230,7 @@ class FileBrowser extends Widget {
         }
       }
 
-    // default to selecting the only the item.
+    // Default to selecting the only the item.
     } else {
       let rows = this.node.querySelectorAll(`.${ROW_CLASS}`);
       for (let i = 0; i < rows.length; i++) {
@@ -251,10 +249,6 @@ class FileBrowser extends Widget {
       return;
     }
     this.open();
-  }
-
-  private _handleMultiSelect(node: HTMLElement) {
-    console.log('handleMultiSelect');
   }
 
   private _findTarget(event: MouseEvent): HTMLElement {
