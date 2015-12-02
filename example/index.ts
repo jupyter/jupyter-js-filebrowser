@@ -32,12 +32,7 @@ function main(): void {
     return listRunningSessions(baseUrl);
   }
 
-  let connectSession = function(id: string) {
-    let options = {
-       baseUrl: baseUrl,
-       notebookPath: 'foo.ipynb',
-       kernelName: 'baz'
-    }
+  let connectSession = function(id: string, options: ISessionOptions) {
     return connectToSession(id, options);
   }
 

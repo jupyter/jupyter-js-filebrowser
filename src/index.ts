@@ -3,7 +3,7 @@
 'use-strict';
 
 import {
-  IContents, INotebookSession, ISessionId
+  IContents, INotebookSession, ISessionId, ISessionOptions
 } from 'jupyter-js-services';
 
 import {
@@ -25,7 +25,6 @@ import './index.css';
  * The class name added to FileBrowser instances.
  */
 const FILE_BROWSER_CLASS = 'jp-FileBrowser';
-
 
 /**
  * The class name added to FileBrowser rows.
@@ -54,9 +53,9 @@ interface IFileBrowserViewModel {
   listRunningSessions: () => Promise<ISessionId[]>;
 
   /**
-   * Connect to a session by session id.
+   * Connect to a session by session id and known options.
    */
-  connectToSession: (id: string) => Promise<INotebookSession>;
+  connectToSession: (id: string, options: ISessionOptions) => Promise<INotebookSession>;
 
   /**
    * Contents provider.

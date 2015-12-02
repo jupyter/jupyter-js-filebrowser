@@ -1,4 +1,4 @@
-import { IContents, INotebookSession, ISessionId } from 'jupyter-js-services';
+import { IContents, INotebookSession, ISessionId, ISessionOptions } from 'jupyter-js-services';
 import { Message } from 'phosphor-messaging';
 import { Widget } from 'phosphor-widget';
 /**
@@ -10,9 +10,9 @@ export interface IFileBrowserViewModel {
      */
     listRunningSessions: () => Promise<ISessionId[]>;
     /**
-     * Connect to a session by session id.
+     * Connect to a session by session id and known options.
      */
-    connectToSession: (id: string) => Promise<INotebookSession>;
+    connectToSession: (id: string, options: ISessionOptions) => Promise<INotebookSession>;
     /**
      * Contents provider.
      */
@@ -91,7 +91,6 @@ export declare class FileBrowser extends Widget {
      * Handle the `'dblclick'` event for the file browser.
      */
     private _evtDblClick(event);
-    private _handleMultiSelect(node);
     private _findTarget(event);
     /**
      * List the contents of the current directory.
