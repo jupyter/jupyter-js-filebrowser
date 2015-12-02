@@ -223,15 +223,16 @@ class FileBrowser extends Widget {
       return;
     }
 
-    // Stop the event propagation.
-    event.preventDefault();
-    event.stopPropagation();
-
     // Find the target row.
-    let node = this._findTarget(event);
+    let rows = findByClass(this.node, ROW_CLASS);
+    let node = hitTestNodes(rows, event.clientX, event.clientY);
     if (!node) {
       return;
     }
+
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
 
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
@@ -243,7 +244,6 @@ class FileBrowser extends Widget {
       // Find the "nearest selected".
       let nearestIndex = -1;
       let index = -1;
-      let rows = findByClass(this.node, ROW_CLASS);
       for (var i = 0; i < rows.length; i++) {
         if (rows[i] === node) {
           index = i;
@@ -275,12 +275,21 @@ class FileBrowser extends Widget {
 
     // Default to selecting the only the item.
     } else {
-      let rows = findByClass(this.node, ROW_CLASS);
+
       for (let row of rows) {
         removeClass(row, SELECTED_CLASS);
       }
       addClass(node, SELECTED_CLASS);
     }
+
+    // Set the selected items on the model.
+    let items: string[] = [];
+    for (let row of rows) {
+      if (hasClass(row, SELECTED_CLASS)) {
+        items.push(row.children[1].textContent);
+      }
+    }
+    this._model.selectedItems = items;
   }
 
   /**
@@ -292,28 +301,19 @@ class FileBrowser extends Widget {
       return;
     }
 
+    // Find the target row.
+    let rows = findByClass(this.node, ROW_CLASS);
+    let node = hitTestNodes(rows, event.clientX, event.clientY);
+    if (!node) {
+      return;
+    }
+
     // Stop the event propagation.
     event.preventDefault();
     event.stopPropagation();
 
-    let node = this._findTarget(event);
-    if (!node) {
-      return;
-    }
+    // Open the selected item.
     this.open();
-  }
-
-  /**
-   * Find a click event target node.
-   */
-  private _findTarget(event: MouseEvent): HTMLElement {
-    let rows = findByClass(this.node, ROW_CLASS);
-    for (let row of rows) {
-      if (hitTest(row, event.clientX, event.clientY)) {
-        return row;
-      }
-    }
-    return void 0;
   }
 
   /**
@@ -419,4 +419,19 @@ function findByClass(node: HTMLElement, className: string): HTMLElement[] {
     elements.push(nodeList[i] as HTMLElement);
   }
   return elements;
+}
+
+
+/**
+ * Perform a client position hit test an array of nodes.
+ *
+ * Returns the first matching node, or `undefined`.
+ */
+function hitTestNodes(nodes: HTMLElement[], clientX: number, clientY: number): HTMLElement {
+  for (let node of nodes) {
+    if (hitTest(node, clientX, clientY)) {
+      return node;
+    }
+  }
+  return void 0;
 }

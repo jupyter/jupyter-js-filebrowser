@@ -2,3 +2,19 @@
 | Copyright (c) Jupyter Development Team.
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
+.jp-FileBrowser-list-area {
+  display: flex;
+  flex-direction: column;
+}
+
+
+.jp-FileBrowser-row {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+
+.jp-FileBrowser-item-icon {
+  display: inline-block;
+  vertical-align: baseline;
+}

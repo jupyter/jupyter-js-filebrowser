@@ -62,6 +62,19 @@ export declare class FileBrowser extends Widget {
     selectedItems: string[];
     /**
      * Open the currently selected item(s).
+     *
+     * #### Notes
+     * Files are opened by emitting the [[openFile]] signal.
+     *
+     * If there is only one currently selected item, and it is a
+     * directory, the widget will refresh with that directory's contents.
+     *
+     * If more than one directory is selected and no files are selected,
+     * the top-most directory will be selected and refreshed.
+     *
+     * If one or more directories are selected in addition to one or
+     * more files, the directories will be ignored and the files will
+     * be opened.
      */
     open(): void;
     /**
@@ -91,10 +104,6 @@ export declare class FileBrowser extends Widget {
      * Handle the `'dblclick'` event for the file browser.
      */
     private _evtDblClick(event);
-    /**
-     * Find a click event target node.
-     */
-    private _findTarget(event);
     /**
      * List the contents of the current directory.
      */

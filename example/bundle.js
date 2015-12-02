@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n"; (require("browserify-css").createStyle(css, { "href": "lib/index.css"})); module.exports = css;
+var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n.jp-FileBrowser-list-area {\n  display: flex;\n  flex-direction: column;\n}\n.jp-FileBrowser-row {\n  display: inline-block;\n  white-space: nowrap;\n}\n.jp-FileBrowser-item-icon {\n  display: inline-block;\n  vertical-align: baseline;\n}\n"; (require("browserify-css").createStyle(css, { "href": "lib/index.css"})); module.exports = css;
 },{"browserify-css":3}],2:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
@@ -107,6 +107,19 @@ var FileBrowser = (function (_super) {
     });
     /**
      * Open the currently selected item(s).
+     *
+     * #### Notes
+     * Files are opened by emitting the [[openFile]] signal.
+     *
+     * If there is only one currently selected item, and it is a
+     * directory, the widget will refresh with that directory's contents.
+     *
+     * If more than one directory is selected and no files are selected,
+     * the top-most directory will be selected and refreshed.
+     *
+     * If one or more directories are selected in addition to one or
+     * more files, the directories will be ignored and the files will
+     * be opened.
      */
     FileBrowser.prototype.open = function () {
         console.log('open');
@@ -154,10 +167,19 @@ var FileBrowser = (function (_super) {
      * Handle the `'click'` event for the file browser.
      */
     FileBrowser.prototype._evtClick = function (event) {
+        // Do nothing if it's not a left mouse press.
+        if (event.button !== 0) {
+            return;
+        }
+        // Stop the event propagation.
+        event.preventDefault();
+        event.stopPropagation();
+        // Find the target row.
         var node = this._findTarget(event);
         if (!node) {
             return;
         }
+        var rows = findByClass(this.node, ROW_CLASS);
         // Handle toggling.
         if (event.metaKey || event.ctrlKey) {
             toggleClass(node, SELECTED_CLASS);
@@ -166,7 +188,6 @@ var FileBrowser = (function (_super) {
             // Find the "nearest selected".
             var nearestIndex = -1;
             var index = -1;
-            var rows = findByClass(this.node, ROW_CLASS);
             for (var i = 0; i < rows.length; i++) {
                 if (rows[i] === node) {
                     index = i;
@@ -183,9 +204,11 @@ var FileBrowser = (function (_super) {
                     }
                 }
             }
+            // Default to the first element (and fill down).
             if (nearestIndex === -1) {
                 nearestIndex = 0;
             }
+            // Select the rows between the current and the nearest selected.
             for (var i = 0; i < rows.length; i++) {
                 if (nearestIndex >= i && index <= i ||
                     nearestIndex <= i && index >= i) {
@@ -194,18 +217,33 @@ var FileBrowser = (function (_super) {
             }
         }
         else {
-            var rows = findByClass(this.node, ROW_CLASS);
             for (var _i = 0; _i < rows.length; _i++) {
                 var row = rows[_i];
                 removeClass(row, SELECTED_CLASS);
             }
             addClass(node, SELECTED_CLASS);
         }
+        // Set the selected items on the model.
+        var items = [];
+        for (var _a = 0; _a < rows.length; _a++) {
+            var row = rows[_a];
+            if (hasClass(row, SELECTED_CLASS)) {
+                items.push(row.children[1].textContent);
+            }
+        }
+        this._model.selectedItems = items;
     };
     /**
      * Handle the `'dblclick'` event for the file browser.
      */
     FileBrowser.prototype._evtDblClick = function (event) {
+        // Do nothing if it's not a left mouse press.
+        if (event.button !== 0) {
+            return;
+        }
+        // Stop the event propagation.
+        event.preventDefault();
+        event.stopPropagation();
         var node = this._findTarget(event);
         if (!node) {
             return;
@@ -311,7 +349,7 @@ function removeClass(node, className) {
  */
 function findByClass(node, className) {
     var elements = [];
-    var nodeList = node.querySelectorAll("." + className);
+    var nodeList = node.getElementsByClassName(className);
     for (var i = 0; i < nodeList.length; i++) {
         elements.push(nodeList[i]);
     }
