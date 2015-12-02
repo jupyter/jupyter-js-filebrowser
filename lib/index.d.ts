@@ -91,6 +91,9 @@ export declare class FileBrowser extends Widget {
      * Handle the `'dblclick'` event for the file browser.
      */
     private _evtDblClick(event);
+    /**
+     * Find a click event target node.
+     */
     private _findTarget(event);
     /**
      * List the contents of the current directory.

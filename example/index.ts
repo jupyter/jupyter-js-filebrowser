@@ -17,8 +17,6 @@ import {
   FileBrowser, IFileBrowserViewModel
 } from '../lib/index';
 
-import './index.css';
-
 
 function main(): void {
 

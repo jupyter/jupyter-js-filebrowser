@@ -41,6 +41,26 @@ const ROW_CLASS = 'jp-FileBrowser-row';
  */
 const SELECTED_CLASS = 'jp-mod-selected';
 
+/**
+ * The class name added to a row icon.
+ */
+const ROW_ICON_CLASS = 'jp-FileBrowser-item-icon'
+
+/**
+ * The class name added to a row text.
+ */
+const ROW_TEXT_CLASS = 'jp-FileBrowser-item-text'
+
+/**
+ * The class name added to a folder icon.
+ */
+const FOLDER_ICON_CLASS = 'jp-FileBrowser-folder-icon';
+
+/**
+ * The class name added to a file icon.
+ */
+const FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
+
 
 /**
  * A view model associated with a Jupyter FileBrowser.
@@ -72,7 +92,6 @@ interface IFileBrowserViewModel {
    */
   selectedItems: string[];
 }
-
 
 
 /**
@@ -192,23 +211,19 @@ class FileBrowser extends Widget {
     }
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
-      if (node.classList.contains(SELECTED_CLASS)) {
-        node.classList.remove(SELECTED_CLASS);
-      } else {
-        node.classList.add(SELECTED_CLASS);
-      }
+      toggleClass(node, SELECTED_CLASS);
     // Handle multiple select.
     } else if (event.shiftKey) {
       // Find the "nearest selected".
       let nearestIndex = -1;
       let index = -1;
-      let rows = this.node.querySelectorAll(`.${ROW_CLASS}`);
+      let rows = findByClass(this.node, ROW_CLASS);
       for (var i = 0; i < rows.length; i++) {
         if (rows[i] === node) {
           index = i;
           continue;
         }
-        if (rows[i].classList.contains(SELECTED_CLASS)) {
+        if (hasClass(rows[i], SELECTED_CLASS)) {
           if (nearestIndex === -1) {
             nearestIndex = i;
           } else {
@@ -225,17 +240,17 @@ class FileBrowser extends Widget {
       for (var i = 0; i < rows.length; i++) {
         if (nearestIndex >= i && index <= i ||
             nearestIndex <= i && index >= i) {
-          rows[i].classList.add(SELECTED_CLASS);
+          addClass(rows[i], SELECTED_CLASS);
         }
       }
 
     // Default to selecting the only the item.
     } else {
-      let rows = this.node.querySelectorAll(`.${ROW_CLASS}`);
-      for (let i = 0; i < rows.length; i++) {
-         rows[i].classList.remove(SELECTED_CLASS);
+      let rows = findByClass(this.node, ROW_CLASS);
+      for (let row of rows) {
+        removeClass(row, SELECTED_CLASS);
       }
-      node.classList.add(SELECTED_CLASS);
+      addClass(node, SELECTED_CLASS);
     }
   }
 
@@ -250,10 +265,12 @@ class FileBrowser extends Widget {
     this.open();
   }
 
+  /**
+   * Find a click event target node.
+   */
   private _findTarget(event: MouseEvent): HTMLElement {
-    let rows = this.node.querySelectorAll(`.${ROW_CLASS}`);
-    for (let i = 0; i < rows.length; i++) {
-      let row = rows[i] as HTMLElement;
+    let rows = findByClass(this.node, ROW_CLASS);
+    for (let row of rows) {
       if (hitTest(row, event.clientX, event.clientY)) {
         return row;
       }
@@ -293,28 +310,75 @@ class FileBrowser extends Widget {
    * @param isDirectory - Whether the item is a directory.
    */
   private _addItem(text: string, isDirectory: boolean): void {
-    let top = document.createElement('div');
-    top.classList.add(ROW_CLASS);
-    let node = document.createElement('div');
-    node.classList.add('col-md-12');
+    let row = document.createElement('div');
+    addClass(row, ROW_CLASS);
+
     let inode = document.createElement('i');
-    inode.className = 'jp-item-icon';
-    inode.style.display = 'inline-block';
-    inode.classList.add('jp-icon-fixed-width');
-    let lnode = document.createElement('div');
-    lnode.className = 'jp-item-link';
-    lnode.textContent = text;
+    addClass(inode, ROW_ICON_CLASS);
     // Add the appropriate icon based on whether it is a directory.
     if (isDirectory) {
-      inode.classList.add('jp-folder-icon');
+      addClass(inode, FOLDER_ICON_CLASS);
     } else {
-      inode.classList.add('jp-file-icon');
+      addClass(inode, FILE_ICON_CLASS);
     }
-    node.appendChild(inode);
-    node.appendChild(lnode);
-    top.appendChild(node);
-    this.node.firstChild.appendChild(top);
+
+    let lnode = document.createElement('div');
+    addClass(lnode, ROW_TEXT_CLASS);
+    lnode.textContent = text;
+
+    row.appendChild(inode);
+    row.appendChild(lnode);
+    this.node.firstChild.appendChild(row);
   }
 
   private _model: IFileBrowserViewModel = null;
+}
+
+
+/**
+ * Test whether a node contains a CSS class.
+ */
+function hasClass(node: HTMLElement, className: string): boolean {
+  return node.classList.contains(className);
+}
+
+
+/**
+ * Toggle a CSS class on a node.
+ */
+function toggleClass(node: HTMLElement, className: string): void {
+  if (!hasClass(node, className)) {
+    addClass(node, className);
+  } else {
+    removeClass(node, className);
+  }
+}
+
+
+/**
+ * Add a CSS class to a node.
+ */
+function addClass(node: HTMLElement, className: string): void {
+  node.classList.add(className);
+}
+
+
+/**
+ * Remove a CSS class from a node.
+ */
+function removeClass(node: HTMLElement, className: string): void {
+  node.classList.remove(className);
+}
+
+
+/**
+ * Find child nodes by CSS class name.
+ */
+function findByClass(node: HTMLElement, className: string): HTMLElement[] {
+  let elements: HTMLElement[] = [];
+  let nodeList = node.querySelectorAll(`.${className}`);
+  for (let i = 0; i < nodeList.length; i++) {
+    elements.push(nodeList[i] as HTMLElement);
+  }
+  return elements;
 }

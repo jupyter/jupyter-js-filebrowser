@@ -7,7 +7,6 @@
 var jupyter_js_services_1 = require('jupyter-js-services');
 var phosphor_widget_1 = require('phosphor-widget');
 var index_1 = require('../lib/index');
-require('./index.css');
 function main() {
     var baseUrl = 'http://localhost:8888';
     var contents = new jupyter_js_services_1.Contents(baseUrl);
@@ -15,12 +14,7 @@ function main() {
     var listSessions = function () {
         return jupyter_js_services_1.listRunningSessions(baseUrl);
     };
-    var connectSession = function (id) {
-        var options = {
-            baseUrl: baseUrl,
-            notebookPath: 'foo.ipynb',
-            kernelName: 'baz'
-        };
+    var connectSession = function (id, options) {
         return jupyter_js_services_1.connectToSession(id, options);
     };
     var model = {

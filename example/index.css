@@ -2,13 +2,43 @@
 | Copyright (c) Jupyter Development Team.
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
-.jp-FileBrowser-row {
-  margin-left: 0px;
-  margin-right: 0px;
+.jp-FileBrowser {
+  min-width: 200px;
 }
 
 
-.jp-item-icon {
+.jp-FileBrowser-list-area {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 2px;
+  bottom: 2px;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border: 1px solid #C0C0C0;
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+
+.jp-FileBrowser-row {
+  display: inline-block;
+  white-space: nowrap;
+  margin-left: 0px;
+  margin-right: 0px;
+  font: 14px Helvetica, Arial, sans-serif;
+  color: #2F2F2F;
+}
+
+
+.jp-mod-selected {
+  background-color: #87CEFA;
+}
+
+
+.jp-FileBrowser-item-icon {
+  display: inline-block;
   font-size: 14px;
   color: #5e5e5e;
   margin-right: 7px;
@@ -18,15 +48,15 @@
 }
 
 
-.jp-item-link {
+.jp-FileBrowser-item-text {
+  display: inline-block;
   margin-left: -1px;
   vertical-align: baseline;
   line-height: 22px;
 }
 
 
-.jp-folder-icon:before {
-  display: inline-block;
+.jp-FileBrowser-folder-icon:before {
   font: normal normal normal 14px/1 FontAwesome;
   font-size: inherit;
   text-rendering: auto;
@@ -36,18 +66,17 @@
 }
 
 
-.jp-folder-icon:before.pull-left {
+.jp-FileBrowser-folder-icon:before.pull-left {
   margin-right: .3em;
 }
 
 
-.jp-folder-icon:before.pull-right {
+.jp-FileBrowser-folder-icon:before.pull-right {
   margin-left: .3em;
 }
 
 
-.jp-file-icon:before {
-  display: inline-block;
+.jp-FileBrowser-file-icon:before {
   font: normal normal normal 14px/1 FontAwesome;
   font-size: inherit;
   text-rendering: auto;
@@ -59,33 +88,11 @@
 }
 
 
-.jp-file-icon:before.pull-left {
+.jp-FileBrowser-file-icon:before.pull-left {
   margin-right: .3em;
 }
 
 
-.jp-file-icon:before.pull-right {
+.jp-FileBrowser-file-icon:before.pull-right {
   margin-left: .3em;
-}
-
-
-.col-md-12 {
-  position: relative;
-  min-height: 1px;
-  padding-left: 0px;
-  padding-right: 0px;
-  width: 100%;
-  float: left;
-}
-
-
-.jp-FileBrowser-row:before,
-.jp-FileBroswer-row:after {
-  content: " ";
-  display: table;
-}
-
-
-.jp-FileBrowser-row:after {
-  clear: both;
 }

@@ -1,8 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n.jp-FileBrowser-row {\n  margin-left: 0px;\n  margin-right: 0px;\n}\n.jp-item-icon {\n  font-size: 14px;\n  color: #5e5e5e;\n  margin-right: 7px;\n  margin-left: 7px;\n  line-height: 22px;\n  vertical-align: baseline;\n}\n.jp-item-link {\n  margin-left: -1px;\n  vertical-align: baseline;\n  line-height: 22px;\n}\n.jp-folder-icon:before {\n  display: inline-block;\n  font: normal normal normal 14px/1 FontAwesome;\n  font-size: inherit;\n  text-rendering: auto;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n  content: \"\\f114\";\n}\n.jp-folder-icon:before.pull-left {\n  margin-right: .3em;\n}\n.jp-folder-icon:before.pull-right {\n  margin-left: .3em;\n}\n.jp-file-icon:before {\n  display: inline-block;\n  font: normal normal normal 14px/1 FontAwesome;\n  font-size: inherit;\n  text-rendering: auto;\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n  content: \"\\f016\";\n  position: relative;\n  top: -2px;\n}\n.jp-file-icon:before.pull-left {\n  margin-right: .3em;\n}\n.jp-file-icon:before.pull-right {\n  margin-left: .3em;\n}\n.col-md-12 {\n  position: relative;\n  min-height: 1px;\n  padding-left: 0px;\n  padding-right: 0px;\n  width: 100%;\n  float: left;\n}\n.jp-FileBrowser-row:before,\n.jp-FileBroswer-row:after {\n  content: \" \";\n  display: table;\n}\n.jp-FileBrowser-row:after {\n  clear: both;\n}\n"; (require("browserify-css").createStyle(css, { "href": "example/index.css"})); module.exports = css;
-},{"browserify-css":4}],2:[function(require,module,exports){
-var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n.jp-FileBrowser-item {\n  color: #2F2F2F;\n  display: inline-block;\n  font: 14px Helvetica, Arial, sans-serif;\n}\n.jp-FileBrowser-list-item {\n  white-space: nowrap;\n}\n.jp-FileBrowser-row:after {\n  content: \" \";\n  display: block;\n  clear: both;\n}\n.jp-mod-selected {\n  background-color: #FFC0CB;\n}\n.jp-FileBrowser {\n  min-width: 200px;\n}\n.jp-FileBrowser-files-inner {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 2px;\n  bottom: 2px;\n  padding: 5px;\n  display: flex;\n  flex-direction: column;\n  background-color: white;\n  border: 1px solid #C0C0C0;\n  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);\n}\n.jp-FileBrowser-files-header {\n  flex-grow: 0;\n  margin-bottom: 5px;\n}\n.jp-FileBrowser-list-container {\n  flex-grow: 1;\n  overflow: auto;\n  margin: 0;\n  border-radius: 0;\n}\n"; (require("browserify-css").createStyle(css, { "href": "lib/index.css"})); module.exports = css;
-},{"browserify-css":4}],3:[function(require,module,exports){
+var css = "/*-----------------------------------------------------------------------------\n| Copyright (c) Jupyter Development Team.\n| Distributed under the terms of the Modified BSD License.\n|----------------------------------------------------------------------------*/\n"; (require("browserify-css").createStyle(css, { "href": "lib/index.css"})); module.exports = css;
+},{"browserify-css":3}],2:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 'use-strict';
@@ -30,6 +28,22 @@ var ROW_CLASS = 'jp-FileBrowser-row';
  * The class name added to selected rows.
  */
 var SELECTED_CLASS = 'jp-mod-selected';
+/**
+ * The class name added to a row icon.
+ */
+var ROW_ICON_CLASS = 'jp-FileBrowser-item-icon';
+/**
+ * The class name added to a row text.
+ */
+var ROW_TEXT_CLASS = 'jp-FileBrowser-item-text';
+/**
+ * The class name added to a folder icon.
+ */
+var FOLDER_ICON_CLASS = 'jp-FileBrowser-folder-icon';
+/**
+ * The class name added to a file icon.
+ */
+var FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
 /**
  * A widget which hosts a file browser.
  *
@@ -144,28 +158,21 @@ var FileBrowser = (function (_super) {
         if (!node) {
             return;
         }
-        // handle toggles
+        // Handle toggling.
         if (event.metaKey || event.ctrlKey) {
-            console.log('toggle select', node);
-            if (node.classList.contains(SELECTED_CLASS)) {
-                node.classList.remove(SELECTED_CLASS);
-            }
-            else {
-                node.classList.add(SELECTED_CLASS);
-            }
+            toggleClass(node, SELECTED_CLASS);
         }
         else if (event.shiftKey) {
-            console.log('multi select', node);
-            // find the "nearest selected"
+            // Find the "nearest selected".
             var nearestIndex = -1;
             var index = -1;
-            var rows = this.node.querySelectorAll("." + ROW_CLASS);
+            var rows = findByClass(this.node, ROW_CLASS);
             for (var i = 0; i < rows.length; i++) {
                 if (rows[i] === node) {
                     index = i;
                     continue;
                 }
-                if (rows[i].classList.contains(SELECTED_CLASS)) {
+                if (hasClass(rows[i], SELECTED_CLASS)) {
                     if (nearestIndex === -1) {
                         nearestIndex = i;
                     }
@@ -182,16 +189,17 @@ var FileBrowser = (function (_super) {
             for (var i = 0; i < rows.length; i++) {
                 if (nearestIndex >= i && index <= i ||
                     nearestIndex <= i && index >= i) {
-                    rows[i].classList.add(SELECTED_CLASS);
+                    addClass(rows[i], SELECTED_CLASS);
                 }
             }
         }
         else {
-            var rows = this.node.querySelectorAll("." + ROW_CLASS);
-            for (var i_1 = 0; i_1 < rows.length; i_1++) {
-                rows[i_1].classList.remove(SELECTED_CLASS);
+            var rows = findByClass(this.node, ROW_CLASS);
+            for (var _i = 0; _i < rows.length; _i++) {
+                var row = rows[_i];
+                removeClass(row, SELECTED_CLASS);
             }
-            node.classList.add(SELECTED_CLASS);
+            addClass(node, SELECTED_CLASS);
         }
     };
     /**
@@ -204,13 +212,13 @@ var FileBrowser = (function (_super) {
         }
         this.open();
     };
-    FileBrowser.prototype._handleMultiSelect = function (node) {
-        console.log('handleMultiSelect');
-    };
+    /**
+     * Find a click event target node.
+     */
     FileBrowser.prototype._findTarget = function (event) {
-        var rows = this.node.querySelectorAll("." + ROW_CLASS);
-        for (var i = 0; i < rows.length; i++) {
-            var row = rows[i];
+        var rows = findByClass(this.node, ROW_CLASS);
+        for (var _i = 0; _i < rows.length; _i++) {
+            var row = rows[_i];
             if (phosphor_domutil_1.hitTest(row, event.clientX, event.clientY)) {
                 return row;
             }
@@ -248,34 +256,69 @@ var FileBrowser = (function (_super) {
      * @param isDirectory - Whether the item is a directory.
      */
     FileBrowser.prototype._addItem = function (text, isDirectory) {
-        var top = document.createElement('div');
-        top.classList.add(ROW_CLASS);
-        var node = document.createElement('div');
-        node.classList.add('col-md-12');
+        var row = document.createElement('div');
+        addClass(row, ROW_CLASS);
         var inode = document.createElement('i');
-        inode.className = 'jp-item-icon';
-        inode.style.display = 'inline-block';
-        inode.classList.add('jp-icon-fixed-width');
-        var lnode = document.createElement('div');
-        lnode.className = 'jp-item-link';
-        lnode.textContent = text;
+        addClass(inode, ROW_ICON_CLASS);
         // Add the appropriate icon based on whether it is a directory.
         if (isDirectory) {
-            inode.classList.add('jp-folder-icon');
+            addClass(inode, FOLDER_ICON_CLASS);
         }
         else {
-            inode.classList.add('jp-file-icon');
+            addClass(inode, FILE_ICON_CLASS);
         }
-        node.appendChild(inode);
-        node.appendChild(lnode);
-        top.appendChild(node);
-        this.node.firstChild.appendChild(top);
+        var lnode = document.createElement('div');
+        addClass(lnode, ROW_TEXT_CLASS);
+        lnode.textContent = text;
+        row.appendChild(inode);
+        row.appendChild(lnode);
+        this.node.firstChild.appendChild(row);
     };
     return FileBrowser;
 })(phosphor_widget_1.Widget);
 exports.FileBrowser = FileBrowser;
+/**
+ * Test whether a node contains a CSS class.
+ */
+function hasClass(node, className) {
+    return node.classList.contains(className);
+}
+/**
+ * Toggle a CSS class on a node.
+ */
+function toggleClass(node, className) {
+    if (!hasClass(node, className)) {
+        addClass(node, className);
+    }
+    else {
+        removeClass(node, className);
+    }
+}
+/**
+ * Add a CSS class to a node.
+ */
+function addClass(node, className) {
+    node.classList.add(className);
+}
+/**
+ * Remove a CSS class from a node.
+ */
+function removeClass(node, className) {
+    node.classList.remove(className);
+}
+/**
+ * Find child nodes by CSS class name.
+ */
+function findByClass(node, className) {
+    var elements = [];
+    var nodeList = node.querySelectorAll("." + className);
+    for (var i = 0; i < nodeList.length; i++) {
+        elements.push(nodeList[i]);
+    }
+    return elements;
+}
 
-},{"./index.css":2,"phosphor-domutil":18,"phosphor-widget":25}],4:[function(require,module,exports){
+},{"./index.css":1,"phosphor-domutil":17,"phosphor-widget":24}],3:[function(require,module,exports){
 'use strict';
 // For more information about browser field, check out the browser field at https://github.com/substack/browserify-handbook#browser-field.
 
@@ -327,7 +370,7 @@ module.exports = {
     }
 };
 
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 var utils = require('./utils');
@@ -483,7 +526,7 @@ var ConfigWithDefaults = (function () {
 })();
 exports.ConfigWithDefaults = ConfigWithDefaults;
 
-},{"./utils":13}],6:[function(require,module,exports){
+},{"./utils":12}],5:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 var utils = require('./utils');
@@ -797,7 +840,7 @@ var Contents = (function () {
 })();
 exports.Contents = Contents;
 
-},{"./utils":13,"./validate":14}],7:[function(require,module,exports){
+},{"./utils":12,"./validate":13}],6:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 'use strict';
@@ -815,7 +858,7 @@ exports.Contents = Contents;
 })(exports.KernelStatus || (exports.KernelStatus = {}));
 var KernelStatus = exports.KernelStatus;
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 'use strict';
@@ -829,12 +872,12 @@ __export(require('./isession'));
 __export(require('./kernel'));
 __export(require('./session'));
 
-},{"./config":5,"./contents":6,"./ikernel":7,"./isession":9,"./kernel":10,"./session":12}],9:[function(require,module,exports){
+},{"./config":4,"./contents":5,"./ikernel":6,"./isession":8,"./kernel":9,"./session":11}],8:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 'use strict';
@@ -2255,7 +2298,7 @@ var Comm = (function (_super) {
     return Comm;
 })(phosphor_disposable_1.DisposableDelegate);
 
-},{"./ikernel":7,"./serialize":11,"./utils":13,"./validate":14,"phosphor-disposable":16,"phosphor-signaling":23}],11:[function(require,module,exports){
+},{"./ikernel":6,"./serialize":10,"./utils":12,"./validate":13,"phosphor-disposable":15,"phosphor-signaling":22}],10:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 'use strict';
@@ -2366,7 +2409,7 @@ function replace_buffers(key, value) {
     return value;
 }
 
-},{}],12:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 'use strict';
@@ -2662,7 +2705,7 @@ function onSessionError(error) {
     throw Error(error.statusText);
 }
 
-},{"./ikernel":7,"./kernel":10,"./utils":13,"./validate":14,"phosphor-signaling":23}],13:[function(require,module,exports){
+},{"./ikernel":6,"./kernel":9,"./utils":12,"./validate":13,"phosphor-signaling":22}],12:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 'use strict';
@@ -2845,7 +2888,7 @@ var PromiseDelegate = (function () {
 })();
 exports.PromiseDelegate = PromiseDelegate;
 
-},{}],14:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
 'use strict';
@@ -3030,7 +3073,7 @@ function validateCheckpointModel(model) {
 }
 exports.validateCheckpointModel = validateCheckpointModel;
 
-},{}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -3714,7 +3757,7 @@ function upperBound(array, value, cmp) {
 }
 exports.upperBound = upperBound;
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -3857,9 +3900,9 @@ var DisposableSet = (function () {
 })();
 exports.DisposableSet = DisposableSet;
 
-},{}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var css = "/*-----------------------------------------------------------------------------\r\n| Copyright (c) 2014-2015, PhosphorJS Contributors\r\n|\r\n| Distributed under the terms of the BSD 3-Clause License.\r\n|\r\n| The full license is in the file LICENSE, distributed with this software.\r\n|----------------------------------------------------------------------------*/\nbody.p-mod-override-cursor * {\n  cursor: inherit !important;\n}\n"; (require("browserify-css").createStyle(css, { "href": "node_modules/phosphor-domutil/lib/index.css"})); module.exports = css;
-},{"browserify-css":4}],18:[function(require,module,exports){
+},{"browserify-css":3}],17:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -4102,7 +4145,7 @@ function clearDragData(event) {
 }
 exports.clearDragData = clearDragData;
 
-},{"./index.css":17,"phosphor-disposable":16}],19:[function(require,module,exports){
+},{"./index.css":16,"phosphor-disposable":15}],18:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -4487,7 +4530,7 @@ var MessageDispatcher = (function () {
     return MessageDispatcher;
 })();
 
-},{"phosphor-queue":22}],20:[function(require,module,exports){
+},{"phosphor-queue":21}],19:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -4612,7 +4655,7 @@ var NodeWrapper = (function () {
 })();
 exports.NodeWrapper = NodeWrapper;
 
-},{}],21:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -4894,7 +4937,7 @@ function lookupHash(owner) {
     return hash;
 }
 
-},{"phosphor-signaling":23}],22:[function(require,module,exports){
+},{"phosphor-signaling":22}],21:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -5250,7 +5293,7 @@ var Queue = (function () {
 })();
 exports.Queue = Queue;
 
-},{}],23:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -5687,9 +5730,9 @@ function removeFromSendersList(conn) {
     conn.nextSender = null;
 }
 
-},{}],24:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var css = "/*-----------------------------------------------------------------------------\r\n| Copyright (c) 2014-2015, PhosphorJS Contributors\r\n|\r\n| Distributed under the terms of the BSD 3-Clause License.\r\n|\r\n| The full license is in the file LICENSE, distributed with this software.\r\n|----------------------------------------------------------------------------*/\n.p-Widget {\n  box-sizing: border-box;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none;\n  overflow: hidden;\n  cursor: default;\n}\n.p-Widget.p-mod-hidden {\n  display: none;\n}\n"; (require("browserify-css").createStyle(css, { "href": "node_modules/phosphor-widget/lib/index.css"})); module.exports = css;
-},{"browserify-css":4}],25:[function(require,module,exports){
+},{"browserify-css":3}],24:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -5705,7 +5748,7 @@ __export(require('./title'));
 __export(require('./widget'));
 require('./index.css');
 
-},{"./index.css":24,"./title":26,"./widget":27}],26:[function(require,module,exports){
+},{"./index.css":23,"./title":25,"./widget":26}],25:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -5936,7 +5979,7 @@ var Title = (function () {
 })();
 exports.Title = Title;
 
-},{"phosphor-properties":21}],27:[function(require,module,exports){
+},{"phosphor-properties":20}],26:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, PhosphorJS Contributors
 |
@@ -6998,7 +7041,7 @@ function sendToShown(widgets, msg) {
         phosphor_messaging_1.sendMessage(w, msg); });
 }
 
-},{"./title":26,"phosphor-arrays":15,"phosphor-messaging":19,"phosphor-nodewrapper":20,"phosphor-properties":21,"phosphor-signaling":23}],28:[function(require,module,exports){
+},{"./title":25,"phosphor-arrays":14,"phosphor-messaging":18,"phosphor-nodewrapper":19,"phosphor-properties":20,"phosphor-signaling":22}],27:[function(require,module,exports){
 /*-----------------------------------------------------------------------------
 | Copyright (c) 2014-2015, Jupyter Development Team.
 |
@@ -7008,7 +7051,6 @@ function sendToShown(widgets, msg) {
 var jupyter_js_services_1 = require('jupyter-js-services');
 var phosphor_widget_1 = require('phosphor-widget');
 var index_1 = require('../lib/index');
-require('./index.css');
 function main() {
     var baseUrl = 'http://localhost:8888';
     var contents = new jupyter_js_services_1.Contents(baseUrl);
@@ -7016,12 +7058,7 @@ function main() {
     var listSessions = function () {
         return jupyter_js_services_1.listRunningSessions(baseUrl);
     };
-    var connectSession = function (id) {
-        var options = {
-            baseUrl: baseUrl,
-            notebookPath: 'foo.ipynb',
-            kernelName: 'baz'
-        };
+    var connectSession = function (id, options) {
         return jupyter_js_services_1.connectToSession(id, options);
     };
     var model = {
@@ -7037,4 +7074,4 @@ function main() {
 }
 window.onload = main;
 
-},{"../lib/index":3,"./index.css":1,"jupyter-js-services":8,"phosphor-widget":25}]},{},[28]);
+},{"../lib/index":2,"jupyter-js-services":7,"phosphor-widget":24}]},{},[27]);
