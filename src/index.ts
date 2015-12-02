@@ -154,6 +154,19 @@ class FileBrowser extends Widget {
 
   /**
    * Open the currently selected item(s).
+   *
+   * #### Notes
+   * Files are opened by emitting the [[openFile]] signal.
+   *
+   * If there is only one currently selected item, and it is a
+   * directory, the widget will refresh with that directory's contents.
+   *
+   * If more than one directory is selected and no files are selected,
+   * the top-most directory will be selected and refreshed.
+   *
+   * If one or more directories are selected in addition to one or
+   * more files, the directories will be ignored and the files will
+   * be opened.
    */
   open(): void {
     console.log('open');
@@ -205,15 +218,28 @@ class FileBrowser extends Widget {
    * Handle the `'click'` event for the file browser.
    */
   private _evtClick(event: MouseEvent) {
+    // Do nothing if it's not a left mouse press.
+    if (event.button !== 0) {
+      return;
+    }
+
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Find the target row.
     let node = this._findTarget(event);
     if (!node) {
       return;
     }
+
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
       toggleClass(node, SELECTED_CLASS);
+
     // Handle multiple select.
     } else if (event.shiftKey) {
+
       // Find the "nearest selected".
       let nearestIndex = -1;
       let index = -1;
@@ -233,10 +259,13 @@ class FileBrowser extends Widget {
           }
         }
       }
+
+      // Default to the first element (and fill down).
       if (nearestIndex === -1) {
         nearestIndex = 0;
       }
 
+      // Select the rows between the current and the nearest selected.
       for (var i = 0; i < rows.length; i++) {
         if (nearestIndex >= i && index <= i ||
             nearestIndex <= i && index >= i) {
@@ -258,6 +287,15 @@ class FileBrowser extends Widget {
    * Handle the `'dblclick'` event for the file browser.
    */
   private _evtDblClick(event: MouseEvent) {
+    // Do nothing if it's not a left mouse press.
+    if (event.button !== 0) {
+      return;
+    }
+
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
+
     let node = this._findTarget(event);
     if (!node) {
       return;
@@ -376,7 +414,7 @@ function removeClass(node: HTMLElement, className: string): void {
  */
 function findByClass(node: HTMLElement, className: string): HTMLElement[] {
   let elements: HTMLElement[] = [];
-  let nodeList = node.querySelectorAll(`.${className}`);
+  let nodeList = node.getElementsByClassName(className);
   for (let i = 0; i < nodeList.length; i++) {
     elements.push(nodeList[i] as HTMLElement);
   }
