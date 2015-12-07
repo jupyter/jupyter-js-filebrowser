@@ -67,7 +67,9 @@ Follow the source build instructions first.
 Requires a Python install with the Jupyter notebook.
 
 ```bash
-npm run build:example
+cd example
+npm install
+npm run build
 ```
 
 Change to `example` directory and run `python main.py`.

@@ -1,0 +1,24 @@
+{
+  "private": true,
+  "name": "filebrowser-example",
+  "version": "0.1.0",
+  "main": "index.js",
+  "dependencies": {
+    "jupyter-js-filebrowser": "file:..",
+    "phosphor-domutil": "^1.2.0",
+    "steal": "^0.12.7"
+  },
+  "devDependencies": {
+    "rimraf": "^2.4.4",
+    "typescript": "^1.7.3"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf *.js"
+  },
+  "system": {
+    "npmIgnore": [
+      "devDependencies"
+    ]
+  }
+}

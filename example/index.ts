@@ -14,8 +14,8 @@ import {
 } from 'phosphor-widget';
 
 import {
-  FileBrowser, IFileBrowserViewModel
-} from '../lib/index';
+  FileBrowser, IFileBrowserViewModel, IContentsItem
+} from 'jupyter-js-filebrowser';
 
 
 function main(): void {
@@ -24,7 +24,7 @@ function main(): void {
 
   let contents = new Contents(baseUrl);
 
-  let items: string[] = [];
+  let items: IContentsItem[] = [];
 
   let listSessions = function() {
     return listRunningSessions(baseUrl);
@@ -50,4 +50,4 @@ function main(): void {
 }
 
 
-window.onload = main;
+main();

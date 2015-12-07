@@ -2,6 +2,25 @@ import { IContents, INotebookSession, ISessionId, ISessionOptions } from 'jupyte
 import { Message } from 'phosphor-messaging';
 import { Widget } from 'phosphor-widget';
 /**
+ * The contents item type.
+ */
+export declare enum ContentsItemType {
+    Directory = 0,
+    File = 1,
+    Notebook = 2,
+    Unknown = 3,
+}
+/**
+ * A contents item.
+ */
+export interface IContentsItem {
+    name: string;
+    path: string;
+    type: ContentsItemType;
+    created: string;
+    lastModified: string;
+}
+/**
  * A view model associated with a Jupyter FileBrowser.
  */
 export interface IFileBrowserViewModel {
@@ -24,7 +43,7 @@ export interface IFileBrowserViewModel {
     /**
      * The selected items in the current directory.
      */
-    selectedItems: string[];
+    selectedItems: IContentsItem[];
 }
 /**
  * A widget which hosts a file browser.
@@ -59,22 +78,17 @@ export declare class FileBrowser extends Widget {
      * #### Notes
      * This is a read-only property.
      */
-    selectedItems: string[];
+    selectedItems: IContentsItem[];
     /**
      * Open the currently selected item(s).
      *
      * #### Notes
      * Files are opened by emitting the [[openFile]] signal.
      *
-     * If there is only one currently selected item, and it is a
-     * directory, the widget will refresh with that directory's contents.
+     * If the selection includes one or more directories, the contents
+     * will update to list that directory.
      *
-     * If more than one directory is selected and no files are selected,
-     * the top-most directory will be selected and refreshed.
-     *
-     * If one or more directories are selected in addition to one or
-     * more files, the directories will be ignored and the files will
-     * be opened.
+     * All selected files will trigger an [[itemOpened]] signal.
      */
     open(): void;
     /**
@@ -108,6 +122,6 @@ export declare class FileBrowser extends Widget {
      * List the contents of the current directory.
      */
     private _listContents();
-    private _addItem(text, isDirectory);
     private _model;
+    private _items;
 }

@@ -15,6 +15,10 @@ import {
 } from 'phosphor-messaging';
 
 import {
+  NodeWrapper
+} from 'phosphor-nodewrapper';
+
+import {
   Widget
 } from 'phosphor-widget';
 
@@ -63,6 +67,31 @@ const FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
 
 
 /**
+ * The contents item type.
+ */
+export
+enum ContentsItemType {
+  Directory,
+  File,
+  Notebook,
+  Unknown
+}
+
+
+/**
+ * A contents item.
+ */
+export
+interface IContentsItem {
+  name: string;
+  path: string;
+  type: ContentsItemType;
+  created: string;
+  lastModified: string;
+}
+
+
+/**
  * A view model associated with a Jupyter FileBrowser.
  */
 export
@@ -90,7 +119,7 @@ interface IFileBrowserViewModel {
   /**
    * The selected items in the current directory.
    */
-  selectedItems: string[];
+  selectedItems: IContentsItem[];
 }
 
 
@@ -123,6 +152,7 @@ class FileBrowser extends Widget {
   constructor(model: IFileBrowserViewModel) {
     super();
     this._model = model;
+    this._items = [];
     this.addClass(FILE_BROWSER_CLASS);
   }
 
@@ -148,7 +178,7 @@ class FileBrowser extends Widget {
    * #### Notes
    * This is a read-only property.
    */
-  get selectedItems(): string[] {
+  get selectedItems(): IContentsItem[] {
     return this._model.selectedItems;
   }
 
@@ -158,18 +188,27 @@ class FileBrowser extends Widget {
    * #### Notes
    * Files are opened by emitting the [[openFile]] signal.
    *
-   * If there is only one currently selected item, and it is a
-   * directory, the widget will refresh with that directory's contents.
+   * If the selection includes one or more directories, the contents
+   * will update to list that directory.
    *
-   * If more than one directory is selected and no files are selected,
-   * the top-most directory will be selected and refreshed.
-   *
-   * If one or more directories are selected in addition to one or
-   * more files, the directories will be ignored and the files will
-   * be opened.
+   * All selected files will trigger an [[itemOpened]] signal.
    */
   open(): void {
     console.log('open');
+    let items = this._items.filter(function(item) {
+      return item.selected;
+    });
+    if (!items.length) {
+      return;
+    }
+    let dirs = items.filter(function(item) {
+      return item.type === ContentsItemType.Directory;
+    });
+
+    if (dirs.length) {
+      this._model.currentDirectory = dirs[0].path;
+      this._listContents();
+    }
   }
 
   /**
@@ -224,11 +263,13 @@ class FileBrowser extends Widget {
     }
 
     // Find the target row.
-    let rows = findByClass(this.node, ROW_CLASS);
-    let node = hitTestNodes(rows, event.clientX, event.clientY);
-    if (!node) {
+    let items = this._items.filter(function(item) {
+      return item.hitTest(event.clientX, event.clientY);
+    });
+    if (!items.length) {
       return;
     }
+    let current = items[0];
 
     // Stop the event propagation.
     event.preventDefault();
@@ -236,7 +277,11 @@ class FileBrowser extends Widget {
 
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
-      toggleClass(node, SELECTED_CLASS);
+      if (current.selected) {
+        current.selected = false;
+      } else {
+        current.selected = true;
+      }
 
     // Handle multiple select.
     } else if (event.shiftKey) {
@@ -244,12 +289,12 @@ class FileBrowser extends Widget {
       // Find the "nearest selected".
       let nearestIndex = -1;
       let index = -1;
-      for (var i = 0; i < rows.length; i++) {
-        if (rows[i] === node) {
+      for (var i = 0; i < this._items.length; i++) {
+        if (this._items[i] === current) {
           index = i;
           continue;
         }
-        if (hasClass(rows[i], SELECTED_CLASS)) {
+        if (this._items[i].selected) {
           if (nearestIndex === -1) {
             nearestIndex = i;
           } else {
@@ -266,30 +311,26 @@ class FileBrowser extends Widget {
       }
 
       // Select the rows between the current and the nearest selected.
-      for (var i = 0; i < rows.length; i++) {
+      for (var i = 0; i < this._items.length; i++) {
         if (nearestIndex >= i && index <= i ||
             nearestIndex <= i && index >= i) {
-          addClass(rows[i], SELECTED_CLASS);
+          this._items[i].selected = true;
         }
       }
 
     // Default to selecting the only the item.
     } else {
 
-      for (let row of rows) {
-        removeClass(row, SELECTED_CLASS);
+      for (let item of this._items) {
+        item.selected = false;
       }
-      addClass(node, SELECTED_CLASS);
+      current.selected = true;
     }
 
     // Set the selected items on the model.
-    let items: string[] = [];
-    for (let row of rows) {
-      if (hasClass(row, SELECTED_CLASS)) {
-        items.push(row.children[1].textContent);
-      }
-    }
-    this._model.selectedItems = items;
+    this._model.selectedItems = this._items.filter(function(item) {
+      return item.selected;
+    });
   }
 
   /**
@@ -302,9 +343,10 @@ class FileBrowser extends Widget {
     }
 
     // Find the target row.
-    let rows = findByClass(this.node, ROW_CLASS);
-    let node = hitTestNodes(rows, event.clientX, event.clientY);
-    if (!node) {
+    let items = this._items.filter(function(item) {
+      return item.hitTest(event.clientX, event.clientY);
+    })
+    if (!items.length) {
       return;
     }
 
@@ -323,115 +365,182 @@ class FileBrowser extends Widget {
     let currentDir = this._model.currentDirectory;
     let contents = this._model.contents;
 
-    this.node.firstChild.textContent = '';
+    for (let item of this._items) {
+      item.dispose();
+    }
+    this._items = [];
+
     // Add a parent link if not at the root.
-    if (currentDir.lastIndexOf('/') !== -1) {
-      this._addItem('..', true);
+    if (currentDir) {
+      let item = new FileBrowserItem({
+        name: '..',
+        path: '',
+        type: 'directory'
+      });
+      this._items.push(item);
+      this.node.firstChild.appendChild(item.node);
     }
 
-    let path = currentDir.slice(0, currentDir.length - 1);
-    contents.listContents(path).then((msg: any) => {
+    contents.listContents(currentDir).then((msg: any) => {
       for (let i = 0; i < msg.content.length; i++) {
-        if ((msg as any).content[i].type === 'directory') {
-          this._addItem((msg as any).content[i].name + '/', true);
-        } else {
-          this._addItem((msg as any).content[i].name, false);
-        }
+        let item = new FileBrowserItem(msg.content[i] as IContentsJSON)
+        this._items.push(item);
+        this.node.firstChild.appendChild(item.node);
       }
     });
   }
 
-  /*
-   * Add an item to the file browser display.
-   *
-   * @param text - The text to display for the item.
-   * @param isDirectory - Whether the item is a directory.
-   */
-  private _addItem(text: string, isDirectory: boolean): void {
-    let row = document.createElement('div');
-    addClass(row, ROW_CLASS);
-
-    let inode = document.createElement('i');
-    addClass(inode, ROW_ICON_CLASS);
-    // Add the appropriate icon based on whether it is a directory.
-    if (isDirectory) {
-      addClass(inode, FOLDER_ICON_CLASS);
-    } else {
-      addClass(inode, FILE_ICON_CLASS);
-    }
-
-    let lnode = document.createElement('div');
-    addClass(lnode, ROW_TEXT_CLASS);
-    lnode.textContent = text;
-
-    row.appendChild(inode);
-    row.appendChild(lnode);
-    this.node.firstChild.appendChild(row);
-  }
-
   private _model: IFileBrowserViewModel = null;
+  private _items: FileBrowserItem[] = null;
 }
 
 
 /**
- * Test whether a node contains a CSS class.
+ * Interface of a contents item returned by a call to
+ * GET /api/contents/[:path] for a directory.
  */
-function hasClass(node: HTMLElement, className: string): boolean {
-  return node.classList.contains(className);
+interface IContentsJSON {
+  name: string;
+  path: string;
+  type: string;
+  created?: string;
+  last_modified?: string;
 }
 
 
-/**
- * Toggle a CSS class on a node.
- */
-function toggleClass(node: HTMLElement, className: string): void {
-  if (!hasClass(node, className)) {
-    addClass(node, className);
-  } else {
-    removeClass(node, className);
+class FileBrowserItem extends NodeWrapper implements IContentsItem {
+
+  /**
+   * Create a node for a file browser item.
+   */
+  static createNode(): HTMLElement {
+    let node = document.createElement('div');
+    let inode = document.createElement('i');
+    inode.className = ROW_ICON_CLASS;
+    let tnode = document.createElement('div');
+    tnode.className = ROW_TEXT_CLASS;
+    node.appendChild(inode);
+    node.appendChild(tnode);
+    return node;
   }
-}
 
-
-/**
- * Add a CSS class to a node.
- */
-function addClass(node: HTMLElement, className: string): void {
-  node.classList.add(className);
-}
-
-
-/**
- * Remove a CSS class from a node.
- */
-function removeClass(node: HTMLElement, className: string): void {
-  node.classList.remove(className);
-}
-
-
-/**
- * Find child nodes by CSS class name.
- */
-function findByClass(node: HTMLElement, className: string): HTMLElement[] {
-  let elements: HTMLElement[] = [];
-  let nodeList = node.getElementsByClassName(className);
-  for (let i = 0; i < nodeList.length; i++) {
-    elements.push(nodeList[i] as HTMLElement);
+  /**
+   * Construct a new file browser item.
+   *
+   * @param options - Initialization options for the item.
+   */
+  constructor(options: IContentsJSON) {
+    super();
+    this.addClass(ROW_CLASS);
+    switch(options.type) {
+    case 'directory':
+      this._type = ContentsItemType.Directory;
+      break;
+    case 'file':
+      this._type = ContentsItemType.File;
+      break;
+    case 'notebook':
+      this._type = ContentsItemType.Notebook
+      break;
+    default:
+      this._type = ContentsItemType.Unknown;
+    }
+    // Add the appropriate icon based on whether it is a directory.
+    let inode = this.node.children[0];
+    if (this._type === ContentsItemType.Directory) {
+      inode.classList.add(FOLDER_ICON_CLASS);
+    } else {
+      inode.classList.add(FILE_ICON_CLASS);
+    }
+    this.node.children[1].textContent = options.name;
+    this._name = options.name;
+    this._path = options.path;
+    this._created = options.created || '';
+    this._lastModified = options.last_modified || '';
   }
-  return elements;
-}
 
+  /**
+   * Get the name of the item.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get name(): string {
+    return this._name;
+  }
 
-/**
- * Perform a client position hit test an array of nodes.
- *
- * Returns the first matching node, or `undefined`.
- */
-function hitTestNodes(nodes: HTMLElement[], clientX: number, clientY: number): HTMLElement {
-  for (let node of nodes) {
-    if (hitTest(node, clientX, clientY)) {
-      return node;
+  /**
+   * Get the full path to the item.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get path(): string {
+    return this._path;
+  }
+
+  /**
+   * Get the type of the item.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get type(): ContentsItemType {
+    return this._type;
+  }
+
+  /**
+   * Get the creation time of the item.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get created(): string {
+    return this._created;
+  }
+
+  /**
+   * Get the last modified time of the item.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get lastModified(): string {
+    return this._lastModified;
+  }
+
+  /**
+   * Get whether the item is selected.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get selected(): boolean {
+    return this.node.classList.contains(SELECTED_CLASS);
+  }
+
+  /**
+   * Set whether the item is selected.
+   */
+  set selected(value: boolean) {
+    if (value) {
+      this.node.classList.add(SELECTED_CLASS);
+    } else {
+      this.node.classList.remove(SELECTED_CLASS);
     }
   }
-  return void 0;
+
+  hitTest(clientX: number, clientY: number): boolean {
+    return hitTest(this.node, clientX, clientY);
+  }
+
+  dispose() {
+    this.node.parentNode.removeChild(this.node);
+  }
+
+  private _type: ContentsItemType;
+  private _name: string;
+  private _path: string;
+  private _created: string;
+  private _lastModified: string;
 }
