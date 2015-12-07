@@ -14,7 +14,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rimraf *.js"
+    "clean": "rimraf *.js",
+    "update": "rimraf node_modules/jupyter-js-filebrowser && npm install"
   },
   "system": {
     "npmIgnore": [
