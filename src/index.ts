@@ -6,6 +6,8 @@ import {
   IContents, INotebookSession, ISessionId, ISessionOptions
 } from 'jupyter-js-services';
 
+import * as moment from 'moment';
+
 import {
   hitTest
 } from 'phosphor-domutil';
@@ -48,12 +50,17 @@ const SELECTED_CLASS = 'jp-mod-selected';
 /**
  * The class name added to a row icon.
  */
-const ROW_ICON_CLASS = 'jp-FileBrowser-item-icon'
+const ROW_ICON_CLASS = 'jp-FileBrowser-item-icon';
 
 /**
  * The class name added to a row text.
  */
-const ROW_TEXT_CLASS = 'jp-FileBrowser-item-text'
+const ROW_TEXT_CLASS = 'jp-FileBrowser-item-text';
+
+/**
+ * The class name added to a row last modified text.
+ */
+const ROW_TIME_CLASS = 'jp-FileBrowser-item-modified';
 
 /**
  * The class name added to a folder icon.
@@ -419,8 +426,11 @@ class FileBrowserItem extends NodeWrapper implements IContentsItem {
     inode.className = ROW_ICON_CLASS;
     let tnode = document.createElement('div');
     tnode.className = ROW_TEXT_CLASS;
+    let mnode = document.createElement('div');
+    mnode.className = ROW_TIME_CLASS;
     node.appendChild(inode);
     node.appendChild(tnode);
+    node.appendChild(mnode);
     return node;
   }
 
@@ -457,6 +467,8 @@ class FileBrowserItem extends NodeWrapper implements IContentsItem {
     this._path = options.path;
     this._created = options.created || '';
     this._lastModified = options.last_modified || '';
+    let modText = moment(this._lastModified).fromNow();
+    this.node.children[2].textContent = modText;
   }
 
   /**

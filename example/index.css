@@ -53,6 +53,17 @@
   margin-left: -1px;
   vertical-align: baseline;
   line-height: 22px;
+  margin-right: 7px;
+}
+
+
+.jp-FileBrowser-item-modified {
+  display: inline-block;
+  text-align: right;
+  vertical-align: baseline;
+  line-height: 22px;
+  margin-right: 7px;
+  float: right;
 }
 
 
