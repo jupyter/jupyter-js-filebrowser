@@ -415,6 +415,9 @@ interface IContentsJSON {
 }
 
 
+/**
+ * An implementation of a file browser item.
+ */
 class FileBrowserItem extends NodeWrapper implements IContentsItem {
 
   /**
@@ -467,8 +470,11 @@ class FileBrowserItem extends NodeWrapper implements IContentsItem {
     this._path = options.path;
     this._created = options.created || '';
     this._lastModified = options.last_modified || '';
-    let modText = moment(this._lastModified).fromNow();
-    this.node.children[2].textContent = modText;
+
+    if (this._lastModified) {
+      let modText = moment(this._lastModified).fromNow();
+      this.node.children[2].textContent = modText;
+    }
   }
 
   /**
