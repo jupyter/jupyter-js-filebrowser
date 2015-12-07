@@ -201,14 +201,13 @@ class FileBrowser extends Widget {
    * All selected files will trigger an [[itemOpened]] signal.
    */
   open(): void {
-    console.log('open');
-    let items = this._items.filter(function(item) {
+    let items = this._items.filter(item => {
       return item.selected;
     });
     if (!items.length) {
       return;
     }
-    let dirs = items.filter(function(item) {
+    let dirs = items.filter(item => {
       return item.type === ContentsItemType.Directory;
     });
 
@@ -270,7 +269,7 @@ class FileBrowser extends Widget {
     }
 
     // Find the target row.
-    let items = this._items.filter(function(item) {
+    let items = this._items.filter(item => {
       return item.hitTest(event.clientX, event.clientY);
     });
     if (!items.length) {
@@ -335,7 +334,7 @@ class FileBrowser extends Widget {
     }
 
     // Set the selected items on the model.
-    this._model.selectedItems = this._items.filter(function(item) {
+    this._model.selectedItems = this._items.filter(item => {
       return item.selected;
     });
   }
@@ -350,7 +349,7 @@ class FileBrowser extends Widget {
     }
 
     // Find the target row.
-    let items = this._items.filter(function(item) {
+    let items = this._items.filter(item => {
       return item.hitTest(event.clientX, event.clientY);
     })
     if (!items.length) {
@@ -379,9 +378,14 @@ class FileBrowser extends Widget {
 
     // Add a parent link if not at the root.
     if (currentDir) {
+      let path = '';
+      let last = currentDir.lastIndexOf('/');
+      if (last !== -1) {
+        path = currentDir.slice(0, last);
+      }
       let item = new FileBrowserItem({
         name: '..',
-        path: '',
+        path: path,
         type: 'directory'
       });
       this._items.push(item);
