@@ -428,12 +428,12 @@ class FileBrowserItem extends NodeWrapper implements IContentsItem {
    * Create a node for a file browser item.
    */
   static createNode(): HTMLElement {
-    let node = document.createElement('div');
-    let inode = document.createElement('i');
+    let node = document.createElement('li');
+    let inode = document.createElement('span');
     inode.className = ROW_ICON_CLASS;
-    let tnode = document.createElement('div');
+    let tnode = document.createElement('span');
     tnode.className = ROW_TEXT_CLASS;
-    let mnode = document.createElement('div');
+    let mnode = document.createElement('span');
     mnode.className = ROW_TIME_CLASS;
     node.appendChild(inode);
     node.appendChild(tnode);
