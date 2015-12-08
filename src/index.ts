@@ -21,6 +21,10 @@ import {
 } from 'phosphor-nodewrapper';
 
 import {
+  ISignal, Signal, clearSignalData
+} from 'phosphor-signaling';
+
+import {
   Widget
 } from 'phosphor-widget';
 
@@ -152,6 +156,13 @@ class FileBrowser extends Widget {
   }
 
   /**
+   * A signal emitted when item(s) are opened.
+   *
+   * **See also:** [[itemsOpened]]
+   */
+  static itemsOpenedSignal = new Signal<FileBrowser, IContentsItem[]>();
+
+  /**
    * Construct a new file browser widget.
    *
    * @param model - File browser view model instance.
@@ -190,15 +201,32 @@ class FileBrowser extends Widget {
   }
 
   /**
+   * A signal emitted when item(s) are opened.
+   *
+   * #### Notes
+   * This is a pure delegate to the [[itemsOpenedSignal]].
+   */
+  get itemsOpened(): ISignal<FileBrowser, IContentsItem[]> {
+    return FileBrowser.itemsOpenedSignal.bind(this);
+  }
+
+  /**
+   * Dispose of the resources held by the file browser.
+   */
+  dispose(): void {
+    this._items = null;
+    this._model = null;
+    clearSignalData(this);
+  }
+
+  /**
    * Open the currently selected item(s).
    *
    * #### Notes
-   * Files are opened by emitting the [[openFile]] signal.
+   * Triggers an [[itemsOpened]] signal with the selected items.
    *
    * If the selection includes one or more directories, the contents
    * will update to list that directory.
-   *
-   * All selected files will trigger an [[itemOpened]] signal.
    */
   open(): void {
     let items = this._items.filter(item => {
@@ -215,6 +243,7 @@ class FileBrowser extends Widget {
       this._model.currentDirectory = dirs[0].path;
       this._listContents();
     }
+    this.itemsOpened.emit(items);
   }
 
   /**

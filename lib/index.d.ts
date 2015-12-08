@@ -1,5 +1,6 @@
 import { IContents, INotebookSession, ISessionId, ISessionOptions } from 'jupyter-js-services';
 import { Message } from 'phosphor-messaging';
+import { ISignal, Signal } from 'phosphor-signaling';
 import { Widget } from 'phosphor-widget';
 /**
  * The contents item type.
@@ -58,6 +59,12 @@ export declare class FileBrowser extends Widget {
      */
     static createNode(): HTMLElement;
     /**
+     * A signal emitted when item(s) are opened.
+     *
+     * **See also:** [[itemsOpened]]
+     */
+    static itemsOpenedSignal: Signal<FileBrowser, IContentsItem[]>;
+    /**
      * Construct a new file browser widget.
      *
      * @param model - File browser view model instance.
@@ -80,15 +87,24 @@ export declare class FileBrowser extends Widget {
      */
     selectedItems: IContentsItem[];
     /**
+     * A signal emitted when item(s) are opened.
+     *
+     * #### Notes
+     * This is a pure delegate to the [[itemsOpenedSignal]].
+     */
+    itemsOpened: ISignal<FileBrowser, IContentsItem[]>;
+    /**
+     * Dispose of the resources held by the file browser.
+     */
+    dispose(): void;
+    /**
      * Open the currently selected item(s).
      *
      * #### Notes
-     * Files are opened by emitting the [[openFile]] signal.
+     * Triggers an [[itemsOpened]] signal with the selected items.
      *
      * If the selection includes one or more directories, the contents
      * will update to list that directory.
-     *
-     * All selected files will trigger an [[itemOpened]] signal.
      */
     open(): void;
     /**
