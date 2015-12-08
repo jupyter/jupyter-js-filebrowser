@@ -3,18 +3,30 @@
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
 .jp-FileBrowser-list-area {
-  display: flex;
-  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
 }
 
 
 .jp-FileBrowser-row {
-  display: inline-block;
-  white-space: nowrap;
+  display: flex;
+  flex-direction: row;
 }
 
 
 .jp-FileBrowser-item-icon {
-  display: inline-block;
-  vertical-align: baseline;
+  flex: 0 0 auto;
+}
+
+
+.jp-FileBrowser-item-text {
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+
+.jp-FileBrowser-item-modified {
+  flex: 0 0 auto;
 }

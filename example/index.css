@@ -9,20 +9,6 @@
 }
 
 
-.jp-FileBrowser-list-area {
-  margin: 0;
-  padding: 0;
-  list-style-type: none;
-}
-
-
-.jp-FileBrowser-row {
-  display: flex;
-  flex-direction: row;
-  padding: 5px;
-}
-
-
 .jp-mod-selected {
   background-color: #2196F3;
   color: #F5F5F5;
@@ -30,22 +16,7 @@
 
 
 .jp-FileBrowser-item-icon {
-  flex-grow: 0;
   font-family: FontAwesome;
-  margin-right: 7px;
-}
-
-
-.jp-FileBrowser-item-text {
-  flex-grow: 1;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-
-.jp-FileBrowser-item-modified {
-  flex-grow: 0;
-  margin-left: 7px;
 }
 
 
