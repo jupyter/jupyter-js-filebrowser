@@ -145,7 +145,7 @@ class FileBrowser extends Widget {
    */
   static createNode(): HTMLElement {
     let node = document.createElement('div');
-    let child = document.createElement('div');
+    let child = document.createElement('ul');
     child.classList.add(LIST_AREA_CLASS);
     node.appendChild(child);
     return node;
@@ -475,6 +475,7 @@ class FileBrowserItem extends NodeWrapper implements IContentsItem {
     this._created = options.created || '';
     this._lastModified = options.last_modified || '';
 
+    // Add the last modified identifier if applicable.
     if (this._lastModified) {
       let modText = moment(this._lastModified).fromNow();
       this.node.children[2].textContent = modText;
