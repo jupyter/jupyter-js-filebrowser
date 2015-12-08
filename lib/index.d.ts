@@ -108,6 +108,10 @@ export declare class FileBrowser extends Widget {
      */
     open(): void;
     /**
+     * Get the contents of an item.
+     */
+    get(item: IContentsItem): Promise<string>;
+    /**
      * Handle the DOM events for the file browser.
      *
      * @param event - The DOM event sent to the panel.

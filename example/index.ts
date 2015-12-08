@@ -10,11 +10,19 @@ import {
 } from 'jupyter-js-services';
 
 import {
+  EditorModel, EditorWidget
+} from 'jupyter-js-editor';
+
+import {
+  SplitPanel
+} from 'phosphor-splitpanel';
+
+import {
   Widget
 } from 'phosphor-widget';
 
 import {
-  FileBrowser, IFileBrowserViewModel, IContentsItem
+  FileBrowser, IFileBrowserViewModel, IContentsItem, ContentsItemType
 } from 'jupyter-js-filebrowser';
 
 
@@ -34,7 +42,7 @@ function main(): void {
     return connectToSession(id, options);
   }
 
-  let model = {
+  let fbModel = {
     listRunningSessions: listSessions,
     connectToSession: connectSession,
     contents: contents,
@@ -42,11 +50,25 @@ function main(): void {
     selectedItems: items
   }
 
-  let fileBrowser = new FileBrowser(model);
+  let fileBrowser = new FileBrowser(fbModel);
 
-  Widget.attach(fileBrowser, document.body);
+  var editorModel = new EditorModel();
+  let editor = new EditorWidget(editorModel);
 
-  window.onresize = () => fileBrowser.update();
+  fileBrowser.itemsOpened.connect((fb, items) => {
+    if (items[0].type === ContentsItemType.File) {
+      fileBrowser.get(items[0]).then(contents => {
+        (editor as any)._editor.getDoc().setValue(contents);
+      });
+    }
+  });
+
+  let panel = new SplitPanel();
+  panel.children.assign([fileBrowser, editor]);
+
+  Widget.attach(panel, document.body);
+
+  window.onresize = () => panel.update();
 }
 
 

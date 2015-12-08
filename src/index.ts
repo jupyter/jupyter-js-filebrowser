@@ -247,6 +247,16 @@ class FileBrowser extends Widget {
   }
 
   /**
+   * Get the contents of an item.
+   */
+  get(item: IContentsItem): Promise<string> {
+    return this._model.contents.get(item.path, { type: "file" }
+    ).then((msg: any) => {
+      return msg.content;
+    });
+  }
+
+  /**
    * Handle the DOM events for the file browser.
    *
    * @param event - The DOM event sent to the panel.

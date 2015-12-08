@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "dependencies": {
-    "jupyter-js-services": "^0.2.1",
+    "jupyter-js-services": "^0.2.2",
     "moment": "^2.10.6",
     "phosphor-domutil": "^1.2.0",
     "phosphor-widget": "^1.0.0-beta.1"

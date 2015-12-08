@@ -4,8 +4,11 @@
   "version": "0.1.0",
   "main": "index.js",
   "dependencies": {
+    "codemirror": "^5.9.0",
+    "jupyter-js-editor": "jupyter/jupyter-js-editor",
     "jupyter-js-filebrowser": "file:..",
     "phosphor-domutil": "^1.2.0",
+    "phosphor-splitpanel": "^1.0.0-beta",
     "steal": "^0.12.7"
   },
   "devDependencies": {
@@ -17,7 +20,7 @@
     "clean": "rimraf *.js",
     "postinstall": "npm dedupe",
     "prepublish": "npm run build",
-    "update": "rimraf node_modules/jupyter-js-filebrowser && npm install"
+    "update": "npm install jupyter-js-filebrowser --force"
   },
   "system": {
     "npmIgnore": [
