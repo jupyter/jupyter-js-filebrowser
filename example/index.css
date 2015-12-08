@@ -4,6 +4,8 @@
 |----------------------------------------------------------------------------*/
 .jp-FileBrowser {
   background-color: #F5F5F5;
+  color: #757575;
+  font: 13px Helvetica, Arial, sans-serif;
 }
 
 
@@ -19,8 +21,6 @@
 .jp-FileBrowser-row {
   display: flex;
   flex-direction: row;
-  font: 13px Helvetica, Arial, sans-serif;
-  color: #757575;
   padding: 5px;
 }
 
