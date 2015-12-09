@@ -22,10 +22,6 @@ import {
 } from 'phosphor-nodewrapper';
 
 import {
-  IChangedArgs, Property
-} from 'phosphor-properties';
-
-import {
   ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
