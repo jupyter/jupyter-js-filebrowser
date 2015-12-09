@@ -12,7 +12,7 @@ var jupyter_js_filebrowser_1 = require('jupyter-js-filebrowser');
 function main() {
     var baseUrl = 'http://localhost:8888';
     var contents = new jupyter_js_services_1.Contents(baseUrl);
-    var fbModel = new jupyter_js_filebrowser_1.FileBrowserViewModel(contents);
+    var fbModel = new jupyter_js_filebrowser_1.FileBrowserViewModel('', contents);
     var fileBrowser = new jupyter_js_filebrowser_1.FileBrowser(fbModel);
     var editorModel = new jupyter_js_editor_1.EditorModel();
     var editor = new jupyter_js_editor_1.EditorWidget(editorModel);

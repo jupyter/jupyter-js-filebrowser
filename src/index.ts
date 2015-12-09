@@ -91,7 +91,8 @@ class FileBrowserViewModel {
   /**
    * Construct a new file browser view model.
    */
-  constructor(contents: IContents) {
+  constructor(path: string, contents: IContents) {
+    this._path = path;
     this._contents = contents;
   }
 
@@ -103,42 +104,42 @@ class FileBrowserViewModel {
   }
 
   /**
-   * Get the current directory.
+   * Get the current path.
    */
-  get currentDirectory(): string {
-    return this._currentDirectory;
+  get path(): string {
+    return this._path;
   }
 
   /**
-   * Set the current directory.
+   * Set the current path, triggering a refresh.
    */
-  set currentDirectory(path: string) {
-    this._currentDirectory = path;
+  set path(value: string) {
+    this._path = value;
     this.refresh();
   }
 
   /**
-   * Get the current selected items.
-   */
-  get selectedItems(): IContentsModel[] {
-    return this._selectedItems;
-  }
-
-  /**
-   * Set the current selected items.
-   */
-  set selectedItems(items: IContentsModel[]) {
-    this._selectedItems = items;
-  }
-
-  /**
-   * Get the contents provider.
+   * Get the current items.
    *
    * #### Notes
    * This is a read-only property.
    */
-  get contents(): IContents {
-    return this._contents;
+  get items(): IContentsModel[] {
+    return this._items.slice();
+  }
+
+  /**
+   * Get the selected indices.
+   */
+  get selected(): number[] {
+    return this._selectedIndices.slice();
+  }
+
+  /**
+   * Set the selected indices.
+   */
+  set selected(value: number[]) {
+    this._selectedIndices = value.slice();
   }
 
   /**
@@ -149,28 +150,57 @@ class FileBrowserViewModel {
    * after loading the contents.
    */
   open(): void {
-    for (let item of this.selectedItems) {
-      this._contents.get(item.path, { type: item.type }
-      ).then((contents: IContentsModel) => {
-        this.opened.emit(contents);
-      });
+    let items = this._items;
+    for (let index of this._selectedIndices) {
+      let item = items[index];
+      if (item.type === 'directory') {
+        this.path = item.path;
+        continue;
+      } else {
+        this._contents.get(item.path, { type: item.type }
+        ).then((contents: IContentsModel) => {
+          this.opened.emit(contents);
+        });
+      }
     }
   }
 
   /**
-   * Refresh the directory contents.
+   * Refresh the model contents.
    */
-  refresh(): void {
-    this._contents.listContents(this._currentDirectory
-    ).then((model: IContentsModel) => {
+  refresh() {
+    this._contents.listContents(this._path).then(model => {
+      this._items = [];
+      // Add a link to the parent directory if not at the root.
+      if (model.path) {
+        let path = '';
+        let last = model.path.lastIndexOf('/');
+        if (last !== -1) {
+          path = model.path.slice(0, last);
+        }
+        let item: IContentsModel = {
+          name: '..',
+          path: path,
+          type: 'directory',
+          writable: null,
+          created: null,
+          last_modified: null,
+        };
+        this._items.push(item);
+      }
+
+      // Add the rest of the items and emit the model.
+      for (let item of model.content) {
+        this._items.push(item);
+      }
       this.opened.emit(model);
     });
   }
 
-  private _baseUrl = '';
-  private _selectedItems: IContentsModel[] = [];
-  private _currentDirectory = '';
+  private _selectedIndices: number[] = [];
   private _contents: IContents = null;
+  private _items: IContentsModel[] = [];
+  private _path = '';
 }
 
 
@@ -202,23 +232,17 @@ class FileBrowser extends Widget {
    */
   constructor(model: FileBrowserViewModel) {
     super();
-    this._model = model;
-    this._items = [];
     this.addClass(FILE_BROWSER_CLASS);
-    this._model.opened.connect((model: FileBrowserViewModel, contents: IContentsModel) => {
-      if (contents.type === 'directory') {
-        this._load(contents);
-      }
-    });
+    this._model = model;
+    this._model.opened.connect(this._onOpened.bind(this));
   }
 
   /**
    * Dispose of the resources held by the file browser.
    */
   dispose(): void {
-    super.dispose();
-    this._items = null;
     this._model = null;
+    super.dispose();
   }
 
   /**
@@ -272,14 +296,16 @@ class FileBrowser extends Widget {
       return;
     }
 
+    // Fetch common variables.
+    let items = this._model.items;
+    let nodes = this._nodes;
+
     // Find the target row.
-    let items = this._items.filter(item => {
-      return item.hitTest(event.clientX, event.clientY);
-    });
-    if (!items.length) {
+    let index = hitTestNodes(nodes, event.clientX, event.clientY);
+    if (index === -1) {
       return;
     }
-    let current = items[0];
+    let current = nodes[index];
 
     // Stop the event propagation.
     event.preventDefault();
@@ -287,24 +313,21 @@ class FileBrowser extends Widget {
 
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
-      if (current.selected) {
-        current.selected = false;
+      if (current.classList.contains(SELECTED_CLASS)) {
+        current.classList.remove(SELECTED_CLASS);
       } else {
-        current.selected = true;
+        current.classList.add(SELECTED_CLASS);
       }
 
     // Handle multiple select.
     } else if (event.shiftKey) {
-
       // Find the "nearest selected".
       let nearestIndex = -1;
-      let index = -1;
-      for (var i = 0; i < this._items.length; i++) {
-        if (this._items[i] === current) {
-          index = i;
+      for (var i = 0; i < nodes.length; i++) {
+        if (i === index) {
           continue;
         }
-        if (this._items[i].selected) {
+        if (nodes[i].classList.contains(SELECTED_CLASS)) {
           if (nearestIndex === -1) {
             nearestIndex = i;
           } else {
@@ -321,29 +344,29 @@ class FileBrowser extends Widget {
       }
 
       // Select the rows between the current and the nearest selected.
-      for (var i = 0; i < this._items.length; i++) {
+      for (let i = 0; i < nodes.length; i++) {
         if (nearestIndex >= i && index <= i ||
             nearestIndex <= i && index >= i) {
-          this._items[i].selected = true;
+          nodes[i].classList.add(SELECTED_CLASS);
         }
       }
 
     // Default to selecting the only the item.
     } else {
-
-      for (let item of this._items) {
-        item.selected = false;
+      for (let node of nodes) {
+        node.classList.remove(SELECTED_CLASS);
       }
-      current.selected = true;
+      current.classList.add(SELECTED_CLASS);
     }
 
     // Set the selected items on the model.
-    items = this._items.filter(item => {
-      return item.selected;
-    });
-    this._model.selectedItems = items.map(item => {
-      return item.model;
-    });
+    let selected: number[] = [];
+    for (let i = 0; i < nodes.length; i++) {
+      if (nodes[i].classList.contains(SELECTED_CLASS)) {
+        selected.push(i);
+      }
+    }
+    this._model.selected = selected;
   }
 
   /**
@@ -356,10 +379,8 @@ class FileBrowser extends Widget {
     }
 
     // Find the target row.
-    let items = this._items.filter(item => {
-      return item.hitTest(event.clientX, event.clientY);
-    })
-    if (!items.length) {
+    let index = hitTestNodes(this._nodes, event.clientX, event.clientY);
+    if (index === -1) {
       return;
     }
 
@@ -372,151 +393,116 @@ class FileBrowser extends Widget {
   }
 
   /**
-   * Load a directory
+   * A handler invoked on an `'update-request'` message.
    */
-  private _load(payload: IContentsModel): void {
+  protected onUpdateRequest(msg: Message): void {
+    // Fetch common variables.
+    let items = this._model.items;
+    let nodes = this._nodes;
+    let content = this.node.firstChild;
 
-    let nItems = payload.content.length;
-    let start = 0;
-
-    if (payload.path) {
-      nItems += 1;
-      start = 1;
+    // Remove any excess item nodes.
+    while (nodes.length > items.length) {
+      let node = nodes.pop();
+      content.removeChild(node);
     }
 
-    // Remove any excess items.
-    while (payload.content.length > nItems) {
-      let item = this._items.pop();
-      item.dispose();
+    // Add any missing item nodes.
+    while (nodes.length < items.length) {
+      let node = createItemNode();
+      nodes.push(node);
+      content.appendChild(node);
     }
 
-    // Add any missing items.
-    while (payload.content.length < nItems) {
-      let item = new FileBrowserItem();
-      this._items.push(item);
-      this.node.firstChild.appendChild(item.node);
+    // Update the node state to match the model contents.
+    for (let i = 0, n = items.length; i < n; ++i) {
+      updateItemNode(items[i], nodes[i]);
     }
+  }
 
-    // Add a parent link if not at the root.
-    if (payload.path) {
-      let path = '';
-      let last = payload.path.lastIndexOf('/');
-      if (last !== -1) {
-        path = payload.path.slice(0, last);
-      }
-      this._items[0].model = {
-        name: '..',
-        path: path,
-        type: 'directory',
-        writable: null,
-        created: null,
-        last_modified: null,
-      };
-    }
-
-    let content = payload.content;
-    for (let i = start; i < content.length; i++) {
-      this._items[i].model = content[i];
+  /**
+   * Handle an `opened` signal from the model.
+   */
+  private _onOpened(model: FileBrowserViewModel, contents: IContentsModel): void {
+    if (contents.type === 'directory') {
+      this.update();
     }
   }
 
   private _model: FileBrowserViewModel = null;
-  private _items: FileBrowserItem[] = null;
+  private _nodes: HTMLElement[] = [];
 }
 
 
 /**
- * An implementation of a file browser item.
+ * Create an uninitialized DOM node for an IContentsModel.
  */
-class FileBrowserItem extends NodeWrapper {
+function createItemNode(): HTMLElement {
+  let node = document.createElement('li');
+  let inode = document.createElement('span');
+  inode.className = ROW_ICON_CLASS;
+  let tnode = document.createElement('span');
+  tnode.className = ROW_TEXT_CLASS;
+  let mnode = document.createElement('span');
+  mnode.className = ROW_TIME_CLASS;
+  node.appendChild(inode);
+  node.appendChild(tnode);
+  node.appendChild(mnode);
+  return node;
+}
 
-  /**
-   * Create a node for a file browser item.
-   */
-  static createNode(): HTMLElement {
-    let node = document.createElement('li');
-    let inode = document.createElement('span');
-    inode.className = ROW_ICON_CLASS;
-    let tnode = document.createElement('span');
-    tnode.className = ROW_TEXT_CLASS;
-    let mnode = document.createElement('span');
-    mnode.className = ROW_TIME_CLASS;
-    node.appendChild(inode);
-    node.appendChild(tnode);
-    node.appendChild(mnode);
-    return node;
+
+/**
+ * Create the icon node class name for an IContentsModel.
+ */
+function createIconClass(item: IContentsModel): string {
+  if (item.type === 'directory') {
+    return ROW_ICON_CLASS + ' ' + FOLDER_ICON_CLASS;
+  } else {
+    return ROW_ICON_CLASS + ' ' + FILE_ICON_CLASS;
   }
+}
 
-  /**
-   * Construct a new file browser item.
-   *
-   * @param options - Initialization options for the item.
-   */
-  constructor(model?: IContentsModel) {
-    super();
-    this.addClass(ROW_CLASS);
-    if (model) {
-      this.model = model;
-    }
+
+/**
+ * Create the text node content for an IContentsModel.
+ */
+function createTextContent(item: IContentsModel): string {
+  return item.name;
+}
+
+
+/**
+ * Create the last modified node content for an IContentsModel.
+ */
+function createModifiedContent(item: IContentsModel): string {
+  if (item.last_modified) {
+    return moment(item.last_modified).fromNow();
+  } else {
+    return '';
   }
+}
 
-  /**
-   * Get the model assoicated with the item.
-   */
-  get model(): IContentsModel {
-    return this._model;
+/**
+ * Update the node state for an IContentsModel.
+ */
+function updateItemNode(item: IContentsModel, node: HTMLElement): void {
+  let icon = node.firstChild as HTMLElement;
+  let text = node.children[1] as HTMLElement;
+  let modified = node.lastChild as HTMLElement;
+  node.className = ROW_CLASS;
+  icon.className = createIconClass(item);
+  text.textContent = createTextContent(item);
+  modified.textContent = createModifiedContent(item);
+}
+
+
+/**
+ * Get the index of the node at a client position, or `-1`.
+ */
+function hitTestNodes(nodes: HTMLElement[], x: number, y: number): number {
+  for (let i = 0, n = nodes.length; i < n; ++i) {
+    if (hitTest(nodes[i], x, y)) return i;
   }
-
-  /**
-   * Set the model associated with the item.
-   */
-  set model(item: IContentsModel) {
-    this._model = item;
-    // Add the appropriate icon based on whether it is a directory.
-    let inode = this.node.children[0];
-    inode.className = ROW_ICON_CLASS;
-    if (item.type === 'directory') {
-      inode.classList.add(FOLDER_ICON_CLASS);
-    } else {
-      inode.classList.add(FILE_ICON_CLASS);
-    }
-    this.node.children[1].textContent = item.name;
-
-    // Add the last modified identifier if applicable.
-    if (item.last_modified) {
-      let modText = moment(item.last_modified).fromNow();
-      this.node.children[2].textContent = modText;
-    }
-  }
-
-  /**
-   * Get whether the item is selected.
-   *
-   * #### Notes
-   * This is a read-only property.
-   */
-  get selected(): boolean {
-    return this.node.classList.contains(SELECTED_CLASS);
-  }
-
-  /**
-   * Set whether the item is selected.
-   */
-  set selected(value: boolean) {
-    if (value) {
-      this.node.classList.add(SELECTED_CLASS);
-    } else {
-      this.node.classList.remove(SELECTED_CLASS);
-    }
-  }
-
-  hitTest(clientX: number, clientY: number): boolean {
-    return hitTest(this.node, clientX, clientY);
-  }
-
-  dispose() {
-    this.node.parentNode.removeChild(this.node);
-  }
-
-  private _model: IContentsModel = null;
+  return -1;
 }

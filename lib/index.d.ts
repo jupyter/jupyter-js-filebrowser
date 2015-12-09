@@ -13,32 +13,32 @@ export declare class FileBrowserViewModel {
     /**
      * Construct a new file browser view model.
      */
-    constructor(contents: IContents);
+    constructor(path: string, contents: IContents);
     /**
      * Get the item opened signal.
      */
     opened: ISignal<FileBrowserViewModel, IContentsModel>;
     /**
-     * Get the current directory.
+     * Get the current path.
      */
     /**
-     * Set the current directory.
+     * Set the current path, triggering a refresh.
      */
-    currentDirectory: string;
+    path: string;
     /**
-     * Get the current selected items.
-     */
-    /**
-     * Set the current selected items.
-     */
-    selectedItems: IContentsModel[];
-    /**
-     * Get the contents provider.
+     * Get the current items.
      *
      * #### Notes
      * This is a read-only property.
      */
-    contents: IContents;
+    items: IContentsModel[];
+    /**
+     * Get the selected indices.
+     */
+    /**
+     * Set the selected indices.
+     */
+    selected: number[];
     /**
      * Open the current selected items.
      *
@@ -48,13 +48,13 @@ export declare class FileBrowserViewModel {
      */
     open(): void;
     /**
-     * Refresh the directory contents.
+     * Refresh the model contents.
      */
     refresh(): void;
-    private _baseUrl;
-    private _selectedItems;
-    private _currentDirectory;
+    private _selectedIndices;
     private _contents;
+    private _items;
+    private _path;
 }
 /**
  * A widget which hosts a file browser.
@@ -106,9 +106,13 @@ export declare class FileBrowser extends Widget {
      */
     private _evtDblClick(event);
     /**
-     * Load a directory
+     * A handler invoked on an `'update-request'` message.
      */
-    private _load(payload);
+    protected onUpdateRequest(msg: Message): void;
+    /**
+     * Handle an `opened` signal from the model.
+     */
+    private _onOpened(model, contents);
     private _model;
-    private _items;
+    private _nodes;
 }

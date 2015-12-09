@@ -31,7 +31,7 @@ function main(): void {
   let baseUrl = 'http://localhost:8888'
   let contents = new Contents(baseUrl);
 
-  let fbModel = new FileBrowserViewModel(contents);
+  let fbModel = new FileBrowserViewModel('', contents);
   let fileBrowser = new FileBrowser(fbModel);
 
   var editorModel = new EditorModel();
