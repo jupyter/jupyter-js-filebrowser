@@ -7,3 +7,4 @@ test/build
 test/coverage
 lib/
 example/*.js
+docs
