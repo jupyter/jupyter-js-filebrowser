@@ -22,7 +22,7 @@ import {
 } from 'phosphor-nodewrapper';
 
 import {
-  ISignal, Signal, clearSignalData
+  ISignal, Signal
 } from 'phosphor-signaling';
 
 import {
@@ -216,9 +216,9 @@ class FileBrowser extends Widget {
    * Dispose of the resources held by the file browser.
    */
   dispose(): void {
+    super.dispose();
     this._items = null;
     this._model = null;
-    clearSignalData(this);
   }
 
   /**
