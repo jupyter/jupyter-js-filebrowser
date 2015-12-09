@@ -5,16 +5,18 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "dependencies": {
-    "jupyter-js-services": "^0.2.1",
+    "jupyter-js-services": "^0.2.2",
+    "moment": "^2.10.6",
+    "phosphor-domutil": "^1.2.0",
+    "phosphor-messaging": "^1.0.5",
+    "phosphor-nodewrapper": "^1.0.4",
     "phosphor-widget": "^1.0.0-beta.1"
   },
   "devDependencies": {
-    "browserify-css": "^0.8.1",
     "expect.js": "^0.3.1",
     "glob-copy": "^0.1.0",
     "istanbul": "^0.3.18",
     "karma": "^0.13.9",
-    "karma-browserify": "^4.3.0",
     "karma-chrome-launcher": "^0.2.0",
     "karma-firefox-launcher": "^0.1.6",
     "karma-ie-launcher": "^0.2.0",
@@ -22,14 +24,13 @@
     "karma-mocha-reporter": "^1.1.1",
     "mocha": "^2.2.5",
     "rimraf": "^2.4.2",
+    "steal": "^0.12.7",
     "typedoc": "^0.3.11",
     "typescript": "^1.6.2"
   },
   "scripts": {
     "clean": "rimraf docs && rimraf lib && rimraf test/build",
-    "clean:example": "rimraf example/*.js",
     "build:src": "tsc --project src && node scripts/copycss.js",
-    "build:example": "tsc --project example && browserify -t browserify-css example/index.js -o example/bundle.js",
     "build:test": "tsc --project test",
     "build": "npm run build:src && npm run build:test",
     "docs": "typedoc --options scripts/tdoptions.json",

@@ -3,14 +3,205 @@
 'use-strict';
 
 import {
-  Contents, IContents
+  IContents, INotebookSession, ISessionId, ISessionOptions,
+  IContentsModel
 } from 'jupyter-js-services';
+
+import * as moment from 'moment';
+
+import {
+  hitTest
+} from 'phosphor-domutil';
+
+import {
+  Message
+} from 'phosphor-messaging';
+
+import {
+  NodeWrapper
+} from 'phosphor-nodewrapper';
+
+import {
+  ISignal, Signal
+} from 'phosphor-signaling';
 
 import {
   Widget
 } from 'phosphor-widget';
 
 import './index.css';
+
+
+/**
+ * The class name added to FileBrowser instances.
+ */
+const FILE_BROWSER_CLASS = 'jp-FileBrowser';
+
+/**
+ * The class name added to FileBrowser rows.
+ */
+const LIST_AREA_CLASS = 'jp-FileBrowser-list-area';
+
+/**
+ * The class name added to FileBrowser rows.
+ */
+const ROW_CLASS = 'jp-FileBrowser-row';
+
+/**
+ * The class name added to selected rows.
+ */
+const SELECTED_CLASS = 'jp-mod-selected';
+
+/**
+ * The class name added to a row icon.
+ */
+const ROW_ICON_CLASS = 'jp-FileBrowser-item-icon';
+
+/**
+ * The class name added to a row text.
+ */
+const ROW_TEXT_CLASS = 'jp-FileBrowser-item-text';
+
+/**
+ * The class name added to a row last modified text.
+ */
+const ROW_TIME_CLASS = 'jp-FileBrowser-item-modified';
+
+/**
+ * The class name added to a folder icon.
+ */
+const FOLDER_ICON_CLASS = 'jp-FileBrowser-folder-icon';
+
+/**
+ * The class name added to a file icon.
+ */
+const FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
+
+
+/**
+ * An implementation of a file browser view model.
+ */
+export
+class FileBrowserViewModel {
+  /**
+   * A signal emitted when an item is opened.
+   */
+  static openedSignal = new Signal<FileBrowserViewModel, IContentsModel>();
+
+  /**
+   * Construct a new file browser view model.
+   */
+  constructor(path: string, contents: IContents) {
+    this._path = path;
+    this._contents = contents;
+  }
+
+  /**
+   * Get the item opened signal.
+   */
+  get opened(): ISignal<FileBrowserViewModel, IContentsModel> {
+    return FileBrowserViewModel.openedSignal.bind(this);
+  }
+
+  /**
+   * Get the current path.
+   */
+  get path(): string {
+    return this._path;
+  }
+
+  /**
+   * Set the current path, triggering a refresh.
+   */
+  set path(value: string) {
+    this._path = value;
+    this.refresh();
+  }
+
+  /**
+   * Get the current items.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get items(): IContentsModel[] {
+    return this._items.slice();
+  }
+
+  /**
+   * Get the selected indices.
+   */
+  get selected(): number[] {
+    return this._selectedIndices.slice();
+  }
+
+  /**
+   * Set the selected indices.
+   */
+  set selected(value: number[]) {
+    this._selectedIndices = value.slice();
+  }
+
+  /**
+   * Open the current selected items.
+   *
+   * #### Notes
+   * Emits an [[opened]] signal for each item
+   * after loading the contents.
+   */
+  open(): void {
+    let items = this._items;
+    for (let index of this._selectedIndices) {
+      let item = items[index];
+      if (item.type === 'directory') {
+        this.path = item.path;
+        continue;
+      } else {
+        this._contents.get(item.path, { type: item.type }
+        ).then((contents: IContentsModel) => {
+          this.opened.emit(contents);
+        });
+      }
+    }
+  }
+
+  /**
+   * Refresh the model contents.
+   */
+  refresh() {
+    this._contents.listContents(this._path).then(model => {
+      this._items = [];
+      // Add a link to the parent directory if not at the root.
+      if (model.path) {
+        let path = '';
+        let last = model.path.lastIndexOf('/');
+        if (last !== -1) {
+          path = model.path.slice(0, last);
+        }
+        let item: IContentsModel = {
+          name: '..',
+          path: path,
+          type: 'directory',
+          writable: null,
+          created: null,
+          last_modified: null,
+        };
+        this._items.push(item);
+      }
+
+      // Add the rest of the items and emit the model.
+      for (let item of model.content) {
+        this._items.push(item);
+      }
+      this.opened.emit(model);
+    });
+  }
+
+  private _selectedIndices: number[] = [];
+  private _contents: IContents = null;
+  private _items: IContentsModel[] = [];
+  private _path = '';
+}
 
 
 /**
@@ -28,74 +219,30 @@ class FileBrowser extends Widget {
    */
   static createNode(): HTMLElement {
     let node = document.createElement('div');
-    node.innerHTML = (
-      '<div class="jp-FileBrowser-files-inner">' +
-        '<div class="jp-FileBrowser-files-header">Files</div>' +
-        '<div class="jp-FileBrowser-list-container"></div>' +
-      '</div>'
-    );
+    let child = document.createElement('ul');
+    child.classList.add(LIST_AREA_CLASS);
+    node.appendChild(child);
     return node;
   }
 
   /**
    * Construct a new file browser widget.
    *
-   * @param baseUrl - The base url for the Contents API.
-   *
-   * @param currentDir - The name of the current directory.
-   *
-   * @param contents - An existing Contents API object.
+   * @param model - File browser view model instance.
    */
-  constructor(baseUrl?: string, currentDir?: string, contents?: IContents) {
+  constructor(model: FileBrowserViewModel) {
     super();
-    this.addClass('jp-FileBrowser');
-    baseUrl = defaultBaseUrl(baseUrl);
-    this._contents = contents || new Contents(baseUrl);
-    document.addEventListener('mousedown', this);
-    this._currentDir = currentDir || '';
+    this.addClass(FILE_BROWSER_CLASS);
+    this._model = model;
+    this._model.opened.connect(this._onOpened.bind(this));
   }
 
   /**
-   * Get the current directory of the file browser.
+   * Dispose of the resources held by the file browser.
    */
-  get directory(): string {
-    return this._currentDir;
-  }
-
-  /**
-   * Set the current directory of the file browser.
-   *
-   * @param path - The path of the new directory.
-   *
-   * #### Note
-   * This does not call [[listDirectory]].
-   */
-  set directory(path: string) {
-    this._currentDir = path;
-  }
-
-  /**
-   * Get the onClick handler for the file browser.
-   *
-   * This is called in response to a user clicking on a file target.
-   * The contents of the file are retrieved, and the name and contents
-   * of the file are passed to the handler.
-   */
-  get onClick(): (name: string, contents: any) => void {
-    return this._onClick;
-  }
-
-  /**
-   * Set the onClick handler for the file browser.
-   *
-   * @param cb - The callback for an onclick event.
-   *
-   * This is called in response to a user clicking on a file target.
-   * The contents of the file are retrieved, and the name and contents
-   * of the file are passed to the handler.
-   */
-  set onClick(cb: (name: string, contents: any) => void) {
-    this._onClick = cb;
+  dispose(): void {
+    this._model = null;
+    super.dispose();
   }
 
   /**
@@ -109,116 +256,253 @@ class FileBrowser extends Widget {
    * not be called directly by user code.
    */
   handleEvent(event: Event): void {
-    if (event.type === 'mousedown') {
-      this._evtMouseDown(event as MouseEvent);
+    switch (event.type) {
+    case 'click':
+      this._evtClick(event as MouseEvent);
+      break;
+    case 'dblclick':
+      this._evtDblClick(event as MouseEvent);
+      break;
     }
   }
 
   /**
-   * Set the file browser contents based on the current directory.
+   * A message handler invoked on an `'after-attach'` message.
    */
-  listDirectory(): void {
-    this.node.firstChild.lastChild.textContent = '';
-    // Add a parent link if not at the root.
-    if (this._currentDir.lastIndexOf('/') !== -1) {
-      this._addItem('..', true);
-    }
-
-    let path = this._currentDir.slice(0, this._currentDir.length - 1);
-    this._contents.listContents(path).then((msg: any) => {
-      for (let i = 0; i < msg.content.length; i++) {
-        if ((msg as any).content[i].type === 'directory') {
-          this._addItem((msg as any).content[i].name + '/', true);
-        } else {
-          this._addItem((msg as any).content[i].name, false);
-        }
-      }
-    });
+  protected onAfterAttach(msg: Message): void {
+    super.onAfterAttach(msg);
+    let node = this.node;
+    node.addEventListener('click', this);
+    node.addEventListener('dblclick', this);
+    this._model.refresh();
   }
 
   /**
-   * Handle the `'mousedown'` event for the file browser.
+   * A message handler invoked on a `'before-detach'` message.
    */
-  private _evtMouseDown(event: MouseEvent): void {
-    let el =  event.target as HTMLElement;
-    if (el.className.indexOf('jp-item-link') === -1) {
+  protected onBeforeDetach(msg: Message): void {
+    super.onBeforeDetach(msg);
+    let node = this.node;
+    node.removeEventListener('click', this);
+    node.removeEventListener('dblclick', this);
+  }
+
+  /**
+   * Handle the `'click'` event for the file browser.
+   */
+  private _evtClick(event: MouseEvent) {
+    // Do nothing if it's not a left mouse press.
+    if (event.button !== 0) {
       return;
     }
-    let text = el.textContent;
-    // Handle a directory target.
-    if (text[text.length - 1] === '/') {
-      this._currentDir += text;
-      this.listDirectory();
-    // Handle a parent directory target.
-    } else if (text === '..') {
-      let parts = this._currentDir.split('/');
-      parts = parts.slice(0, parts.length-2);
-      if (parts.length === 0) {
-        this._currentDir = '';
+
+    // Fetch common variables.
+    let items = this._model.items;
+    let nodes = this._nodes;
+
+    // Find the target row.
+    let index = hitTestNodes(nodes, event.clientX, event.clientY);
+    if (index === -1) {
+      return;
+    }
+    let current = nodes[index];
+
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Handle toggling.
+    if (event.metaKey || event.ctrlKey) {
+      if (current.classList.contains(SELECTED_CLASS)) {
+        current.classList.remove(SELECTED_CLASS);
       } else {
-        this._currentDir = parts.join('/') + '/';
+        current.classList.add(SELECTED_CLASS);
       }
-      this.listDirectory();
-    // Handle a file target.
+
+    // Handle multiple select.
+    } else if (event.shiftKey) {
+      // Find the "nearest selected".
+      let nearestIndex = -1;
+      for (var i = 0; i < nodes.length; i++) {
+        if (i === index) {
+          continue;
+        }
+        if (nodes[i].classList.contains(SELECTED_CLASS)) {
+          if (nearestIndex === -1) {
+            nearestIndex = i;
+          } else {
+            if (Math.abs(index - i) < Math.abs(nearestIndex - i)) {
+              nearestIndex = i;
+            }
+          }
+        }
+      }
+
+      // Default to the first element (and fill down).
+      if (nearestIndex === -1) {
+        nearestIndex = 0;
+      }
+
+      // Select the rows between the current and the nearest selected.
+      for (let i = 0; i < nodes.length; i++) {
+        if (nearestIndex >= i && index <= i ||
+            nearestIndex <= i && index >= i) {
+          nodes[i].classList.add(SELECTED_CLASS);
+        }
+      }
+
+    // Default to selecting the only the item.
     } else {
-      let path = this._currentDir + text;
-      this._contents.get(path, 'file', { }).then((msg: any) => {
-        let onClick = this._onClick;
-        if (onClick) { onClick(msg.path, msg.content); }
-      });
+      for (let node of nodes) {
+        node.classList.remove(SELECTED_CLASS);
+      }
+      current.classList.add(SELECTED_CLASS);
     }
+
+    // Set the selected items on the model.
+    let selected: number[] = [];
+    for (let i = 0; i < nodes.length; i++) {
+      if (nodes[i].classList.contains(SELECTED_CLASS)) {
+        selected.push(i);
+      }
+    }
+    this._model.selected = selected;
   }
 
-  /*
-   * Add an item to the file browser display.
-   *
-   * @param text - The text to display for the item.
-   * @param isDirectory - Whether the item is a directory.
+  /**
+   * Handle the `'dblclick'` event for the file browser.
    */
-  private _addItem(text: string, isDirectory: boolean): void {
-    let top = document.createElement('div');
-    top.className = 'jp-FileBrowser-list-item';
-    top.classList.add('jp-FileBrowser-row');
-    let node = document.createElement('div');
-    node.classList.add('col-md-12');
-    let inode = document.createElement('i');
-    inode.className = 'jp-item-icon';
-    inode.style.display = 'inline-block';
-    inode.classList.add('jp-icon-fixed-width');
-    let lnode = document.createElement('div');
-    lnode.className = 'jp-item-link';
-    lnode.textContent = text;
-    // Add the appropriate icon based on whether it is a directory.
-    if (isDirectory) {
-      inode.classList.add('jp-folder-icon');
-    } else {
-      inode.classList.add('jp-file-icon');
+  private _evtDblClick(event: MouseEvent) {
+    // Do nothing if it's not a left mouse press.
+    if (event.button !== 0) {
+      return;
     }
-    node.appendChild(inode);
-    node.appendChild(lnode);
-    top.appendChild(node);
-    this.node.firstChild.lastChild.appendChild(top);
+
+    // Find the target row.
+    let index = hitTestNodes(this._nodes, event.clientX, event.clientY);
+    if (index === -1) {
+      return;
+    }
+
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Open the selected item.
+    this._model.open();
   }
 
-  private _currentDir = '';
-  private _onClick: (name: string, contents: string) => void = null;
-  private _contents: IContents = null;
+  /**
+   * A handler invoked on an `'update-request'` message.
+   */
+  protected onUpdateRequest(msg: Message): void {
+    // Fetch common variables.
+    let items = this._model.items;
+    let nodes = this._nodes;
+    let content = this.node.firstChild;
+
+    // Remove any excess item nodes.
+    while (nodes.length > items.length) {
+      let node = nodes.pop();
+      content.removeChild(node);
+    }
+
+    // Add any missing item nodes.
+    while (nodes.length < items.length) {
+      let node = createItemNode();
+      nodes.push(node);
+      content.appendChild(node);
+    }
+
+    // Update the node state to match the model contents.
+    for (let i = 0, n = items.length; i < n; ++i) {
+      updateItemNode(items[i], nodes[i]);
+    }
+  }
+
+  /**
+   * Handle an `opened` signal from the model.
+   */
+  private _onOpened(model: FileBrowserViewModel, contents: IContentsModel): void {
+    if (contents.type === 'directory') {
+      this.update();
+    }
+  }
+
+  private _model: FileBrowserViewModel = null;
+  private _nodes: HTMLElement[] = [];
 }
 
 
 /**
- * Handle default logic for baseUrl.
+ * Create an uninitialized DOM node for an IContentsModel.
  */
-function defaultBaseUrl(baseUrl?: string): string {
-  if (baseUrl !== undefined) {
-    if (baseUrl[baseUrl.length - 1] !== '/') {
-      baseUrl += '/';
-    }
-    return baseUrl;
-  }
-  if (typeof location === undefined) {
-    return 'http://localhost:8888/';
+function createItemNode(): HTMLElement {
+  let node = document.createElement('li');
+  let inode = document.createElement('span');
+  inode.className = ROW_ICON_CLASS;
+  let tnode = document.createElement('span');
+  tnode.className = ROW_TEXT_CLASS;
+  let mnode = document.createElement('span');
+  mnode.className = ROW_TIME_CLASS;
+  node.appendChild(inode);
+  node.appendChild(tnode);
+  node.appendChild(mnode);
+  return node;
+}
+
+
+/**
+ * Create the icon node class name for an IContentsModel.
+ */
+function createIconClass(item: IContentsModel): string {
+  if (item.type === 'directory') {
+    return ROW_ICON_CLASS + ' ' + FOLDER_ICON_CLASS;
   } else {
-    return location.origin + '/';
+    return ROW_ICON_CLASS + ' ' + FILE_ICON_CLASS;
   }
+}
+
+
+/**
+ * Create the text node content for an IContentsModel.
+ */
+function createTextContent(item: IContentsModel): string {
+  return item.name;
+}
+
+
+/**
+ * Create the last modified node content for an IContentsModel.
+ */
+function createModifiedContent(item: IContentsModel): string {
+  if (item.last_modified) {
+    return moment(item.last_modified).fromNow();
+  } else {
+    return '';
+  }
+}
+
+/**
+ * Update the node state for an IContentsModel.
+ */
+function updateItemNode(item: IContentsModel, node: HTMLElement): void {
+  let icon = node.firstChild as HTMLElement;
+  let text = node.children[1] as HTMLElement;
+  let modified = node.lastChild as HTMLElement;
+  node.className = ROW_CLASS;
+  icon.className = createIconClass(item);
+  text.textContent = createTextContent(item);
+  modified.textContent = createModifiedContent(item);
+}
+
+
+/**
+ * Get the index of the node at a client position, or `-1`.
+ */
+function hitTestNodes(nodes: HTMLElement[], x: number, y: number): number {
+  for (let i = 0, n = nodes.length; i < n; ++i) {
+    if (hitTest(nodes[i], x, y)) return i;
+  }
+  return -1;
 }

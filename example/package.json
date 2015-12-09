@@ -1,0 +1,30 @@
+{
+  "private": true,
+  "name": "filebrowser-example",
+  "version": "0.1.0",
+  "main": "index.js",
+  "dependencies": {
+    "codemirror": "^5.9.0",
+    "jupyter-js-editor": "jupyter/jupyter-js-editor",
+    "jupyter-js-filebrowser": "file:..",
+    "phosphor-splitpanel": "^1.0.0-beta",
+    "phosphor-widget": "^1.0.0-beta.1",
+    "steal": "^0.12.7"
+  },
+  "devDependencies": {
+    "rimraf": "^2.4.4",
+    "typescript": "^1.7.3"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf *.js",
+    "postinstall": "npm dedupe",
+    "prepublish": "npm run build",
+    "update": "npm install jupyter-js-filebrowser --force"
+  },
+  "system": {
+    "npmIgnore": [
+      "devDependencies"
+    ]
+  }
+}

@@ -1,5 +1,61 @@
-import { IContents } from 'jupyter-js-services';
+import { IContents, IContentsModel } from 'jupyter-js-services';
+import { Message } from 'phosphor-messaging';
+import { ISignal, Signal } from 'phosphor-signaling';
 import { Widget } from 'phosphor-widget';
+/**
+ * An implementation of a file browser view model.
+ */
+export declare class FileBrowserViewModel {
+    /**
+     * A signal emitted when an item is opened.
+     */
+    static openedSignal: Signal<FileBrowserViewModel, IContentsModel>;
+    /**
+     * Construct a new file browser view model.
+     */
+    constructor(path: string, contents: IContents);
+    /**
+     * Get the item opened signal.
+     */
+    opened: ISignal<FileBrowserViewModel, IContentsModel>;
+    /**
+     * Get the current path.
+     */
+    /**
+     * Set the current path, triggering a refresh.
+     */
+    path: string;
+    /**
+     * Get the current items.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    items: IContentsModel[];
+    /**
+     * Get the selected indices.
+     */
+    /**
+     * Set the selected indices.
+     */
+    selected: number[];
+    /**
+     * Open the current selected items.
+     *
+     * #### Notes
+     * Emits an [[opened]] signal for each item
+     * after loading the contents.
+     */
+    open(): void;
+    /**
+     * Refresh the model contents.
+     */
+    refresh(): void;
+    private _selectedIndices;
+    private _contents;
+    private _items;
+    private _path;
+}
 /**
  * A widget which hosts a file browser.
  *
@@ -15,42 +71,13 @@ export declare class FileBrowser extends Widget {
     /**
      * Construct a new file browser widget.
      *
-     * @param baseUrl - The base url for the Contents API.
-     *
-     * @param currentDir - The name of the current directory.
-     *
-     * @param contents - An existing Contents API object.
+     * @param model - File browser view model instance.
      */
-    constructor(baseUrl?: string, currentDir?: string, contents?: IContents);
+    constructor(model: FileBrowserViewModel);
     /**
-     * Get the current directory of the file browser.
+     * Dispose of the resources held by the file browser.
      */
-    /**
-     * Set the current directory of the file browser.
-     *
-     * @param path - The path of the new directory.
-     *
-     * #### Note
-     * This does not call [[listDirectory]].
-     */
-    directory: string;
-    /**
-     * Get the onClick handler for the file browser.
-     *
-     * This is called in response to a user clicking on a file target.
-     * The contents of the file are retrieved, and the name and contents
-     * of the file are passed to the handler.
-     */
-    /**
-     * Set the onClick handler for the file browser.
-     *
-     * @param cb - The callback for an onclick event.
-     *
-     * This is called in response to a user clicking on a file target.
-     * The contents of the file are retrieved, and the name and contents
-     * of the file are passed to the handler.
-     */
-    onClick: (name: string, contents: any) => void;
+    dispose(): void;
     /**
      * Handle the DOM events for the file browser.
      *
@@ -63,15 +90,29 @@ export declare class FileBrowser extends Widget {
      */
     handleEvent(event: Event): void;
     /**
-     * Set the file browser contents based on the current directory.
+     * A message handler invoked on an `'after-attach'` message.
      */
-    listDirectory(): void;
+    protected onAfterAttach(msg: Message): void;
     /**
-     * Handle the `'mousedown'` event for the file browser.
+     * A message handler invoked on a `'before-detach'` message.
      */
-    private _evtMouseDown(event);
-    private _addItem(text, isDirectory);
-    private _currentDir;
-    private _onClick;
-    private _contents;
+    protected onBeforeDetach(msg: Message): void;
+    /**
+     * Handle the `'click'` event for the file browser.
+     */
+    private _evtClick(event);
+    /**
+     * Handle the `'dblclick'` event for the file browser.
+     */
+    private _evtDblClick(event);
+    /**
+     * A handler invoked on an `'update-request'` message.
+     */
+    protected onUpdateRequest(msg: Message): void;
+    /**
+     * Handle an `opened` signal from the model.
+     */
+    private _onOpened(model, contents);
+    private _model;
+    private _nodes;
 }

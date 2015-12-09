@@ -5,3 +5,4 @@ node_modules
 npm-debug.log
 test/build
 lib/
+example/*.js

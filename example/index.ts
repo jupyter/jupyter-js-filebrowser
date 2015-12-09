@@ -6,30 +6,51 @@
 'use-strict';
 
 import {
+  Contents, listRunningSessions, connectToSession, ISessionOptions
+} from 'jupyter-js-services';
+
+import {
+  EditorModel, EditorWidget
+} from 'jupyter-js-editor';
+
+import {
+  SplitPanel
+} from 'phosphor-splitpanel';
+
+import {
   Widget
 } from 'phosphor-widget';
 
 import {
-  FileBrowser
-} from '../lib/index';
-
-import './index.css';
+  FileBrowser, FileBrowserViewModel
+} from 'jupyter-js-filebrowser';
 
 
 function main(): void {
 
-  var fileBrowser = new FileBrowser('http://localhost:8888', '');
+  let baseUrl = 'http://localhost:8888'
+  let contents = new Contents(baseUrl);
 
-  Widget.attach(fileBrowser, document.body);
+  let fbModel = new FileBrowserViewModel('', contents);
+  let fileBrowser = new FileBrowser(fbModel);
 
-  fileBrowser.listDirectory();
+  var editorModel = new EditorModel();
+  let editor = new EditorWidget(editorModel);
 
-  fileBrowser.onClick = (name, contents) => {
-    console.log(name);
-  }
 
-  window.onresize = () => fileBrowser.update();
+  fbModel.opened.connect((fb, item) => {
+    if (item.type === 'file') {
+      (editor as any)._editor.getDoc().setValue(item.content);
+    }
+  });
+
+  let panel = new SplitPanel();
+  panel.children.assign([fileBrowser, editor]);
+
+  Widget.attach(panel, document.body);
+
+  window.onresize = () => panel.update();
 }
 
 
-window.onload = main;
+main();
