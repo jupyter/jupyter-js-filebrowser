@@ -2,6 +2,11 @@
 | Copyright (c) Jupyter Development Team.
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
+.jp-FileBrowser {
+  overflow: auto;
+}
+
+
 .jp-FileBrowser-list-area {
   margin: 0;
   padding: 0;
@@ -26,6 +31,7 @@
   flex: 1 1 auto;
   overflow: hidden;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 
