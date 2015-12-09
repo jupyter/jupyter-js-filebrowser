@@ -3,8 +3,8 @@
 'use-strict';
 
 import {
-  IContents, INotebookSession, ISessionId, ISessionOptions,
-  IContentsModel
+  IContents, IContentsModel, INotebookSession, ISessionId,
+  ISessionOptions
 } from 'jupyter-js-services';
 
 import * as moment from 'moment';

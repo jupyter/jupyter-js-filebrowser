@@ -1,8 +1,9 @@
 module.exports = function (config) {
   config.set({
     basePath: '..',
+    browsers: ['Firefox'],
     frameworks: ['mocha'],
-    reporters: ['mocha'],
+    reporters: ['mocha', 'coverage'],
     files: [
       { pattern: 'lib/*.*', included: false },
       { pattern: 'package.json', included: false },
@@ -11,6 +12,13 @@ module.exports = function (config) {
       'node_modules/steal/steal.js',
       'test/karma.bootstrap.js'
     ],
+    coverageReporter: {
+      reporters : [
+        { 'type': 'text' },
+        { 'type': 'lcov', dir: 'test/coverage' },
+        { 'type': 'html', dir: 'test/coverage' }
+      ]
+    },
     port: 9876,
     colors: true,
     singleRun: true,

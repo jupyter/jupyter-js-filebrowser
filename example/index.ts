@@ -6,12 +6,16 @@
 'use-strict';
 
 import {
-  Contents, listRunningSessions, connectToSession, ISessionOptions
-} from 'jupyter-js-services';
-
-import {
   EditorModel, EditorWidget
 } from 'jupyter-js-editor';
+
+import {
+  FileBrowser, FileBrowserViewModel
+} from 'jupyter-js-filebrowser';
+
+import {
+  Contents, ISessionOptions, connectToSession, listRunningSessions
+} from 'jupyter-js-services';
 
 import {
   SplitPanel
@@ -20,10 +24,6 @@ import {
 import {
   Widget
 } from 'phosphor-widget';
-
-import {
-  FileBrowser, FileBrowserViewModel
-} from 'jupyter-js-filebrowser';
 
 
 function main(): void {
