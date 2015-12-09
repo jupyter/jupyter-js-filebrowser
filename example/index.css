@@ -9,17 +9,13 @@
   min-height: 400px;
 }
 
-.jp-FileBrowser-list-area {
-  overflow: scroll;
-  height: 100%;
-}
-
 
 .jp-EditorWidget {
   min-height: 200px;
 }
 
-.jp-mod-selected {
+
+.jp-FileBrowser-row.jp-mod-selected {
   background-color: #2196F3;
   color: #F5F5F5;
 }
