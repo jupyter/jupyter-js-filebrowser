@@ -3,7 +3,8 @@
 'use-strict';
 
 import {
-  IContents, INotebookSession, ISessionId, ISessionOptions
+  IContents, INotebookSession, ISessionId, ISessionOptions,
+  IContentsModel
 } from 'jupyter-js-services';
 
 import * as moment from 'moment';
@@ -19,6 +20,10 @@ import {
 import {
   NodeWrapper
 } from 'phosphor-nodewrapper';
+
+import {
+  IChangedArgs, Property
+} from 'phosphor-properties';
 
 import {
   ISignal, Signal, clearSignalData
@@ -78,59 +83,98 @@ const FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
 
 
 /**
- * The contents item type.
+ * An implementation of a file browser view model.
  */
 export
-enum ContentsItemType {
-  Directory,
-  File,
-  Notebook,
-  Unknown
-}
-
-
-/**
- * A contents item.
- */
-export
-interface IContentsItem {
-  name: string;
-  path: string;
-  type: ContentsItemType;
-  created: string;
-  lastModified: string;
-}
-
-
-/**
- * A view model associated with a Jupyter FileBrowser.
- */
-export
-interface IFileBrowserViewModel {
+class FileBrowserViewModel {
   /**
-   * Get a list of running session models.
+   * A signal emitted when an item is opened.
    */
-  listRunningSessions: () => Promise<ISessionId[]>;
+  static openedSignal = new Signal<FileBrowserViewModel, IContentsModel>();
 
   /**
-   * Connect to a session by session id and known options.
+   * Construct a new file browser view model.
    */
-  connectToSession: (id: string, options: ISessionOptions) => Promise<INotebookSession>;
+  constructor(contents: IContents) {
+    this._contents = contents;
+  }
 
   /**
-   * Contents provider.
+   * Get the item opened signal.
    */
-  contents: IContents;
+  get opened(): ISignal<FileBrowserViewModel, IContentsModel> {
+    return FileBrowserViewModel.openedSignal.bind(this);
+  }
 
   /**
-   * The current directory path.
+   * Get the current directory.
    */
-  currentDirectory: string;
+  get currentDirectory(): string {
+    return this._currentDirectory;
+  }
 
   /**
-   * The selected items in the current directory.
+   * Set the current directory.
    */
-  selectedItems: IContentsItem[];
+  set currentDirectory(path: string) {
+    this._currentDirectory = path;
+    this.refresh();
+  }
+
+  /**
+   * Get the current selected items.
+   */
+  get selectedItems(): IContentsModel[] {
+    return this._selectedItems;
+  }
+
+  /**
+   * Set the current selected items.
+   */
+  set selectedItems(items: IContentsModel[]) {
+    this._selectedItems = items;
+  }
+
+  /**
+   * Get the contents provider.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get contents(): IContents {
+    return this._contents;
+  }
+
+  /**
+   * Open the current selected items.
+   *
+   * #### Notes
+   * Emits an [[opened]] signal for each item
+   * after loading the contents.
+   */
+  open(): void {
+    for (let item of this.selectedItems) {
+      this._contents.get(item.path, { type: item.type }
+      ).then((contents: IContentsModel) => {
+        this.opened.emit(contents);
+      });
+    }
+  }
+
+  /**
+   * Refresh the directory contents.
+   */
+  refresh(): void {
+    this._contents.listContents(this._currentDirectory
+    ).then((model: IContentsModel) => {
+      this.opened.emit(model);
+    });
+  }
+
+  private _baseUrl = '';
+  private _selectedItems: IContentsModel[] = [];
+  private _currentDirectory = '';
+  private _contents: IContents = null;
 }
 
 
@@ -156,58 +200,20 @@ class FileBrowser extends Widget {
   }
 
   /**
-   * A signal emitted when item(s) are opened.
-   *
-   * **See also:** [[itemsOpened]]
-   */
-  static itemsOpenedSignal = new Signal<FileBrowser, IContentsItem[]>();
-
-  /**
    * Construct a new file browser widget.
    *
    * @param model - File browser view model instance.
    */
-  constructor(model: IFileBrowserViewModel) {
+  constructor(model: FileBrowserViewModel) {
     super();
     this._model = model;
     this._items = [];
     this.addClass(FILE_BROWSER_CLASS);
-  }
-
-  /**
-   * Get the current directory of the file browser.
-   */
-  get directory(): string {
-    return this._model.currentDirectory;
-  }
-
-  /**
-   * Set the current directory of the file browser.
-   *
-   * @param path - The path of the new directory.
-   */
-  set directory(path: string) {
-    this._model.currentDirectory = path;
-  }
-
-  /**
-   * Get the selected items for the file browser.
-   *
-   * #### Notes
-   * This is a read-only property.
-   */
-  get selectedItems(): IContentsItem[] {
-    return this._model.selectedItems;
-  }
-
-  /**
-   * A signal emitted when item(s) are opened.
-   *
-   * #### Notes
-   * This is a pure delegate to the [[itemsOpenedSignal]].
-   */
-  get itemsOpened(): ISignal<FileBrowser, IContentsItem[]> {
-    return FileBrowser.itemsOpenedSignal.bind(this);
+    this._model.opened.connect((model: FileBrowserViewModel, contents: IContentsModel) => {
+      if (contents.type === 'directory') {
+        this._load(contents);
+      }
+    });
   }
 
   /**
@@ -217,43 +223,6 @@ class FileBrowser extends Widget {
     this._items = null;
     this._model = null;
     clearSignalData(this);
-  }
-
-  /**
-   * Open the currently selected item(s).
-   *
-   * #### Notes
-   * Triggers an [[itemsOpened]] signal with the selected items.
-   *
-   * If the selection includes one or more directories, the contents
-   * will update to list that directory.
-   */
-  open(): void {
-    let items = this._items.filter(item => {
-      return item.selected;
-    });
-    if (!items.length) {
-      return;
-    }
-    let dirs = items.filter(item => {
-      return item.type === ContentsItemType.Directory;
-    });
-
-    if (dirs.length) {
-      this._model.currentDirectory = dirs[0].path;
-      this._listContents();
-    }
-    this.itemsOpened.emit(items);
-  }
-
-  /**
-   * Get the contents of an item.
-   */
-  get(item: IContentsItem): Promise<string> {
-    return this._model.contents.get(item.path, { type: "file" }
-    ).then((msg: any) => {
-      return msg.content;
-    });
   }
 
   /**
@@ -285,7 +254,7 @@ class FileBrowser extends Widget {
     let node = this.node;
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
-    this._listContents();
+    this._model.refresh();
   }
 
   /**
@@ -373,8 +342,11 @@ class FileBrowser extends Widget {
     }
 
     // Set the selected items on the model.
-    this._model.selectedItems = this._items.filter(item => {
+    items = this._items.filter(item => {
       return item.selected;
+    });
+    this._model.selectedItems = items.map(item => {
+      return item.model;
     });
   }
 
@@ -400,68 +372,54 @@ class FileBrowser extends Widget {
     event.stopPropagation();
 
     // Open the selected item.
-    this.open();
+    this._model.open();
   }
 
   /**
-   * List the contents of the current directory.
+   * Load a directory
    */
-  private _listContents() {
-    let currentDir = this._model.currentDirectory;
-    let contents = this._model.contents;
-
+  private _load(payload: IContentsModel): void {
     for (let item of this._items) {
       item.dispose();
     }
     this._items = [];
 
     // Add a parent link if not at the root.
-    if (currentDir) {
+    if (payload.path) {
       let path = '';
-      let last = currentDir.lastIndexOf('/');
+      let last = payload.path.lastIndexOf('/');
       if (last !== -1) {
-        path = currentDir.slice(0, last);
+        path = payload.path.slice(0, last);
       }
       let item = new FileBrowserItem({
         name: '..',
         path: path,
-        type: 'directory'
+        type: 'directory',
+        writable: null,
+        created: null,
+        last_modified: null,
       });
       this._items.push(item);
       this.node.firstChild.appendChild(item.node);
     }
 
-    contents.listContents(currentDir).then((msg: any) => {
-      for (let i = 0; i < msg.content.length; i++) {
-        let item = new FileBrowserItem(msg.content[i] as IContentsJSON)
-        this._items.push(item);
-        this.node.firstChild.appendChild(item.node);
-      }
-    });
+    let content = payload.content;
+    for (let i = 0; i < content.length; i++) {
+      let item = new FileBrowserItem(content[i]);
+      this._items.push(item);
+      this.node.firstChild.appendChild(item.node);
+    }
   }
 
-  private _model: IFileBrowserViewModel = null;
+  private _model: FileBrowserViewModel = null;
   private _items: FileBrowserItem[] = null;
-}
-
-
-/**
- * Interface of a contents item returned by a call to
- * GET /api/contents/[:path] for a directory.
- */
-interface IContentsJSON {
-  name: string;
-  path: string;
-  type: string;
-  created?: string;
-  last_modified?: string;
 }
 
 
 /**
  * An implementation of a file browser item.
  */
-class FileBrowserItem extends NodeWrapper implements IContentsItem {
+class FileBrowserItem extends NodeWrapper {
 
   /**
    * Create a node for a file browser item.
@@ -485,90 +443,32 @@ class FileBrowserItem extends NodeWrapper implements IContentsItem {
    *
    * @param options - Initialization options for the item.
    */
-  constructor(options: IContentsJSON) {
+  constructor(model: IContentsModel) {
     super();
     this.addClass(ROW_CLASS);
-    switch(options.type) {
-    case 'directory':
-      this._type = ContentsItemType.Directory;
-      break;
-    case 'file':
-      this._type = ContentsItemType.File;
-      break;
-    case 'notebook':
-      this._type = ContentsItemType.Notebook
-      break;
-    default:
-      this._type = ContentsItemType.Unknown;
-    }
+    this._model = model;
+
     // Add the appropriate icon based on whether it is a directory.
     let inode = this.node.children[0];
-    if (this._type === ContentsItemType.Directory) {
+    if (model.type === 'directory') {
       inode.classList.add(FOLDER_ICON_CLASS);
     } else {
       inode.classList.add(FILE_ICON_CLASS);
     }
-    this.node.children[1].textContent = options.name;
-    this._name = options.name;
-    this._path = options.path;
-    this._created = options.created || '';
-    this._lastModified = options.last_modified || '';
+    this.node.children[1].textContent = model.name;
 
     // Add the last modified identifier if applicable.
-    if (this._lastModified) {
-      let modText = moment(this._lastModified).fromNow();
+    if (model.last_modified) {
+      let modText = moment(model.last_modified).fromNow();
       this.node.children[2].textContent = modText;
     }
   }
 
   /**
-   * Get the name of the item.
-   *
-   * #### Notes
-   * This is a read-only property.
+   * Get the model assoicated with the item.
    */
-  get name(): string {
-    return this._name;
-  }
-
-  /**
-   * Get the full path to the item.
-   *
-   * #### Notes
-   * This is a read-only property.
-   */
-  get path(): string {
-    return this._path;
-  }
-
-  /**
-   * Get the type of the item.
-   *
-   * #### Notes
-   * This is a read-only property.
-   */
-  get type(): ContentsItemType {
-    return this._type;
-  }
-
-  /**
-   * Get the creation time of the item.
-   *
-   * #### Notes
-   * This is a read-only property.
-   */
-  get created(): string {
-    return this._created;
-  }
-
-  /**
-   * Get the last modified time of the item.
-   *
-   * #### Notes
-   * This is a read-only property.
-   */
-  get lastModified(): string {
-    return this._lastModified;
+  get model(): IContentsModel {
+    return this._model;
   }
 
   /**
@@ -600,9 +500,5 @@ class FileBrowserItem extends NodeWrapper implements IContentsItem {
     this.node.parentNode.removeChild(this.node);
   }
 
-  private _type: ContentsItemType;
-  private _name: string;
-  private _path: string;
-  private _created: string;
-  private _lastModified: string;
+  private _model: IContentsModel = null;
 }

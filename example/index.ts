@@ -22,44 +22,25 @@ import {
 } from 'phosphor-widget';
 
 import {
-  FileBrowser, IFileBrowserViewModel, IContentsItem, ContentsItemType
+  FileBrowser, FileBrowserViewModel
 } from 'jupyter-js-filebrowser';
 
 
 function main(): void {
 
   let baseUrl = 'http://localhost:8888'
-
   let contents = new Contents(baseUrl);
 
-  let items: IContentsItem[] = [];
-
-  let listSessions = function() {
-    return listRunningSessions(baseUrl);
-  }
-
-  let connectSession = function(id: string, options: ISessionOptions) {
-    return connectToSession(id, options);
-  }
-
-  let fbModel = {
-    listRunningSessions: listSessions,
-    connectToSession: connectSession,
-    contents: contents,
-    currentDirectory: '',
-    selectedItems: items
-  }
-
+  let fbModel = new FileBrowserViewModel(contents);
   let fileBrowser = new FileBrowser(fbModel);
 
   var editorModel = new EditorModel();
   let editor = new EditorWidget(editorModel);
 
-  fileBrowser.itemsOpened.connect((fb, items) => {
-    if (items[0].type === ContentsItemType.File) {
-      fileBrowser.get(items[0]).then(contents => {
-        (editor as any)._editor.getDoc().setValue(contents);
-      });
+
+  fbModel.opened.connect((fb, item) => {
+    if (item.type === 'file') {
+      (editor as any)._editor.getDoc().setValue(item.content);
     }
   });
 

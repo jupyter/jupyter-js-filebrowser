@@ -1,50 +1,60 @@
-import { IContents, INotebookSession, ISessionId, ISessionOptions } from 'jupyter-js-services';
+import { IContents, IContentsModel } from 'jupyter-js-services';
 import { Message } from 'phosphor-messaging';
 import { ISignal, Signal } from 'phosphor-signaling';
 import { Widget } from 'phosphor-widget';
 /**
- * The contents item type.
+ * An implementation of a file browser view model.
  */
-export declare enum ContentsItemType {
-    Directory = 0,
-    File = 1,
-    Notebook = 2,
-    Unknown = 3,
-}
-/**
- * A contents item.
- */
-export interface IContentsItem {
-    name: string;
-    path: string;
-    type: ContentsItemType;
-    created: string;
-    lastModified: string;
-}
-/**
- * A view model associated with a Jupyter FileBrowser.
- */
-export interface IFileBrowserViewModel {
+export declare class FileBrowserViewModel {
     /**
-     * Get a list of running session models.
+     * A signal emitted when an item is opened.
      */
-    listRunningSessions: () => Promise<ISessionId[]>;
+    static openedSignal: Signal<FileBrowserViewModel, IContentsModel>;
     /**
-     * Connect to a session by session id and known options.
+     * Construct a new file browser view model.
      */
-    connectToSession: (id: string, options: ISessionOptions) => Promise<INotebookSession>;
+    constructor(contents: IContents);
     /**
-     * Contents provider.
+     * Get the item opened signal.
      */
-    contents: IContents;
+    opened: ISignal<FileBrowserViewModel, IContentsModel>;
     /**
-     * The current directory path.
+     * Get the current directory.
+     */
+    /**
+     * Set the current directory.
      */
     currentDirectory: string;
     /**
-     * The selected items in the current directory.
+     * Get the current selected items.
      */
-    selectedItems: IContentsItem[];
+    /**
+     * Set the current selected items.
+     */
+    selectedItems: IContentsModel[];
+    /**
+     * Get the contents provider.
+     *
+     * #### Notes
+     * This is a read-only property.
+     */
+    contents: IContents;
+    /**
+     * Open the current selected items.
+     *
+     * #### Notes
+     * Emits an [[opened]] signal for each item
+     * after loading the contents.
+     */
+    open(): void;
+    /**
+     * Refresh the directory contents.
+     */
+    refresh(): void;
+    private _baseUrl;
+    private _selectedItems;
+    private _currentDirectory;
+    private _contents;
 }
 /**
  * A widget which hosts a file browser.
@@ -59,58 +69,15 @@ export declare class FileBrowser extends Widget {
      */
     static createNode(): HTMLElement;
     /**
-     * A signal emitted when item(s) are opened.
-     *
-     * **See also:** [[itemsOpened]]
-     */
-    static itemsOpenedSignal: Signal<FileBrowser, IContentsItem[]>;
-    /**
      * Construct a new file browser widget.
      *
      * @param model - File browser view model instance.
      */
-    constructor(model: IFileBrowserViewModel);
-    /**
-     * Get the current directory of the file browser.
-     */
-    /**
-     * Set the current directory of the file browser.
-     *
-     * @param path - The path of the new directory.
-     */
-    directory: string;
-    /**
-     * Get the selected items for the file browser.
-     *
-     * #### Notes
-     * This is a read-only property.
-     */
-    selectedItems: IContentsItem[];
-    /**
-     * A signal emitted when item(s) are opened.
-     *
-     * #### Notes
-     * This is a pure delegate to the [[itemsOpenedSignal]].
-     */
-    itemsOpened: ISignal<FileBrowser, IContentsItem[]>;
+    constructor(model: FileBrowserViewModel);
     /**
      * Dispose of the resources held by the file browser.
      */
     dispose(): void;
-    /**
-     * Open the currently selected item(s).
-     *
-     * #### Notes
-     * Triggers an [[itemsOpened]] signal with the selected items.
-     *
-     * If the selection includes one or more directories, the contents
-     * will update to list that directory.
-     */
-    open(): void;
-    /**
-     * Get the contents of an item.
-     */
-    get(item: IContentsItem): Promise<string>;
     /**
      * Handle the DOM events for the file browser.
      *
@@ -139,9 +106,9 @@ export declare class FileBrowser extends Widget {
      */
     private _evtDblClick(event);
     /**
-     * List the contents of the current directory.
+     * Load a directory
      */
-    private _listContents();
+    private _load(payload);
     private _model;
     private _items;
 }

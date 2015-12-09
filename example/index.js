@@ -12,28 +12,13 @@ var jupyter_js_filebrowser_1 = require('jupyter-js-filebrowser');
 function main() {
     var baseUrl = 'http://localhost:8888';
     var contents = new jupyter_js_services_1.Contents(baseUrl);
-    var items = [];
-    var listSessions = function () {
-        return jupyter_js_services_1.listRunningSessions(baseUrl);
-    };
-    var connectSession = function (id, options) {
-        return jupyter_js_services_1.connectToSession(id, options);
-    };
-    var fbModel = {
-        listRunningSessions: listSessions,
-        connectToSession: connectSession,
-        contents: contents,
-        currentDirectory: '',
-        selectedItems: items
-    };
+    var fbModel = new jupyter_js_filebrowser_1.FileBrowserViewModel(contents);
     var fileBrowser = new jupyter_js_filebrowser_1.FileBrowser(fbModel);
     var editorModel = new jupyter_js_editor_1.EditorModel();
     var editor = new jupyter_js_editor_1.EditorWidget(editorModel);
-    fileBrowser.itemsOpened.connect(function (fb, items) {
-        if (items[0].type === jupyter_js_filebrowser_1.ContentsItemType.File) {
-            fileBrowser.get(items[0]).then(function (contents) {
-                editor._editor.getDoc().setValue(contents);
-            });
+    fbModel.opened.connect(function (fb, item) {
+        if (item.type === 'file') {
+            editor._editor.getDoc().setValue(item.content);
         }
     });
     var panel = new phosphor_splitpanel_1.SplitPanel();
