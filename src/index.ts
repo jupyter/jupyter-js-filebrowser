@@ -375,10 +375,27 @@ class FileBrowser extends Widget {
    * Load a directory
    */
   private _load(payload: IContentsModel): void {
-    for (let item of this._items) {
+
+    let nItems = payload.content.length;
+    let start = 0;
+
+    if (payload.path) {
+      nItems += 1;
+      start = 1;
+    }
+
+    // Remove any excess items.
+    while (payload.content.length > nItems) {
+      let item = this._items.pop();
       item.dispose();
     }
-    this._items = [];
+
+    // Add any missing items.
+    while (payload.content.length < nItems) {
+      let item = new FileBrowserItem();
+      this._items.push(item);
+      this.node.firstChild.appendChild(item.node);
+    }
 
     // Add a parent link if not at the root.
     if (payload.path) {
@@ -387,23 +404,19 @@ class FileBrowser extends Widget {
       if (last !== -1) {
         path = payload.path.slice(0, last);
       }
-      let item = new FileBrowserItem({
+      this._items[0].model = {
         name: '..',
         path: path,
         type: 'directory',
         writable: null,
         created: null,
         last_modified: null,
-      });
-      this._items.push(item);
-      this.node.firstChild.appendChild(item.node);
+      };
     }
 
     let content = payload.content;
-    for (let i = 0; i < content.length; i++) {
-      let item = new FileBrowserItem(content[i]);
-      this._items.push(item);
-      this.node.firstChild.appendChild(item.node);
+    for (let i = start; i < content.length; i++) {
+      this._items[i].model = content[i];
     }
   }
 
@@ -439,24 +452,11 @@ class FileBrowserItem extends NodeWrapper {
    *
    * @param options - Initialization options for the item.
    */
-  constructor(model: IContentsModel) {
+  constructor(model?: IContentsModel) {
     super();
     this.addClass(ROW_CLASS);
-    this._model = model;
-
-    // Add the appropriate icon based on whether it is a directory.
-    let inode = this.node.children[0];
-    if (model.type === 'directory') {
-      inode.classList.add(FOLDER_ICON_CLASS);
-    } else {
-      inode.classList.add(FILE_ICON_CLASS);
-    }
-    this.node.children[1].textContent = model.name;
-
-    // Add the last modified identifier if applicable.
-    if (model.last_modified) {
-      let modText = moment(model.last_modified).fromNow();
-      this.node.children[2].textContent = modText;
+    if (model) {
+      this.model = model;
     }
   }
 
@@ -465,6 +465,28 @@ class FileBrowserItem extends NodeWrapper {
    */
   get model(): IContentsModel {
     return this._model;
+  }
+
+  /**
+   * Set the model associated with the item.
+   */
+  set model(item: IContentsModel) {
+    this._model = item;
+    // Add the appropriate icon based on whether it is a directory.
+    let inode = this.node.children[0];
+    inode.className = ROW_ICON_CLASS;
+    if (item.type === 'directory') {
+      inode.classList.add(FOLDER_ICON_CLASS);
+    } else {
+      inode.classList.add(FILE_ICON_CLASS);
+    }
+    this.node.children[1].textContent = item.name;
+
+    // Add the last modified identifier if applicable.
+    if (item.last_modified) {
+      let modText = moment(item.last_modified).fromNow();
+      this.node.children[2].textContent = modText;
+    }
   }
 
   /**
