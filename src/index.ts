@@ -266,6 +266,9 @@ class FileBrowser extends Widget {
    */
   dispose(): void {
     this._model = null;
+    this._items = null;
+    this._crumbs = null;
+    this._crumbSeps = null;
     super.dispose();
   }
 
