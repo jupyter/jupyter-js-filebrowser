@@ -38,6 +38,31 @@ import './index.css';
 const FILE_BROWSER_CLASS = 'jp-FileBrowser';
 
 /**
+ * The class name added to the header node.
+ */
+const HEADER_CLASS = 'jp-FileBrowser-header';
+
+/**
+ * The class name added to the header file node.
+ */
+const HEADER_FILE_CLASS = 'jp-FileBrowser-header-file';
+
+/**
+ * The class name added to the header modified node.
+ */
+const HEADER_MOD_CLASS = 'jp-FileBrowser-header-modified';
+
+/**
+ * The class name added to the breadcrumb node.
+ */
+const BREADCRUMB_CLASS = 'jp-FileBrowser-breadcrumbs';
+
+/**
+ * The class name added to the breadcrumb node.
+ */
+const BREADCRUMB_ITEM_CLASS = 'jp-FileBrowser-breadcrumb-item';
+
+/**
  * The class name added to FileBrowser rows.
  */
 const LIST_AREA_CLASS = 'jp-FileBrowser-list-area';
@@ -170,29 +195,7 @@ class FileBrowserViewModel {
    */
   refresh() {
     this._contents.listContents(this._path).then(model => {
-      this._items = [];
-      // Add a link to the parent directory if not at the root.
-      if (model.path) {
-        let path = '';
-        let last = model.path.lastIndexOf('/');
-        if (last !== -1) {
-          path = model.path.slice(0, last);
-        }
-        let item: IContentsModel = {
-          name: '..',
-          path: path,
-          type: 'directory',
-          writable: null,
-          created: null,
-          last_modified: null,
-        };
-        this._items.push(item);
-      }
-
-      // Add the rest of the items and emit the model.
-      for (let item of model.content) {
-        this._items.push(item);
-      }
+      this._items = model.content;
       this.opened.emit(model);
     });
   }
@@ -219,9 +222,27 @@ class FileBrowser extends Widget {
    */
   static createNode(): HTMLElement {
     let node = document.createElement('div');
-    let child = document.createElement('ul');
-    child.classList.add(LIST_AREA_CLASS);
-    node.appendChild(child);
+    let breadcrumbs = document.createElement('div');
+    breadcrumbs.classList.add(BREADCRUMB_CLASS);
+
+    // Create the header.
+    let header = document.createElement('div');
+    header.classList.add(HEADER_CLASS);
+    let fileName = document.createElement('span');
+    fileName.textContent = 'File Name';
+    fileName.className = HEADER_FILE_CLASS;
+    let modified = document.createElement('span');
+    modified.textContent = 'Last Modified';
+    modified.className = HEADER_MOD_CLASS;
+    header.appendChild(fileName);
+    header.appendChild(modified);
+
+    let list = document.createElement('ul');
+    list.classList.add(LIST_AREA_CLASS);
+
+    node.appendChild(breadcrumbs);
+    node.appendChild(header);
+    node.appendChild(list);
     return node;
   }
 
@@ -235,6 +256,10 @@ class FileBrowser extends Widget {
     this.addClass(FILE_BROWSER_CLASS);
     this._model = model;
     this._model.opened.connect(this._onOpened.bind(this));
+    this._crumbs = createCrumbs();
+    this._crumbSeps = createCrumbSeparators();
+    let node = this.node.getElementsByClassName(BREADCRUMB_CLASS)[0];
+    node.appendChild(this._crumbs[Crumb.Home]);
   }
 
   /**
@@ -242,6 +267,9 @@ class FileBrowser extends Widget {
    */
   dispose(): void {
     this._model = null;
+    this._items = null;
+    this._crumbs = null;
+    this._crumbSeps = null;
     super.dispose();
   }
 
@@ -288,6 +316,37 @@ class FileBrowser extends Widget {
   }
 
   /**
+   * A handler invoked on an `'update-request'` message.
+   */
+  protected onUpdateRequest(msg: Message): void {
+    // Fetch common variables.
+    let items = this._model.items;
+    let nodes = this._items;
+    let content = this.node.lastChild;
+
+    // Remove any excess item nodes.
+    while (nodes.length > items.length) {
+      let node = nodes.pop();
+      content.removeChild(node);
+    }
+
+    // Add any missing item nodes.
+    while (nodes.length < items.length) {
+      let node = createItemNode();
+      nodes.push(node);
+      content.appendChild(node);
+    }
+
+    // Update the node state to match the model contents.
+    for (let i = 0, n = items.length; i < n; ++i) {
+      updateItemNode(items[i], nodes[i]);
+    }
+
+    // Update the breadcrumb list.
+    updateCrumbs(this._crumbs, this._crumbSeps, this._model.path);
+  }
+
+  /**
    * Handle the `'click'` event for the file browser.
    */
   private _evtClick(event: MouseEvent) {
@@ -296,20 +355,69 @@ class FileBrowser extends Widget {
       return;
     }
 
-    // Fetch common variables.
-    let items = this._model.items;
-    let nodes = this._nodes;
+    // Check for a breadcrumb hit.
+    let index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
+    if (index !== -1) {
+      // Stop the event propagation.
+      event.preventDefault();
+      event.stopPropagation();
 
-    // Find the target row.
-    let index = hitTestNodes(nodes, event.clientX, event.clientY);
+      // If the home node was clicked, set the path to root.
+      if (index == Crumb.Home) {
+        this._model.path = '';
+        return;
+      }
+
+      // Grab the portion of the path based on which node was clicked.
+      let splice = 4 - index;
+      let path = this._model.path.split('/');
+      path = path.splice(0, path.length - splice);
+      this._model.path = path.join('/');
+      return;
+    }
+
+    // Check for a file item hit.
+    index = hitTestNodes(this._items, event.clientX, event.clientY);
+    if (index !== -1) {
+      this._handleFileClick(event, index);;
+    }
+  }
+
+  /**
+   * Handle the `'dblclick'` event for the file browser.
+   */
+  private _evtDblClick(event: MouseEvent) {
+    // Do nothing if it's not a left mouse press.
+    if (event.button !== 0) {
+      return;
+    }
+
+    // Find the target file item.
+    let index = hitTestNodes(this._items, event.clientX, event.clientY);
     if (index === -1) {
       return;
     }
-    let current = nodes[index];
 
     // Stop the event propagation.
     event.preventDefault();
     event.stopPropagation();
+
+    // Open the selected item.
+    this._model.open();
+  }
+
+  /**
+   * Handle a click on a file node.
+   */
+  private _handleFileClick(event: MouseEvent, index: number) {
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Fetch common variables.
+    let items = this._model.items;
+    let nodes = this._items;
+    let current = nodes[index];
 
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
@@ -370,57 +478,6 @@ class FileBrowser extends Widget {
   }
 
   /**
-   * Handle the `'dblclick'` event for the file browser.
-   */
-  private _evtDblClick(event: MouseEvent) {
-    // Do nothing if it's not a left mouse press.
-    if (event.button !== 0) {
-      return;
-    }
-
-    // Find the target row.
-    let index = hitTestNodes(this._nodes, event.clientX, event.clientY);
-    if (index === -1) {
-      return;
-    }
-
-    // Stop the event propagation.
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Open the selected item.
-    this._model.open();
-  }
-
-  /**
-   * A handler invoked on an `'update-request'` message.
-   */
-  protected onUpdateRequest(msg: Message): void {
-    // Fetch common variables.
-    let items = this._model.items;
-    let nodes = this._nodes;
-    let content = this.node.firstChild;
-
-    // Remove any excess item nodes.
-    while (nodes.length > items.length) {
-      let node = nodes.pop();
-      content.removeChild(node);
-    }
-
-    // Add any missing item nodes.
-    while (nodes.length < items.length) {
-      let node = createItemNode();
-      nodes.push(node);
-      content.appendChild(node);
-    }
-
-    // Update the node state to match the model contents.
-    for (let i = 0, n = items.length; i < n; ++i) {
-      updateItemNode(items[i], nodes[i]);
-    }
-  }
-
-  /**
    * Handle an `opened` signal from the model.
    */
   private _onOpened(model: FileBrowserViewModel, contents: IContentsModel): void {
@@ -430,7 +487,21 @@ class FileBrowser extends Widget {
   }
 
   private _model: FileBrowserViewModel = null;
-  private _nodes: HTMLElement[] = [];
+  private _items: HTMLElement[] = [];
+  private _crumbs: HTMLElement[] = [];
+  private _crumbSeps: HTMLElement[] = [];
+
+}
+
+
+/**
+ * Breadcrumb item list enum.
+ */
+enum Crumb {
+  Home,
+  Ellipsis,
+  First,
+  Second
 }
 
 
@@ -494,6 +565,67 @@ function updateItemNode(item: IContentsModel, node: HTMLElement): void {
   icon.className = createIconClass(item);
   text.textContent = createTextContent(item);
   modified.textContent = createModifiedContent(item);
+}
+
+
+/**
+ * Populate the breadcrumb node.
+ */
+function updateCrumbs(breadcrumbs: HTMLElement[], separators: HTMLElement[], path: string) {
+  let node = breadcrumbs[0].parentNode;
+
+  // Remove all but the home node.
+  while (node.firstChild.nextSibling) {
+    node.removeChild(node.firstChild.nextSibling);
+  }
+
+  let parts = path.split('/');
+  if (parts.length > 2) {
+    parts = [parts[parts.length - 2], parts[parts.length - 1]];
+    node.appendChild(separators[0]);
+    node.appendChild(breadcrumbs[Crumb.Ellipsis]);
+  }
+
+  if (path) {
+    node.appendChild(separators[1]);
+    breadcrumbs[Crumb.First].textContent = parts[0];
+    node.appendChild(breadcrumbs[Crumb.First]);
+    if (parts.length === 2) {
+      node.appendChild(separators[2]);
+      breadcrumbs[Crumb.Second].textContent = parts[1];
+      node.appendChild(breadcrumbs[Crumb.Second]);
+    }
+  }
+}
+
+
+/**
+ * Create the breadcrumb nodes.
+ */
+function createCrumbs(): HTMLElement[] {
+  let home = document.createElement('i');
+  home.className = 'fa fa-home ' + BREADCRUMB_ITEM_CLASS;
+  let ellipsis = document.createElement('i');
+  ellipsis.className = 'fa fa-ellipsis-h ' + BREADCRUMB_ITEM_CLASS;
+  let first = document.createElement('span');
+  first.className = BREADCRUMB_ITEM_CLASS;
+  let second = document.createElement('span');
+  second.className = BREADCRUMB_ITEM_CLASS;
+  return [home, ellipsis, first, second];
+}
+
+
+/**
+ * Create the breadcrumb separator nodes.
+ */
+function createCrumbSeparators(): HTMLElement[] {
+  let items: HTMLElement[] = [];
+  for (let i = 0; i < 3; i++) {
+    let item = document.createElement('i');
+    item.className = 'fa fa-angle-right ' + BREADCRUMB_ITEM_CLASS;
+    items.push(item);
+  }
+  return items;
 }
 
 

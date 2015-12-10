@@ -98,6 +98,10 @@ export declare class FileBrowser extends Widget {
      */
     protected onBeforeDetach(msg: Message): void;
     /**
+     * A handler invoked on an `'update-request'` message.
+     */
+    protected onUpdateRequest(msg: Message): void;
+    /**
      * Handle the `'click'` event for the file browser.
      */
     private _evtClick(event);
@@ -106,13 +110,15 @@ export declare class FileBrowser extends Widget {
      */
     private _evtDblClick(event);
     /**
-     * A handler invoked on an `'update-request'` message.
+     * Handle a click on a file node.
      */
-    protected onUpdateRequest(msg: Message): void;
+    private _handleFileClick(event, index);
     /**
      * Handle an `opened` signal from the model.
      */
     private _onOpened(model, contents);
     private _model;
-    private _nodes;
+    private _items;
+    private _crumbs;
+    private _crumbSeps;
 }

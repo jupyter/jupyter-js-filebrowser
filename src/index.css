@@ -7,6 +7,33 @@
 }
 
 
+.jp-FileBrowser-breadcrumbs {
+  padding: 5px;
+}
+
+
+.jp-FileBrowser-breadcrumb-item {
+  margin-right: 5px;
+}
+
+
+.jp-FileBrowser-header {
+  display: flex;
+  flex-direction: row;
+  padding: 5px;
+}
+
+
+.jp-FileBrowser-header-file {
+  flex: 1 1 auto;
+}
+
+
+.jp-FileBrowser-header-modified {
+  flex: 0 0 auto;
+}
+
+
 .jp-FileBrowser-list-area {
   margin: 0;
   padding: 0;
