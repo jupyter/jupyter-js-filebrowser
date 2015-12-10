@@ -470,7 +470,7 @@ class FileBrowser extends Widget {
       }
 
       // Grab the portion of the path based on which node was clicked.
-      let splice = 4 - index;
+      let splice = 3 - index;
       let path = this._model.path.split('/');
       path = path.splice(0, path.length - splice);
       this._model.path = path.join('/');
