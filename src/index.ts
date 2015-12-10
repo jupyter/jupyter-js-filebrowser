@@ -760,8 +760,11 @@ function createButtons(buttonBar: HTMLElement): HTMLElement[] {
     buttons.push(button);
   }
   buttons[Button.New].classList.add('fa-plus');
+  buttons[Button.New].title = 'Create New';
   buttons[Button.Upload].classList.add('fa-upload');
+  buttons[Button.Upload].title = 'Upload File(s)';
   buttons[Button.Refresh].classList.add('fa-refresh');
+  buttons[Button.Refresh].title = 'Refresh File List';
   return buttons;
 }
 
