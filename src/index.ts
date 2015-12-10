@@ -10,8 +10,16 @@ import {
 import * as moment from 'moment';
 
 import {
+  DelegateCommand, ICommand
+} from 'phosphor-command';
+
+import {
   hitTest
 } from 'phosphor-domutil';
+
+import {
+  Menu, MenuBar, MenuItem
+} from 'phosphor-menus';
 
 import {
   Message
@@ -206,6 +214,17 @@ class FileBrowserViewModel {
   }
 
   /**
+   * Create a new untitled file or directory in the current directory.
+   */
+  newUntitled(type: string): Promise<IContentsModel> {
+    return this._contents.newUntitled(this._path, { type: type, ext: '' }
+    ).then(contents => {
+        this.refresh();
+        return contents
+    });
+  }
+
+  /**
    * Refresh the model contents.
    */
   refresh() {
@@ -290,6 +309,12 @@ class FileBrowser extends Widget {
     // Create the button nodes and add to button node.
     let buttons = this.node.getElementsByClassName(BUTTON_CLASS)[0];
     this._buttons = createButtons(buttons as HTMLElement);
+
+    // Create the "new" menu.
+    let command = new DelegateCommand(args => {
+      this._handleNewCommand(args);
+    });
+    this._newMenu = createMenu(command);
   }
 
   /**
@@ -401,6 +426,9 @@ class FileBrowser extends Widget {
       this._buttons[index].classList.add(SELECTED_CLASS);
       if (index === Button.Refresh) {
         this._model.refresh();
+      } else if (index === Button.Add) {
+        let rect = this._buttons[index].getBoundingClientRect();
+        this._newMenu.open(rect.left, rect.bottom, false, true);
       }
     }
   }
@@ -551,6 +579,13 @@ class FileBrowser extends Widget {
   }
 
   /**
+   * Handle a "new" command execution.
+   */
+  private _handleNewCommand(type: string): void {
+    this._model.newUntitled(type);
+  }
+
+  /**
    * Handle an `opened` signal from the model.
    */
   private _onOpened(model: FileBrowserViewModel, contents: IContentsModel): void {
@@ -564,6 +599,7 @@ class FileBrowser extends Widget {
   private _crumbs: HTMLElement[] = [];
   private _crumbSeps: HTMLElement[] = [];
   private _buttons: HTMLElement[] = [];
+  private _newMenu: Menu = null;
 }
 
 
@@ -727,6 +763,30 @@ function createButtons(buttonBar: HTMLElement): HTMLElement[] {
   buttons[Button.Upload].classList.add('fa-upload');
   buttons[Button.Refresh].classList.add('fa-refresh');
   return buttons;
+}
+
+
+/**
+ * Create the "new" menu.
+ */
+function createMenu(command: ICommand): Menu {
+  return new Menu([
+    new MenuItem({
+      text: 'Notebook',
+      command: command,
+      commandArgs: 'notebook'
+    }),
+    new MenuItem({
+      text: 'File',
+      command: command,
+      commandArgs: 'file'
+    }),
+    new MenuItem({
+      text: 'Directory',
+      command: command,
+      commandArgs: 'directory'
+    })
+  ]);
 }
 
 

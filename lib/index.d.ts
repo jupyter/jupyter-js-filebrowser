@@ -48,6 +48,10 @@ export declare class FileBrowserViewModel {
      */
     open(): void;
     /**
+     * Create a new untitled file or directory in the current directory.
+     */
+    newUntitled(type: string): Promise<IContentsModel>;
+    /**
      * Refresh the model contents.
      */
     refresh(): void;
@@ -122,6 +126,10 @@ export declare class FileBrowser extends Widget {
      */
     private _handleFileClick(event, index);
     /**
+     * Handle a "new" command execution.
+     */
+    private _handleNewCommand(type);
+    /**
      * Handle an `opened` signal from the model.
      */
     private _onOpened(model, contents);
@@ -130,4 +138,5 @@ export declare class FileBrowser extends Widget {
     private _crumbs;
     private _crumbSeps;
     private _buttons;
+    private _newMenu;
 }
