@@ -258,7 +258,8 @@ class FileBrowser extends Widget {
     this._model.opened.connect(this._onOpened.bind(this));
     this._crumbs = createCrumbs();
     this._crumbSeps = createCrumbSeparators();
-    this.node.firstChild.appendChild(this._crumbs[Crumb.Home]);
+    let node = this.node.getElementsByClassName(BREADCRUMB_CLASS)[0];
+    node.appendChild(this._crumbs[Crumb.Home]);
   }
 
   /**
@@ -342,8 +343,7 @@ class FileBrowser extends Widget {
     }
 
     // Update the breadcrumb list.
-    updateCrumbs(this.node.firstChild as HTMLElement,
-                 this._crumbs, this._crumbSeps, this._model.path);
+    updateCrumbs(this._crumbs, this._crumbSeps, this._model.path);
   }
 
   /**
@@ -356,27 +356,68 @@ class FileBrowser extends Widget {
     }
 
     // Check for a breadcrumb hit.
-    if (hitTest(this.node.firstChild as HTMLElement, event.clientX, event.clientY)) {
-      this._handleCrumbEvent(event);
+    let index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
+    if (index !== -1) {
+      // Stop the event propagation.
+      event.preventDefault();
+      event.stopPropagation();
+
+      // If the home node was clicked, set the path to root.
+      if (index == Crumb.Home) {
+        this._model.path = '';
+        return;
+      }
+
+      // Grab the portion of the path based on which node was clicked.
+      let splice = 4 - index;
+      let path = this._model.path.split('/');
+      path = path.splice(0, path.length - splice);
+      this._model.path = path.join('/');
       return;
     }
 
     // Check for a file item hit.
+    index = hitTestNodes(this._items, event.clientX, event.clientY);
+    if (index !== -1) {
+      this._handleFileClick(event, index);;
+    }
+  }
+
+  /**
+   * Handle the `'dblclick'` event for the file browser.
+   */
+  private _evtDblClick(event: MouseEvent) {
+    // Do nothing if it's not a left mouse press.
+    if (event.button !== 0) {
+      return;
+    }
+
+    // Find the target file item.
     let index = hitTestNodes(this._items, event.clientX, event.clientY);
     if (index === -1) {
       return;
     }
 
-    // Fetch common variables.
-    let items = this._model.items;
-    let nodes = this._items;
-
-
-    let current = nodes[index];
-
     // Stop the event propagation.
     event.preventDefault();
     event.stopPropagation();
+
+    // Open the selected item.
+    this._model.open();
+  }
+
+  /**
+   * Handle a click on a file node.
+   */
+  private _handleFileClick(event: MouseEvent, index: number) {
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Fetch common variables.
+    let items = this._model.items;
+    let nodes = this._items;
+    let current = nodes[index];
 
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
@@ -434,48 +475,6 @@ class FileBrowser extends Widget {
       }
     }
     this._model.selected = selected;
-  }
-
-  /**
-   * Handle the `'dblclick'` event for the file browser.
-   */
-  private _evtDblClick(event: MouseEvent) {
-    // Do nothing if it's not a left mouse press.
-    if (event.button !== 0) {
-      return;
-    }
-
-    // Find the target file item.
-    let index = hitTestNodes(this._items, event.clientX, event.clientY);
-    if (index === -1) {
-      return;
-    }
-
-    // Stop the event propagation.
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Open the selected item.
-    this._model.open();
-  }
-
-  private _handleCrumbEvent(event: MouseEvent) {
-    // Stop the event propagation.
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Find the matching node.
-    let i = hitTestNodes(this._crumbs, event.clientX, event.clientY);
-
-    if (i == Crumb.Home) {
-      this._model.path = '';
-      return;
-    }
-
-    let splice = 4 - i;
-    let path = this._model.path.split('/');
-    path = path.splice(0, path.length - splice);
-    this._model.path = path.join('/');
   }
 
   /**
@@ -572,7 +571,9 @@ function updateItemNode(item: IContentsModel, node: HTMLElement): void {
 /**
  * Populate the breadcrumb node.
  */
-function updateCrumbs(node: HTMLElement, breadcrumbs: HTMLElement[], separators: HTMLElement[], path: string) {
+function updateCrumbs(breadcrumbs: HTMLElement[], separators: HTMLElement[], path: string) {
+  let node = breadcrumbs[0].parentNode;
+
   // Remove all but the home node.
   while (node.firstChild.nextSibling) {
     node.removeChild(node.firstChild.nextSibling);

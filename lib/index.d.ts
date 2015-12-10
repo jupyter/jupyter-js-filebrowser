@@ -109,7 +109,10 @@ export declare class FileBrowser extends Widget {
      * Handle the `'dblclick'` event for the file browser.
      */
     private _evtDblClick(event);
-    private _handleCrumbEvent(event);
+    /**
+     * Handle a click on a file node.
+     */
+    private _handleFileClick(event, index);
     /**
      * Handle an `opened` signal from the model.
      */
