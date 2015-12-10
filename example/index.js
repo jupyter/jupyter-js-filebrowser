@@ -4,11 +4,11 @@
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
 'use-strict';
-var jupyter_js_services_1 = require('jupyter-js-services');
 var jupyter_js_editor_1 = require('jupyter-js-editor');
+var jupyter_js_filebrowser_1 = require('jupyter-js-filebrowser');
+var jupyter_js_services_1 = require('jupyter-js-services');
 var phosphor_splitpanel_1 = require('phosphor-splitpanel');
 var phosphor_widget_1 = require('phosphor-widget');
-var jupyter_js_filebrowser_1 = require('jupyter-js-filebrowser');
 function main() {
     var baseUrl = 'http://localhost:8888';
     var contents = new jupyter_js_services_1.Contents(baseUrl);

@@ -109,6 +109,7 @@ export declare class FileBrowser extends Widget {
      * A handler invoked on an `'update-request'` message.
      */
     protected onUpdateRequest(msg: Message): void;
+    private _handleBreadcrumbEvent(event);
     /**
      * Handle an `opened` signal from the model.
      */

@@ -38,6 +38,21 @@ import './index.css';
 const FILE_BROWSER_CLASS = 'jp-FileBrowser';
 
 /**
+ * The class name added to the header node.
+ */
+const HEADER_CLASS = 'jp-FileBrowser-header';
+
+/**
+ * The class name added to the breadcrumb node.
+ */
+const BREADCRUMB_CLASS = 'jp-FileBrowser-breadcrumbs';
+
+/**
+ * The class name added to the breadcrumb node.
+ */
+const BREADCRUMB_ITEM_CLASS = 'jp-FileBrowser-breadcrumb-item';
+
+/**
  * The class name added to FileBrowser rows.
  */
 const LIST_AREA_CLASS = 'jp-FileBrowser-list-area';
@@ -170,29 +185,7 @@ class FileBrowserViewModel {
    */
   refresh() {
     this._contents.listContents(this._path).then(model => {
-      this._items = [];
-      // Add a link to the parent directory if not at the root.
-      if (model.path) {
-        let path = '';
-        let last = model.path.lastIndexOf('/');
-        if (last !== -1) {
-          path = model.path.slice(0, last);
-        }
-        let item: IContentsModel = {
-          name: '..',
-          path: path,
-          type: 'directory',
-          writable: null,
-          created: null,
-          last_modified: null,
-        };
-        this._items.push(item);
-      }
-
-      // Add the rest of the items and emit the model.
-      for (let item of model.content) {
-        this._items.push(item);
-      }
+      this._items = model.content;
       this.opened.emit(model);
     });
   }
@@ -219,9 +212,27 @@ class FileBrowser extends Widget {
    */
   static createNode(): HTMLElement {
     let node = document.createElement('div');
-    let child = document.createElement('ul');
-    child.classList.add(LIST_AREA_CLASS);
-    node.appendChild(child);
+    let breadcrumbs = document.createElement('div');
+    breadcrumbs.classList.add(BREADCRUMB_CLASS);
+
+    // Create the header.
+    let header = document.createElement('div');
+    header.classList.add(HEADER_CLASS);
+    let fileName = document.createElement('span');
+    fileName.textContent = 'File Name';
+    fileName.style.flex = '1 1 auto';
+    let modified = document.createElement('span');
+    modified.textContent = 'Last Modified';
+    modified.style.flex = '0 0 auto';
+    header.appendChild(fileName);
+    header.appendChild(modified);
+
+    let list = document.createElement('ul');
+    list.classList.add(LIST_AREA_CLASS);
+
+    node.appendChild(breadcrumbs);
+    node.appendChild(header);
+    node.appendChild(list);
     return node;
   }
 
@@ -296,15 +307,23 @@ class FileBrowser extends Widget {
       return;
     }
 
+    // Check for a breadcrumb hit.
+    if (hitTest(this.node.firstChild as HTMLElement, event.clientX, event.clientY)) {
+      this._handleBreadcrumbEvent(event);
+      return;
+    }
+
+    // Check for a file item hit.
+    let index = hitTestNodes(this._nodes, event.clientX, event.clientY);
+    if (index === -1) {
+      return;
+    }
+
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._nodes;
 
-    // Find the target row.
-    let index = hitTestNodes(nodes, event.clientX, event.clientY);
-    if (index === -1) {
-      return;
-    }
+
     let current = nodes[index];
 
     // Stop the event propagation.
@@ -399,7 +418,7 @@ class FileBrowser extends Widget {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._nodes;
-    let content = this.node.firstChild;
+    let content = this.node.lastChild;
 
     // Remove any excess item nodes.
     while (nodes.length > items.length) {
@@ -417,6 +436,37 @@ class FileBrowser extends Widget {
     // Update the node state to match the model contents.
     for (let i = 0, n = items.length; i < n; ++i) {
       updateItemNode(items[i], nodes[i]);
+    }
+
+    // Update the breadcrumb list.
+    createBreadcrumbs(this.node.firstChild as HTMLElement, this._model.path);
+  }
+
+  private _handleBreadcrumbEvent(event: MouseEvent) {
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Find the matching node.
+
+    let i = hitTestNodes(this.node.firstChild.childNodes, event.clientX, event.clientY);
+    let total = this.node.firstChild.childNodes.length;
+
+    // Take the appropriate action.
+    let splice = 0;
+    if (i == 0) {
+      this._model.path = '';
+    } else if (i === total - 5) {
+      splice = 3;
+    } else if (i === total - 3) {
+      splice = 2;
+    } else if (i === total - 1) {
+      splice = 1;
+    }
+    if (splice) {
+      let path = this._model.path.split('/');
+      path = path.splice(0, path.length - splice);
+      this._model.path = path.join('/');
     }
   }
 
@@ -498,11 +548,55 @@ function updateItemNode(item: IContentsModel, node: HTMLElement): void {
 
 
 /**
+ * Populate the breadcrumb node.
+ */
+function createBreadcrumbs(node: HTMLElement, path: string) {
+  let parts = path.split('/');
+  if (parts.length > 2) {
+    parts = ['...', parts[parts.length - 2], parts[parts.length - 1]];
+  }
+
+  while (node.firstChild) {
+    node.removeChild(node.firstChild);
+  }
+
+  let home = document.createElement('i');
+  home.className = 'fa';
+  home.classList.add('fa-home');
+  home.classList.add(BREADCRUMB_ITEM_CLASS);
+  node.appendChild(home);
+
+  if (path) {
+    for (let part of parts) {
+      let angle = document.createElement('i');
+      angle.className = 'fa';
+      angle.classList.add('fa-angle-right');
+      angle.classList.add(BREADCRUMB_ITEM_CLASS);
+      node.appendChild(angle);
+
+      if (part === '...') {
+        let item = document.createElement('i');
+        item.className = 'fa';
+        item.classList.add('fa-ellipsis-h');
+        item.classList.add(BREADCRUMB_ITEM_CLASS);
+        node.appendChild(item);
+
+      } else {
+        let item = document.createElement('span');
+        item.textContent = part;
+        item.classList.add(BREADCRUMB_ITEM_CLASS);
+        node.appendChild(item);
+      }
+    }
+  }
+}
+
+/**
  * Get the index of the node at a client position, or `-1`.
  */
-function hitTestNodes(nodes: HTMLElement[], x: number, y: number): number {
+function hitTestNodes(nodes: HTMLElement[] | NodeList, x: number, y: number): number {
   for (let i = 0, n = nodes.length; i < n; ++i) {
-    if (hitTest(nodes[i], x, y)) return i;
+    if (hitTest(nodes[i] as HTMLElement, x, y)) return i;
   }
   return -1;
 }
