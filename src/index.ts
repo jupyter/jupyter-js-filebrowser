@@ -428,7 +428,7 @@ class FileBrowser extends Widget {
         this._model.refresh();
       } else if (index === Button.New) {
         let rect = this._buttons[index].getBoundingClientRect();
-        this._newMenu.open(rect.left, rect.bottom, false, true);
+        this._newMenu.popup(rect.left, rect.bottom, false, true);
       }
     }
   }
