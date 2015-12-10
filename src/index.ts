@@ -426,7 +426,7 @@ class FileBrowser extends Widget {
       this._buttons[index].classList.add(SELECTED_CLASS);
       if (index === Button.Refresh) {
         this._model.refresh();
-      } else if (index === Button.Add) {
+      } else if (index === Button.New) {
         let rect = this._buttons[index].getBoundingClientRect();
         this._newMenu.open(rect.left, rect.bottom, false, true);
       }
@@ -618,7 +618,7 @@ enum Crumb {
  * Button item list enum.
  */
 enum Button {
-  Add,
+  New,
   Upload,
   Refresh
 }
@@ -759,7 +759,7 @@ function createButtons(buttonBar: HTMLElement): HTMLElement[] {
     buttonBar.appendChild(button);
     buttons.push(button);
   }
-  buttons[Button.Add].classList.add('fa-plus');
+  buttons[Button.New].classList.add('fa-plus');
   buttons[Button.Upload].classList.add('fa-upload');
   buttons[Button.Refresh].classList.add('fa-refresh');
   return buttons;
