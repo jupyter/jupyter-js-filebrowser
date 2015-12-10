@@ -38,6 +38,21 @@ import './index.css';
 const FILE_BROWSER_CLASS = 'jp-FileBrowser';
 
 /**
+ * The class name added to the button node.
+ */
+const BUTTON_CLASS = 'jp-FileBrowser-button';
+
+/**
+ * The class name added to the button nodes.
+ */
+const BUTTON_ITEM_CLASS = 'jp-FileBrowser-button-item';
+
+/**
+ * The class name added to the button nodes.
+ */
+const BUTTON_SELECTED_CLASS = 'jp-FileBrowser-button-';
+
+/**
  * The class name added to the header node.
  */
 const HEADER_CLASS = 'jp-FileBrowser-header';
@@ -222,8 +237,14 @@ class FileBrowser extends Widget {
    */
   static createNode(): HTMLElement {
     let node = document.createElement('div');
+
+    // Create the breadcrumb node.
     let breadcrumbs = document.createElement('div');
     breadcrumbs.classList.add(BREADCRUMB_CLASS);
+
+    // Create the button node.
+    let buttonBar = document.createElement('ul');
+    buttonBar.className = BUTTON_CLASS;
 
     // Create the header.
     let header = document.createElement('div');
@@ -237,10 +258,13 @@ class FileBrowser extends Widget {
     header.appendChild(fileName);
     header.appendChild(modified);
 
+    // Create the file list.
     let list = document.createElement('ul');
     list.classList.add(LIST_AREA_CLASS);
 
+    // Add the children.
     node.appendChild(breadcrumbs);
+    node.appendChild(buttonBar);
     node.appendChild(header);
     node.appendChild(list);
     return node;
@@ -256,10 +280,16 @@ class FileBrowser extends Widget {
     this.addClass(FILE_BROWSER_CLASS);
     this._model = model;
     this._model.opened.connect(this._onOpened.bind(this));
+
+    // Create the crumb nodes add add to crumb node.
     this._crumbs = createCrumbs();
     this._crumbSeps = createCrumbSeparators();
-    let node = this.node.getElementsByClassName(BREADCRUMB_CLASS)[0];
-    node.appendChild(this._crumbs[Crumb.Home]);
+    let crumbs = this.node.getElementsByClassName(BREADCRUMB_CLASS)[0];
+    crumbs.appendChild(this._crumbs[Crumb.Home]);
+
+    // Create the button nodes and add to button node.
+    let buttons = this.node.getElementsByClassName(BUTTON_CLASS)[0];
+    this._buttons = createButtons(buttons as HTMLElement);
   }
 
   /**
@@ -270,6 +300,7 @@ class FileBrowser extends Widget {
     this._items = null;
     this._crumbs = null;
     this._crumbSeps = null;
+    this._buttons = null;
     super.dispose();
   }
 
@@ -285,6 +316,12 @@ class FileBrowser extends Widget {
    */
   handleEvent(event: Event): void {
     switch (event.type) {
+    case 'mousedown':
+      this._evtMousedown(event as MouseEvent);
+      break;
+    case 'mouseup':
+      this._evtMouseup(event as MouseEvent);
+      break;
     case 'click':
       this._evtClick(event as MouseEvent);
       break;
@@ -300,6 +337,8 @@ class FileBrowser extends Widget {
   protected onAfterAttach(msg: Message): void {
     super.onAfterAttach(msg);
     let node = this.node;
+    node.addEventListener('mousedown', this);
+    node.addEventListener('mouseup', this);
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
     this._model.refresh();
@@ -311,6 +350,8 @@ class FileBrowser extends Widget {
   protected onBeforeDetach(msg: Message): void {
     super.onBeforeDetach(msg);
     let node = this.node;
+    node.removeEventListener('mousedown', this);
+    node.removeEventListener('mouseup', this);
     node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
   }
@@ -344,6 +385,38 @@ class FileBrowser extends Widget {
 
     // Update the breadcrumb list.
     updateCrumbs(this._crumbs, this._crumbSeps, this._model.path);
+  }
+
+  /**
+   * Handle the `'mousedown'` event for the file browser.
+   */
+  private _evtMousedown(event: MouseEvent) {
+    // Do nothing if it's not a left mouse press.
+    if (event.button !== 0) {
+      return;
+    }
+
+    let index = hitTestNodes(this._buttons, event.clientX, event.clientY);
+    if (index !== -1) {
+      this._buttons[index].classList.add(SELECTED_CLASS);
+      if (index === Button.Refresh) {
+        this._model.refresh();
+      }
+    }
+  }
+
+  /**
+   * Handle the `'mouseup'` event for the file browser.
+   */
+  private _evtMouseup(event: MouseEvent) {
+    // Do nothing if it's not a left mouse press.
+    if (event.button !== 0) {
+      return;
+    }
+
+    for (let node of this._buttons) {
+      node.classList.remove(SELECTED_CLASS);
+    }
   }
 
   /**
@@ -490,7 +563,7 @@ class FileBrowser extends Widget {
   private _items: HTMLElement[] = [];
   private _crumbs: HTMLElement[] = [];
   private _crumbSeps: HTMLElement[] = [];
-
+  private _buttons: HTMLElement[] = [];
 }
 
 
@@ -502,6 +575,16 @@ enum Crumb {
   Ellipsis,
   First,
   Second
+}
+
+
+/**
+ * Button item list enum.
+ */
+enum Button {
+  Add,
+  Upload,
+  Refresh
 }
 
 
@@ -626,6 +709,24 @@ function createCrumbSeparators(): HTMLElement[] {
     items.push(item);
   }
   return items;
+}
+
+
+/**
+ * Create the button nodes.
+ */
+function createButtons(buttonBar: HTMLElement): HTMLElement[] {
+  let buttons: HTMLElement[] = [];
+  for (let i = 0; i < 3; i++) {
+    let button = document.createElement('li');
+    button.className = BUTTON_ITEM_CLASS + ' fa';
+    buttonBar.appendChild(button);
+    buttons.push(button);
+  }
+  buttons[Button.Add].classList.add('fa-plus');
+  buttons[Button.Upload].classList.add('fa-upload');
+  buttons[Button.Refresh].classList.add('fa-refresh');
+  return buttons;
 }
 
 

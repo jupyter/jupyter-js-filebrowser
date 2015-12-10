@@ -102,6 +102,14 @@ export declare class FileBrowser extends Widget {
      */
     protected onUpdateRequest(msg: Message): void;
     /**
+     * Handle the `'mousedown'` event for the file browser.
+     */
+    private _evtMousedown(event);
+    /**
+     * Handle the `'mouseup'` event for the file browser.
+     */
+    private _evtMouseup(event);
+    /**
      * Handle the `'click'` event for the file browser.
      */
     private _evtClick(event);
@@ -121,4 +129,5 @@ export declare class FileBrowser extends Widget {
     private _items;
     private _crumbs;
     private _crumbSeps;
+    private _buttons;
 }

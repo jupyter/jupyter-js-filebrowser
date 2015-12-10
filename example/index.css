@@ -9,6 +9,21 @@
   min-height: 400px;
 }
 
+
+.jp-FileBrowser-button-item {
+  background-color: #FAFAFA;
+  font-size: 16px;
+  border: 1px solid #757575;
+  line-height: 20px;
+}
+
+
+.jp-FileBrowser-button-item.jp-mod-selected {
+  background-color: #2196F3;
+  color: #F5F5F5;
+}
+
+
 .jp-FileBrowser-breadcrumbs {
 
 }
