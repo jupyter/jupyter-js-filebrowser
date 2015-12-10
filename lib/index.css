@@ -24,6 +24,16 @@
 }
 
 
+.jp-FileBrowser-header-file {
+  flex: 1 1 auto;
+}
+
+
+.jp-FileBrowser-header-modified {
+  flex: 0 0 auto;
+}
+
+
 .jp-FileBrowser-list-area {
   margin: 0;
   padding: 0;
@@ -55,4 +65,5 @@
 .jp-FileBrowser-item-modified {
   flex: 0 0 auto;
   margin-left: 7px;
+  text-overflow: ellipsis;
 }
