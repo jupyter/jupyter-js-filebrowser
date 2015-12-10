@@ -311,7 +311,7 @@ class FileBrowser extends Widget {
     this._buttons = createButtons(buttons as HTMLElement);
 
     // Create the "new" menu.
-    let command = new DelegateCommand(args => {
+    let command = new DelegateCommand((args: string) => {
       this._handleNewCommand(args);
     });
     this._newMenu = createMenu(command);
