@@ -56,9 +56,9 @@ const BUTTON_CLASS = 'jp-FileBrowser-button';
 const BUTTON_ITEM_CLASS = 'jp-FileBrowser-button-item';
 
 /**
- * The class name added to the button nodes.
+ * The class name added to the upload button node.
  */
-const BUTTON_SELECTED_CLASS = 'jp-FileBrowser-button-';
+const UPLOAD_CLASS = 'jp-FileBrowser-upload';
 
 /**
  * The class name added to the header node.
@@ -309,6 +309,8 @@ class FileBrowser extends Widget {
     // Create the button nodes and add to button node.
     let buttons = this.node.getElementsByClassName(BUTTON_CLASS)[0];
     this._buttons = createButtons(buttons as HTMLElement);
+    let input = this._buttons[Button.Upload].lastChild;
+    (input as HTMLElement).onchange = this._handleUploadEvent.bind(this);
 
     // Create the "new" menu.
     let command = new DelegateCommand((args: string) => {
@@ -579,6 +581,13 @@ class FileBrowser extends Widget {
   }
 
   /**
+   * Handle a file upload event.
+   */
+  private _handleUploadEvent(event: Event) {
+    console.log((event.target as any).files);
+  }
+
+  /**
    * Handle a "new" command execution.
    */
   private _handleNewCommand(type: string): void {
@@ -770,7 +779,7 @@ function createButtons(buttonBar: HTMLElement): HTMLElement[] {
   let file = document.createElement('input');
   file.setAttribute("type", "file");
   file.setAttribute("multiple", "multiple");
-  buttons[Button.Upload].classList.add('jp-FileBrowser-upload');
+  buttons[Button.Upload].classList.add(UPLOAD_CLASS);
   buttons[Button.Upload].appendChild(text);
   buttons[Button.Upload].appendChild(file);
   buttons[Button.Upload].title = 'Upload File(s)';

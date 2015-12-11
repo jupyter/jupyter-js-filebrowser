@@ -126,6 +126,10 @@ export declare class FileBrowser extends Widget {
      */
     private _handleFileClick(event, index);
     /**
+     * Handle a file upload event.
+     */
+    private _handleUploadEvent(event);
+    /**
      * Handle a "new" command execution.
      */
     private _handleNewCommand(type);
