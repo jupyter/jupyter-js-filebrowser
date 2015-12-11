@@ -12,6 +12,7 @@
     "steal": "^0.12.7"
   },
   "devDependencies": {
+    "jupyter-js-services": "^0.2.2",
     "rimraf": "^2.4.4",
     "typescript": "^1.7.3"
   },

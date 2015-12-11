@@ -17,6 +17,25 @@
 }
 
 
+.jp-FileBrowser-button {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  list-style-type: none;
+  margin: 0;
+  padding-left: 3px;
+}
+
+
+.jp-FileBrowser-button-item {
+  flex: 1 1 auto;
+  text-align: center;
+  vertical-align: middle;
+  margin-right: 3px;
+}
+
+
 .jp-FileBrowser-header {
   display: flex;
   flex-direction: row;

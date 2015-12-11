@@ -48,6 +48,10 @@ export declare class FileBrowserViewModel {
      */
     open(): void;
     /**
+     * Create a new untitled file or directory in the current directory.
+     */
+    newUntitled(type: string): Promise<IContentsModel>;
+    /**
      * Refresh the model contents.
      */
     refresh(): void;
@@ -102,6 +106,14 @@ export declare class FileBrowser extends Widget {
      */
     protected onUpdateRequest(msg: Message): void;
     /**
+     * Handle the `'mousedown'` event for the file browser.
+     */
+    private _evtMousedown(event);
+    /**
+     * Handle the `'mouseup'` event for the file browser.
+     */
+    private _evtMouseup(event);
+    /**
      * Handle the `'click'` event for the file browser.
      */
     private _evtClick(event);
@@ -114,6 +126,10 @@ export declare class FileBrowser extends Widget {
      */
     private _handleFileClick(event, index);
     /**
+     * Handle a "new" command execution.
+     */
+    private _handleNewCommand(type);
+    /**
      * Handle an `opened` signal from the model.
      */
     private _onOpened(model, contents);
@@ -121,4 +137,6 @@ export declare class FileBrowser extends Widget {
     private _items;
     private _crumbs;
     private _crumbSeps;
+    private _buttons;
+    private _newMenu;
 }
