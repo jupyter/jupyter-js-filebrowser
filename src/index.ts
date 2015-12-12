@@ -220,8 +220,8 @@ class FileBrowserViewModel {
     let ext = type === 'file' ? '.ext': '';
     return this._contents.newUntitled(this._path, { type: type, ext: ext }
     ).then(contents => {
-        this.refresh();
-        return contents
+      this.refresh();
+      return contents
     });
   }
 
