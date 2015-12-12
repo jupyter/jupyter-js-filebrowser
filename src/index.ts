@@ -245,6 +245,7 @@ class FileBrowserViewModel {
       }
     }
 
+    // Gather the file model parameters.
     let path = this._path ? this._path + '/' + file.name : file.name;
     let name = file.name;
     let isNotebook = file.name.indexOf('.ipynb') !== -1;
@@ -270,7 +271,7 @@ class FileBrowserViewModel {
           let buf = new Uint8Array(reader.result);
           var nbytes = buf.byteLength;
           for (var i = 0; i < nbytes; i++) {
-              bytes += String.fromCharCode(buf[i]);
+            bytes += String.fromCharCode(buf[i]);
           }
           content = btoa(bytes);
         }
