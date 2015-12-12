@@ -261,8 +261,8 @@ class FileBrowserViewModel {
     }
 
     return new Promise<IContentsModel>((resolve, reject) => {
-      let content = '';
       reader.onload = (event: Event) => {
+        let content = '';
         if (isNotebook) {
           content = JSON.parse(reader.result);
         } else {
