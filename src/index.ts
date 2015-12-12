@@ -3,7 +3,7 @@
 'use-strict';
 
 import {
-  IContents, IContentsModel, INotebookSession, ISessionId,
+  IContents, IContentsModel, IContentsOpts, INotebookSession, ISessionId,
   ISessionOptions
 } from 'jupyter-js-services';
 
@@ -217,10 +217,78 @@ class FileBrowserViewModel {
    * Create a new untitled file or directory in the current directory.
    */
   newUntitled(type: string): Promise<IContentsModel> {
-    return this._contents.newUntitled(this._path, { type: type, ext: '' }
+    let ext = type === 'file' ? '.ext': '';
+    return this._contents.newUntitled(this._path, { type: type, ext: ext }
     ).then(contents => {
         this.refresh();
         return contents
+    });
+  }
+
+  /**
+   * Upload a file object.
+   */
+  upload(file: File): Promise<IContentsModel> {
+
+    // Skip large files with a warning.
+    if (file.size > this._max_upload_size_mb * 1024 * 1024) {
+      let msg = `Cannot upload file (>${this._max_upload_size_mb} MB)`;
+      msg += `'${file.name}'`
+      console.warn(msg);
+      return Promise.reject(new Error(msg));
+    }
+
+    // Check for existing file.
+    for (let model of this._items) {
+      if (model.name === file.name) {
+        return Promise.reject(new Error(`${file.name} already exists`));
+      }
+    }
+
+    let path = this._path ? this._path + '/' + file.name : file.name;
+    let name = file.name;
+    let isNotebook = file.name.indexOf('.ipynb') !== -1;
+    let type = isNotebook ? 'notebook' : 'file';
+    let format = isNotebook ? 'json' : 'base64';
+
+    // Get the file content.
+    let reader = new FileReader();
+    if (isNotebook) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
+    }
+
+    return new Promise<IContentsModel>((resolve, reject) => {
+      let content = '';
+      reader.onload = (event: Event) => {
+        if (isNotebook) {
+          content = JSON.parse(reader.result);
+        } else {
+          // Base64-encode binary file data.
+          let bytes = '';
+          let buf = new Uint8Array(reader.result);
+          var nbytes = buf.byteLength;
+          for (var i = 0; i < nbytes; i++) {
+              bytes += String.fromCharCode(buf[i]);
+          }
+          content = btoa(bytes);
+        }
+        let model: IContentsOpts = {
+          type: type,
+          format: format,
+          name: name,
+          content: content
+        }
+        return this._contents.save(path, model).then(model => {
+          this.refresh();
+          return model;
+        });
+      }
+
+      reader.onerror = (evt: Event) => {
+        throw Error('Failed to upload `${file.name}`');
+      }
     });
   }
 
@@ -234,6 +302,7 @@ class FileBrowserViewModel {
     });
   }
 
+  private _max_upload_size_mb = 15;
   private _selectedIndices: number[] = [];
   private _contents: IContents = null;
   private _items: IContentsModel[] = [];
@@ -584,7 +653,9 @@ class FileBrowser extends Widget {
    * Handle a file upload event.
    */
   private _handleUploadEvent(event: Event) {
-    console.log((event.target as any).files);
+    for (let file of (event.target as any).files) {
+      this._model.upload(file);
+    }
   }
 
   /**
