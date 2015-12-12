@@ -269,8 +269,8 @@ class FileBrowserViewModel {
           // Base64-encode binary file data.
           let bytes = '';
           let buf = new Uint8Array(reader.result);
-          var nbytes = buf.byteLength;
-          for (var i = 0; i < nbytes; i++) {
+          let nbytes = buf.byteLength;
+          for (let i = 0; i < nbytes; i++) {
             bytes += String.fromCharCode(buf[i]);
           }
           content = btoa(bytes);
@@ -604,7 +604,7 @@ class FileBrowser extends Widget {
     } else if (event.shiftKey) {
       // Find the "nearest selected".
       let nearestIndex = -1;
-      for (var i = 0; i < nodes.length; i++) {
+      for (let i = 0; i < nodes.length; i++) {
         if (i === index) {
           continue;
         }
