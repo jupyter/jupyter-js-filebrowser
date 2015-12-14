@@ -37,6 +37,10 @@ import {
   Widget
 } from 'phosphor-widget';
 
+import {
+  Dialog
+} from './dialog';
+
 import './index.css';
 
 
@@ -381,6 +385,20 @@ class FileBrowser extends Widget {
     this._buttons = createButtons(buttons as HTMLElement);
     let input = this._buttons[Button.Upload].lastChild;
     (input as HTMLElement).onchange = this._handleUploadEvent.bind(this);
+
+    this._buttons[Button.Refresh].onclick = () => {
+      // Show a dialog here
+      let test = document.createElement('textarea');
+      test.value = 'Input some text';
+      Dialog.showDialog('Test', this.node, test).then(button => {
+        if (button) {
+          console.log(button.text);
+        } else {
+          console.log('Escape!');
+        }
+        console.log(test.value);
+      });
+    }
 
     // Create the "new" menu.
     let command = new DelegateCommand((args: string) => {
