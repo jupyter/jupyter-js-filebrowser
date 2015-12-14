@@ -52,9 +52,14 @@ export declare class FileBrowserViewModel {
      */
     newUntitled(type: string): Promise<IContentsModel>;
     /**
+     * Upload a file object.
+     */
+    upload(file: File): Promise<IContentsModel>;
+    /**
      * Refresh the model contents.
      */
     refresh(): void;
+    private _max_upload_size_mb;
     private _selectedIndices;
     private _contents;
     private _items;
@@ -125,6 +130,10 @@ export declare class FileBrowser extends Widget {
      * Handle a click on a file node.
      */
     private _handleFileClick(event, index);
+    /**
+     * Handle a file upload event.
+     */
+    private _handleUploadEvent(event);
     /**
      * Handle a "new" command execution.
      */

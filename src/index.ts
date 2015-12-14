@@ -3,7 +3,7 @@
 'use-strict';
 
 import {
-  IContents, IContentsModel, INotebookSession, ISessionId,
+  IContents, IContentsModel, IContentsOpts, INotebookSession, ISessionId,
   ISessionOptions
 } from 'jupyter-js-services';
 
@@ -56,9 +56,9 @@ const BUTTON_CLASS = 'jp-FileBrowser-button';
 const BUTTON_ITEM_CLASS = 'jp-FileBrowser-button-item';
 
 /**
- * The class name added to the button nodes.
+ * The class name added to the upload button node.
  */
-const BUTTON_SELECTED_CLASS = 'jp-FileBrowser-button-';
+const UPLOAD_CLASS = 'jp-FileBrowser-upload';
 
 /**
  * The class name added to the header node.
@@ -217,10 +217,79 @@ class FileBrowserViewModel {
    * Create a new untitled file or directory in the current directory.
    */
   newUntitled(type: string): Promise<IContentsModel> {
-    return this._contents.newUntitled(this._path, { type: type, ext: '' }
+    let ext = type === 'file' ? '.ext': '';
+    return this._contents.newUntitled(this._path, { type: type, ext: ext }
     ).then(contents => {
-        this.refresh();
-        return contents
+      this.refresh();
+      return contents
+    });
+  }
+
+  /**
+   * Upload a file object.
+   */
+  upload(file: File): Promise<IContentsModel> {
+
+    // Skip large files with a warning.
+    if (file.size > this._max_upload_size_mb * 1024 * 1024) {
+      let msg = `Cannot upload file (>${this._max_upload_size_mb} MB)`;
+      msg += `'${file.name}'`
+      console.warn(msg);
+      return Promise.reject(new Error(msg));
+    }
+
+    // Check for existing file.
+    for (let model of this._items) {
+      if (model.name === file.name) {
+        return Promise.reject(new Error(`${file.name} already exists`));
+      }
+    }
+
+    // Gather the file model parameters.
+    let path = this._path ? this._path + '/' + file.name : file.name;
+    let name = file.name;
+    let isNotebook = file.name.indexOf('.ipynb') !== -1;
+    let type = isNotebook ? 'notebook' : 'file';
+    let format = isNotebook ? 'json' : 'base64';
+
+    // Get the file content.
+    let reader = new FileReader();
+    if (isNotebook) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
+    }
+
+    return new Promise<IContentsModel>((resolve, reject) => {
+      reader.onload = (event: Event) => {
+        let content = '';
+        if (isNotebook) {
+          content = JSON.parse(reader.result);
+        } else {
+          // Base64-encode binary file data.
+          let bytes = '';
+          let buf = new Uint8Array(reader.result);
+          let nbytes = buf.byteLength;
+          for (let i = 0; i < nbytes; i++) {
+            bytes += String.fromCharCode(buf[i]);
+          }
+          content = btoa(bytes);
+        }
+        let model: IContentsOpts = {
+          type: type,
+          format: format,
+          name: name,
+          content: content
+        }
+        return this._contents.save(path, model).then(model => {
+          this.refresh();
+          return model;
+        });
+      }
+
+      reader.onerror = (evt: Event) => {
+        throw Error('Failed to upload `${file.name}`');
+      }
     });
   }
 
@@ -234,6 +303,7 @@ class FileBrowserViewModel {
     });
   }
 
+  private _max_upload_size_mb = 15;
   private _selectedIndices: number[] = [];
   private _contents: IContents = null;
   private _items: IContentsModel[] = [];
@@ -309,6 +379,8 @@ class FileBrowser extends Widget {
     // Create the button nodes and add to button node.
     let buttons = this.node.getElementsByClassName(BUTTON_CLASS)[0];
     this._buttons = createButtons(buttons as HTMLElement);
+    let input = this._buttons[Button.Upload].lastChild;
+    (input as HTMLElement).onchange = this._handleUploadEvent.bind(this);
 
     // Create the "new" menu.
     let command = new DelegateCommand((args: string) => {
@@ -532,7 +604,7 @@ class FileBrowser extends Widget {
     } else if (event.shiftKey) {
       // Find the "nearest selected".
       let nearestIndex = -1;
-      for (var i = 0; i < nodes.length; i++) {
+      for (let i = 0; i < nodes.length; i++) {
         if (i === index) {
           continue;
         }
@@ -576,6 +648,15 @@ class FileBrowser extends Widget {
       }
     }
     this._model.selected = selected;
+  }
+
+  /**
+   * Handle a file upload event.
+   */
+  private _handleUploadEvent(event: Event) {
+    for (let file of (event.target as any).files) {
+      this._model.upload(file);
+    }
   }
 
   /**
@@ -761,10 +842,19 @@ function createButtons(buttonBar: HTMLElement): HTMLElement[] {
   }
   buttons[Button.New].classList.add('fa-plus');
   buttons[Button.New].title = 'Create New...';
-  buttons[Button.Upload].classList.add('fa-upload');
-  buttons[Button.Upload].title = 'Upload File(s)';
   buttons[Button.Refresh].classList.add('fa-refresh');
   buttons[Button.Refresh].title = 'Refresh File List';
+
+  // Create the upload button with a hidden input.
+  let text = document.createElement('span');
+  text.classList.add('fa-upload');
+  let file = document.createElement('input');
+  file.setAttribute("type", "file");
+  file.setAttribute("multiple", "multiple");
+  buttons[Button.Upload].classList.add(UPLOAD_CLASS);
+  buttons[Button.Upload].appendChild(text);
+  buttons[Button.Upload].appendChild(file);
+  buttons[Button.Upload].title = 'Upload File(s)';
   return buttons;
 }
 

@@ -17,6 +17,24 @@
 }
 
 
+.jp-FileBrowser-upload {
+  position: relative;
+  overflow: hidden;
+}
+
+
+.jp-FileBrowser-upload input {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  opacity: 0;
+  filter: alpha(opacity=0);
+}
+
+
 .jp-FileBrowser-button {
   display: flex;
   flex-direction: row;
