@@ -1,6 +1,6 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use-strict';
+'use strict';
 
 import {
   IContents, IContentsModel, IContentsOpts, INotebookSession, ISessionId,
@@ -115,6 +115,11 @@ const ROW_ICON_CLASS = 'jp-FileBrowser-item-icon';
 const ROW_TEXT_CLASS = 'jp-FileBrowser-item-text';
 
 /**
+ * The class name added to a row filename editor.
+ */
+const ROW_EDIT_CLASS = 'jp-FileBrowser-item-edit';
+
+/**
  * The class name added to a row last modified text.
  */
 const ROW_TIME_CLASS = 'jp-FileBrowser-item-modified';
@@ -131,6 +136,12 @@ const FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
 
 
 /**
+ * The minimum duration for a rename select in ms.
+ */
+const RENAME_DURATION = 500;
+
+
+/**
  * An implementation of a file browser view model.
  */
 export
@@ -139,6 +150,11 @@ class FileBrowserViewModel {
    * A signal emitted when an item is opened.
    */
   static openedSignal = new Signal<FileBrowserViewModel, IContentsModel>();
+
+  /**
+   * A signal emitted when an item is renamed.
+   */
+  static renamedSignal = new Signal<FileBrowserViewModel, IContentsModel[]>();
 
   /**
    * Construct a new file browser view model.
@@ -153,6 +169,13 @@ class FileBrowserViewModel {
    */
   get opened(): ISignal<FileBrowserViewModel, IContentsModel> {
     return FileBrowserViewModel.openedSignal.bind(this);
+  }
+
+  /**
+   * Get the item renamed signal.
+   */
+  get renamed(): ISignal<FileBrowserViewModel, IContentsModel[]> {
+    return FileBrowserViewModel.renamedSignal.bind(this);
   }
 
   /**
@@ -226,6 +249,30 @@ class FileBrowserViewModel {
     ).then(contents => {
       this.refresh();
       return contents
+    });
+  }
+
+  /**
+   * Rename a file or directory.
+   */
+  rename(path: string, newPath: string): Promise<IContentsModel> {
+    // Check for existing file.
+
+    for (let model of this._items) {
+      if (model.name === newPath) {
+        return Promise.reject(new Error(`${newPath} already exists`));
+      } else if (model.name == path) {
+        var current = model;
+      }
+    }
+    if (this._path) {
+      path = this._path + '/' + path;
+      newPath = this._path + '/' + newPath;
+    }
+    return this._contents.rename(path, newPath).then(contents => {
+      this.refresh();
+      this.renamed.emit([current, contents]);
+      return contents;
     });
   }
 
@@ -391,6 +438,10 @@ class FileBrowser extends Widget {
       this._handleNewCommand(args);
     });
     this._newMenu = createMenu(command);
+
+    // Create the edit node.
+    this._editNode = document.createElement('input');
+    this._editNode.className = ROW_EDIT_CLASS;
   }
 
   /**
@@ -532,13 +583,22 @@ class FileBrowser extends Widget {
       return;
     }
 
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Handle the edit node.
+    if (this._editNode.parentNode) {
+      if (!this._editNode.contains(event.target as HTMLElement)) {
+        this._editNode.focus();
+        this._editNode.blur();
+      }
+      return;
+    }
+
     // Check for a breadcrumb hit.
     let index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
     if (index !== -1) {
-      // Stop the event propagation.
-      event.preventDefault();
-      event.stopPropagation();
-
       // If the home node was clicked, set the path to root.
       if (index == Crumb.Home) {
         this._model.path = '';
@@ -557,6 +617,9 @@ class FileBrowser extends Widget {
     index = hitTestNodes(this._items, event.clientX, event.clientY);
     if (index !== -1) {
       this._handleFileClick(event, index);;
+    } else {
+      // Remove the pending select flag.
+      this._pendingSelect = false;
     }
   }
 
@@ -575,6 +638,9 @@ class FileBrowser extends Widget {
       return;
     }
 
+    // Remove the pending select flag.
+    this._pendingSelect = false;
+
     // Stop the event propagation.
     event.preventDefault();
     event.stopPropagation();
@@ -587,14 +653,10 @@ class FileBrowser extends Widget {
    * Handle a click on a file node.
    */
   private _handleFileClick(event: MouseEvent, index: number) {
-    // Stop the event propagation.
-    event.preventDefault();
-    event.stopPropagation();
-
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
-    let current = nodes[index];
+    var current = nodes[index];
 
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
@@ -638,6 +700,27 @@ class FileBrowser extends Widget {
 
     // Default to selecting the only the item.
     } else {
+      // Handle a rename.
+      if (this._model.selected.length === 1 &&
+          current.classList.contains(SELECTED_CLASS)) {
+        if (this._pendingSelect) {
+          setTimeout(() => {
+            if (this._pendingSelect) {
+              handleEdit(current, this._editNode).then(result => {
+                if (result) {
+                  var text = current.getElementsByClassName(ROW_TEXT_CLASS)[0];
+                  this._model.rename(current.textContent, this._editNode.value).catch(error => {
+                    // TODO: display the dialog here.
+                    console.log(error);
+                  });
+                }
+              });
+            }
+          }, RENAME_DURATION);
+        }
+      } else {
+        this._pendingSelect = true;
+      }
       for (let node of nodes) {
         node.classList.remove(SELECTED_CLASS);
       }
@@ -706,6 +789,8 @@ class FileBrowser extends Widget {
   private _crumbSeps: HTMLElement[] = [];
   private _buttons: HTMLElement[] = [];
   private _newMenu: Menu = null;
+  private _pendingSelect = false;
+  private _editNode: HTMLInputElement = null;
 }
 
 
@@ -895,7 +980,7 @@ function createMenu(command: ICommand): Menu {
       commandArgs: 'notebook'
     }),
     new MenuItem({
-      text: 'File',
+      text: 'Text File',
       command: command,
       commandArgs: 'file'
     }),
@@ -905,6 +990,42 @@ function createMenu(command: ICommand): Menu {
       commandArgs: 'directory'
     })
   ]);
+}
+
+
+/**
+ * Handle editing a file name.
+ */
+function handleEdit(row: HTMLElement, edit: HTMLInputElement): Promise<boolean> {
+  var text = row.getElementsByClassName(ROW_TEXT_CLASS)[0];
+  var value = true;
+  row.replaceChild(edit, text);
+  edit.value = text.textContent;
+  edit.focus();
+  edit.setSelectionRange(0, edit.value.indexOf('.'));
+
+  return new Promise<boolean>((resolve, reject) => {
+    edit.onblur = () => {
+      row.replaceChild(text, edit);
+      if (value) text.textContent = edit.value;
+      resolve(value);
+    }
+    row.onkeydown = (event: KeyboardEvent) => {
+      switch (event.keyCode) {
+      case 13:  // Enter
+        event.stopPropagation();
+        event.preventDefault();
+        edit.blur();
+        break;
+      case 27:  // Escape
+        event.stopPropagation();
+        event.preventDefault();
+        value = false;
+        edit.blur();
+        break;
+      }
+    }
+  });
 }
 
 

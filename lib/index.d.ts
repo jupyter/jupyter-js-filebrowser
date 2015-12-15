@@ -11,6 +11,10 @@ export declare class FileBrowserViewModel {
      */
     static openedSignal: Signal<FileBrowserViewModel, IContentsModel>;
     /**
+     * A signal emitted when an item is renamed.
+     */
+    static renamedSignal: Signal<FileBrowserViewModel, IContentsModel[]>;
+    /**
      * Construct a new file browser view model.
      */
     constructor(path: string, contents: IContents);
@@ -18,6 +22,10 @@ export declare class FileBrowserViewModel {
      * Get the item opened signal.
      */
     opened: ISignal<FileBrowserViewModel, IContentsModel>;
+    /**
+     * Get the item renamed signal.
+     */
+    renamed: ISignal<FileBrowserViewModel, IContentsModel[]>;
     /**
      * Get the current path.
      */
@@ -51,6 +59,10 @@ export declare class FileBrowserViewModel {
      * Create a new untitled file or directory in the current directory.
      */
     newUntitled(type: string): Promise<IContentsModel>;
+    /**
+     * Rename a file or directory.
+     */
+    rename(path: string, newPath: string): Promise<IContentsModel>;
     /**
      * Upload a file object.
      */
@@ -148,4 +160,6 @@ export declare class FileBrowser extends Widget {
     private _crumbSeps;
     private _buttons;
     private _newMenu;
+    private _pendingSelect;
+    private _editNode;
 }
