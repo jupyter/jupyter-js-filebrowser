@@ -8,7 +8,6 @@ var jupyter_js_editor_1 = require('jupyter-js-editor');
 var jupyter_js_filebrowser_1 = require('jupyter-js-filebrowser');
 var jupyter_js_services_1 = require('jupyter-js-services');
 var phosphor_splitpanel_1 = require('phosphor-splitpanel');
-var phosphor_widget_1 = require('phosphor-widget');
 function main() {
     var baseUrl = 'http://localhost:8888';
     var contents = new jupyter_js_services_1.Contents(baseUrl);
@@ -22,8 +21,9 @@ function main() {
         }
     });
     var panel = new phosphor_splitpanel_1.SplitPanel();
-    panel.children.assign([fileBrowser, editor]);
-    phosphor_widget_1.Widget.attach(panel, document.body);
+    panel.addChild(fileBrowser);
+    panel.addChild(editor);
+    panel.attach(document.body);
     window.onresize = function () { return panel.update(); };
 }
 main();
