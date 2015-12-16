@@ -22,6 +22,10 @@ import {
 } from 'phosphor-domutil';
 
 import {
+  Drag, DropAction, DropActions, IDragEvent, MimeData
+} from 'phosphor-dragdrop';
+
+import {
   Menu, MenuBar, MenuItem
 } from 'phosphor-menus';
 
@@ -143,6 +147,12 @@ const FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
  * The minimum duration for a rename select in ms.
  */
 const RENAME_DURATION = 500;
+
+
+const DRAG_THRESHOLD = 5;
+
+
+const CONTENTS_MIME = 'application/x-juptyer-icontents';
 
 
 /**
@@ -481,11 +491,26 @@ class FileBrowser extends Widget {
     case 'mouseup':
       this._evtMouseup(event as MouseEvent);
       break;
+    case 'mousemove':
+      this._evtMousemove(event as MouseEvent);
+      break;
     case 'click':
       this._evtClick(event as MouseEvent);
       break;
     case 'dblclick':
       this._evtDblClick(event as MouseEvent);
+      break;
+    case 'p-dragenter':
+      this._evtDragEnter(event as IDragEvent);
+      break;
+    case 'p-dragleave':
+      this._evtDragLeave(event as IDragEvent);
+      break;
+    case 'p-dragover':
+      this._evtDragOver(event as IDragEvent);
+      break;
+    case 'p-drop':
+      this._evtDrop(event as IDragEvent);
       break;
     }
   }
@@ -500,6 +525,10 @@ class FileBrowser extends Widget {
     node.addEventListener('mouseup', this);
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
+    node.addEventListener('p-dragenter', this);
+    node.addEventListener('p-dragleave', this);
+    node.addEventListener('p-dragover', this);
+    node.addEventListener('p-drop', this);
     this._model.refresh();
   }
 
@@ -513,6 +542,11 @@ class FileBrowser extends Widget {
     node.removeEventListener('mouseup', this);
     node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
+    node.removeEventListener('mousemove', this);
+    node.removeEventListener('p-dragenter', this);
+    node.removeEventListener('p-dragleave', this);
+    node.removeEventListener('p-dragover', this);
+    node.removeEventListener('p-drop', this);
   }
 
   /**
@@ -555,6 +589,7 @@ class FileBrowser extends Widget {
       return;
     }
 
+    // Handle a button selection.
     let index = hitTestNodes(this._buttons, event.clientX, event.clientY);
     if (index !== -1) {
       this._buttons[index].classList.add(SELECTED_CLASS);
@@ -564,7 +599,17 @@ class FileBrowser extends Widget {
         let rect = this._buttons[index].getBoundingClientRect();
         this._newMenu.popup(rect.left, rect.bottom, false, true);
       }
+      return;
     }
+
+    // Handle an item selection.
+    index = hitTestNodes(this._items, event.clientX, event.clientY);
+    if (index !== -1) {
+      this._dragData = { pressX: event.clientX, pressY: event.clientY };
+      document.addEventListener('mouseup', this, true);
+      document.addEventListener('mousemove', this, true);
+    }
+
   }
 
   /**
@@ -579,6 +624,39 @@ class FileBrowser extends Widget {
     for (let node of this._buttons) {
       node.classList.remove(SELECTED_CLASS);
     }
+
+    document.removeEventListener('mousemove', this, true);
+  }
+
+  /**
+   * Handle the `'mousemove'` event for the file browser.
+   */
+  private _evtMousemove(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this._drag) {
+      return;
+    }
+    let data = this._dragData;
+    let dx = Math.abs(event.clientX - data.pressX);
+    let dy = Math.abs(event.clientY - data.pressY);
+    if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) {
+      return;
+    }
+    let rect = this.node.getBoundingClientRect();
+    this._drag = new Drag({
+      mimeData: new MimeData(),
+      supportedActions: DropActions.Move,
+      proposedAction: DropAction.Move
+    });
+    this._drag.mimeData.setData(CONTENTS_MIME, null);
+    let { clientX, clientY } = event;
+    document.removeEventListener('mousemove', this, true);
+    this._drag.start(clientX, clientY).then(action => {
+      console.log('action', action);
+      this._drag = null;
+    });
+
   }
 
   /**
@@ -655,6 +733,58 @@ class FileBrowser extends Widget {
 
     // Open the selected item.
     this._model.open();
+  }
+
+  /**
+   * Handle the `'p-dragenter'` event for the dock panel.
+   */
+  private _evtDragEnter(event: IDragEvent): void {
+    if (event.mimeData.hasData(CONTENTS_MIME)) {
+      let index = hitTestNodes(this._items, event.clientX, event.clientY);
+      if (index === -1) {
+        index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
+      }
+      if (index !== -1) {
+         event.preventDefault();
+        event.stopPropagation();
+      }
+    }
+  }
+
+  /**
+   * Handle the `'p-dragleave'` event for the dock panel.
+   */
+  private _evtDragLeave(event: IDragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    let related = event.relatedTarget as HTMLElement;
+    if (!related || !this.node.contains(related)) {
+      console.log('Drag left');
+    }
+  }
+
+  /**
+   * Handle the `'p-dragover'` event for the dock panel.
+   */
+  private _evtDragOver(event: IDragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    event.dropAction = event.proposedAction;
+  }
+
+  /**
+   * Handle the `'p-drop'` event for the dock panel.
+   */
+  private _evtDrop(event: IDragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.proposedAction === DropAction.None) {
+      event.dropAction = DropAction.None;
+      return;
+    }
+    let contents = event.mimeData.getData(CONTENTS_MIME);
+    console.log('Got contents', contents);
+    event.dropAction = event.proposedAction;
   }
 
   /**
@@ -831,6 +961,8 @@ class FileBrowser extends Widget {
   private _newMenu: Menu = null;
   private _pendingSelect = false;
   private _editNode: HTMLInputElement = null;
+  private _drag: Drag = null;
+  private _dragData: { pressX: number, pressY: number } = null;
 }
 
 

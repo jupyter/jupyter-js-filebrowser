@@ -123,6 +123,10 @@ export declare class FileBrowser extends Widget {
      */
     private _evtMouseup(event);
     /**
+     * Handle the `'mousemove'` event for the file browser.
+     */
+    private _evtMousemove(event);
+    /**
      * Handle the `'click'` event for the file browser.
      */
     private _evtClick(event);
@@ -130,6 +134,22 @@ export declare class FileBrowser extends Widget {
      * Handle the `'dblclick'` event for the file browser.
      */
     private _evtDblClick(event);
+    /**
+     * Handle the `'p-dragenter'` event for the dock panel.
+     */
+    private _evtDragEnter(event);
+    /**
+     * Handle the `'p-dragleave'` event for the dock panel.
+     */
+    private _evtDragLeave(event);
+    /**
+     * Handle the `'p-dragover'` event for the dock panel.
+     */
+    private _evtDragOver(event);
+    /**
+     * Handle the `'p-drop'` event for the dock panel.
+     */
+    private _evtDrop(event);
     /**
      * Handle a click on a file node.
      */
@@ -159,4 +179,6 @@ export declare class FileBrowser extends Widget {
     private _newMenu;
     private _pendingSelect;
     private _editNode;
+    private _drag;
+    private _dragData;
 }
