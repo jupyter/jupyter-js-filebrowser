@@ -1034,7 +1034,7 @@ function createMenu(command: ICommand): Menu {
 
 
 /**
- * Handle editing a text on a node.
+ * Handle editing text on a node.
  *
  * @returns Boolean indicating whether the name changed.
  */
