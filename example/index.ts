@@ -38,9 +38,9 @@ function main(): void {
   let editor = new EditorWidget(editorModel);
 
 
-  fbModel.opened.connect((fb, item) => {
-    if (item.type === 'file') {
-      (editor as any)._editor.getDoc().setValue(item.content);
+  fbModel.changed.connect((fb, change) => {
+    if (change.name === 'open' && change.newValue.type === 'file') {
+      (editor as any)._editor.getDoc().setValue(change.newValue.content);
     }
   });
 
