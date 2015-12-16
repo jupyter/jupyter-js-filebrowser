@@ -9,6 +9,8 @@ import threading
 
 import tornado.web
 
+PORT = 8765
+
 
 class MainPageHandler(tornado.web.RequestHandler):
 
@@ -18,14 +20,11 @@ class MainPageHandler(tornado.web.RequestHandler):
 
 def main(argv):
 
-    url = "http://localhost:8765"
+    url = "http://localhost:%s" % PORT
 
     handlers = [
         (r"/", MainPageHandler),
-        (r'/(.*)', tornado.web.StaticFileHandler,
-         {'path': '.'}),
-        (r'/components/font-awesome/fonts/(.*)', tornado.web.StaticFileHandler,
-         {'path': './components/font-awesome/fonts/'}),
+        (r'/(.*)', tornado.web.StaticFileHandler, {'path': '.'}),
     ]
 
     nb_command = [sys.executable, '-m', 'notebook', '--no-browser', '--debug',
@@ -57,9 +56,9 @@ def main(argv):
     app = tornado.web.Application(handlers, static_path='build',
                                   template_path='.')
 
-    app.listen(8765, 'localhost')
+    app.listen(PORT, 'localhost')
     loop = tornado.ioloop.IOLoop.instance()
-    print('Browse to http://localhost:8765')
+    print('Browse to http://localhost:%s' % PORT)
     try:
         loop.start()
     except KeyboardInterrupt:
