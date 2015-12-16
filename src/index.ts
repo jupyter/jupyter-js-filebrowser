@@ -1059,7 +1059,7 @@ function doRename(parent: HTMLElement, text: HTMLElement, edit: HTMLInputElement
       if (changed) text.textContent = edit.value;
       resolve(changed);
     }
-    parent.onkeydown = (event: KeyboardEvent) => {
+    edit.onkeydown = (event: KeyboardEvent) => {
       switch (event.keyCode) {
       case 13:  // Enter
         event.stopPropagation();
