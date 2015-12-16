@@ -44,6 +44,14 @@ def main(argv):
             raise ValueError('The port 8888 was already taken, kill running '
                              'notebook servers')
 
+    while 1:
+        line = nb_server.stdout.readline().decode('utf-8').strip()
+        if not line:
+            continue
+        print(line)
+        if 'Control-C' in line:
+            break
+
     def print_thread():
         while 1:
             line = nb_server.stdout.readline().decode('utf-8').strip()
