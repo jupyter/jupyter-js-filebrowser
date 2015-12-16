@@ -1039,7 +1039,7 @@ function createMenu(command: ICommand): Menu {
  * @returns Boolean indicating whether the name changed.
  */
 function doRename(parent: HTMLElement, text: HTMLElement, edit: HTMLInputElement): Promise<boolean> {
-  var value = true;
+  let changed = true;
   parent.replaceChild(edit, text);
   edit.value = text.textContent;
   edit.focus();
@@ -1054,10 +1054,10 @@ function doRename(parent: HTMLElement, text: HTMLElement, edit: HTMLInputElement
     edit.onblur = () => {
       parent.replaceChild(text, edit);
       if (text.textContent === edit.value) {
-        value = false;
+        changed = false;
       }
-      if (value) text.textContent = edit.value;
-      resolve(value);
+      if (changed) text.textContent = edit.value;
+      resolve(changed);
     }
     parent.onkeydown = (event: KeyboardEvent) => {
       switch (event.keyCode) {
@@ -1069,7 +1069,7 @@ function doRename(parent: HTMLElement, text: HTMLElement, edit: HTMLInputElement
       case 27:  // Escape
         event.stopPropagation();
         event.preventDefault();
-        value = false;
+        changed = false;
         edit.blur();
         break;
       }
