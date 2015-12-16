@@ -794,6 +794,8 @@ class FileBrowser extends Widget {
           showDialog(options).then(button => {
             if (button.text === 'OK') {
               this._model.rename(content, this._editNode.value, true);
+            } else {
+              text.textContent = content;
             }
           });
         } else {
