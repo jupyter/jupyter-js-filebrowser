@@ -99,6 +99,11 @@
   text-overflow: ellipsis;
 }
 
+.jp-FileBrowser-item-edit {
+  flex: 1 1 auto;
+  z-index: 10000;
+}
+
 
 .jp-FileBrowser-item-modified {
   flex: 0 0 auto;

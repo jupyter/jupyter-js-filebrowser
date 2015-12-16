@@ -1,6 +1,6 @@
 // Copyright (c) Jupyter Development Team.
 // Distributed under the terms of the Modified BSD License.
-'use-strict';
+'use strict';
 
 import {
   IContents, IContentsModel, IContentsOpts, INotebookSession, ISessionId,
@@ -32,6 +32,10 @@ import {
 import {
   NodeWrapper
 } from 'phosphor-nodewrapper';
+
+import {
+  IChangedArgs
+} from 'phosphor-properties';
 
 import {
   ISignal, Signal
@@ -115,6 +119,11 @@ const ROW_ICON_CLASS = 'jp-FileBrowser-item-icon';
 const ROW_TEXT_CLASS = 'jp-FileBrowser-item-text';
 
 /**
+ * The class name added to a row filename editor.
+ */
+const ROW_EDIT_CLASS = 'jp-FileBrowser-item-edit';
+
+/**
  * The class name added to a row last modified text.
  */
 const ROW_TIME_CLASS = 'jp-FileBrowser-item-modified';
@@ -131,42 +140,49 @@ const FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
 
 
 /**
+ * The minimum duration for a rename select in ms.
+ */
+const RENAME_DURATION = 500;
+
+
+/**
  * An implementation of a file browser view model.
  */
 export
 class FileBrowserViewModel {
   /**
-   * A signal emitted when an item is opened.
+   * A signal emitted when an item changes.
    */
-  static openedSignal = new Signal<FileBrowserViewModel, IContentsModel>();
+  static changedSignal = new Signal<FileBrowserViewModel, IChangedArgs<IContentsModel>>();
 
   /**
    * Construct a new file browser view model.
    */
   constructor(path: string, contents: IContents) {
-    this._path = path;
+    this._model = { path: path , name: '', type: 'directory',
+                    writable: true, created: '', last_modified: '' };
     this._contents = contents;
   }
 
   /**
-   * Get the item opened signal.
+   * Get the item changed signal.
    */
-  get opened(): ISignal<FileBrowserViewModel, IContentsModel> {
-    return FileBrowserViewModel.openedSignal.bind(this);
+  get changed(): ISignal<FileBrowserViewModel, IChangedArgs<IContentsModel>> {
+    return FileBrowserViewModel.changedSignal.bind(this);
   }
 
   /**
    * Get the current path.
    */
   get path(): string {
-    return this._path;
+    return this._model.path;
   }
 
   /**
    * Set the current path, triggering a refresh.
    */
   set path(value: string) {
-    this._path = value;
+    this._model.path = value;
     this.refresh();
   }
 
@@ -177,7 +193,7 @@ class FileBrowserViewModel {
    * This is a read-only property.
    */
   get items(): IContentsModel[] {
-    return this._items.slice();
+    return this._model.content.slice();
   }
 
   /**
@@ -202,7 +218,7 @@ class FileBrowserViewModel {
    * after loading the contents.
    */
   open(): void {
-    let items = this._items;
+    let items = this._model.content;
     for (let index of this._selectedIndices) {
       let item = items[index];
       if (item.type === 'directory') {
@@ -211,7 +227,11 @@ class FileBrowserViewModel {
       } else {
         this._contents.get(item.path, { type: item.type }
         ).then((contents: IContentsModel) => {
-          this.opened.emit(contents);
+          this.changed.emit({
+            name: 'open',
+            newValue: contents ,
+            oldValue: null,
+          });
         });
       }
     }
@@ -222,10 +242,39 @@ class FileBrowserViewModel {
    */
   newUntitled(type: string): Promise<IContentsModel> {
     let ext = type === 'file' ? '.ext': '';
-    return this._contents.newUntitled(this._path, { type: type, ext: ext }
+    return this._contents.newUntitled(this._model.path, { type: type, ext: ext }
     ).then(contents => {
       this.refresh();
       return contents
+    });
+  }
+
+  /**
+   * Rename a file or directory.
+   */
+  rename(path: string, newPath: string, overwrite?: boolean): Promise<IContentsModel> {
+    // Check for existing file.
+    for (let model of this._model.content) {
+      if (model.name === newPath && !overwrite) {
+        return Promise.reject(new Error(`"${newPath}" already exists`));
+      } else if (model.name == path) {
+        var current = model;
+      }
+    }
+    // Add the directory if applicable.
+    if (this._model.path) {
+      path = this._model.path + '/' + path;
+      newPath = this._model.path + '/' + newPath;
+    }
+    // Rename, refresh, and emit a change event.
+    return this._contents.rename(path, newPath).then(contents => {
+      this.refresh();
+      this.changed.emit({
+        name: 'rename',
+        oldValue: current,
+        newValue: contents
+      });
+      return contents;
     });
   }
 
@@ -243,14 +292,15 @@ class FileBrowserViewModel {
     }
 
     // Check for existing file.
-    for (let model of this._items) {
+    for (let model of this._model.content) {
       if (model.name === file.name && !overwrite) {
         return Promise.reject(new Error(`"${file.name}" already exists`));
       }
     }
 
     // Gather the file model parameters.
-    let path = this._path ? this._path + '/' + file.name : file.name;
+    let path = this._model.path
+    path = path ? path + '/' + file.name : file.name;
     let name = file.name;
     let isNotebook = file.name.indexOf('.ipynb') !== -1;
     let type = isNotebook ? 'notebook' : 'file';
@@ -301,17 +351,21 @@ class FileBrowserViewModel {
    * Refresh the model contents.
    */
   refresh() {
-    this._contents.listContents(this._path).then(model => {
-      this._items = model.content;
-      this.opened.emit(model);
+    this._contents.listContents(this._model.path).then(model => {
+      let old = this._model;
+      this._model = model;
+      this.changed.emit({
+        name: 'refresh',
+        oldValue: old,
+        newValue: model.content
+      });
     });
   }
 
   private _max_upload_size_mb = 15;
   private _selectedIndices: number[] = [];
   private _contents: IContents = null;
-  private _items: IContentsModel[] = [];
-  private _path = '';
+  private _model: IContentsModel = null;
 }
 
 
@@ -372,7 +426,7 @@ class FileBrowser extends Widget {
     super();
     this.addClass(FILE_BROWSER_CLASS);
     this._model = model;
-    this._model.opened.connect(this._onOpened.bind(this));
+    this._model.changed.connect(this._onChanged.bind(this));
 
     // Create the crumb nodes add add to crumb node.
     this._crumbs = createCrumbs();
@@ -391,6 +445,10 @@ class FileBrowser extends Widget {
       this._handleNewCommand(args);
     });
     this._newMenu = createMenu(command);
+
+    // Create the edit node.
+    this._editNode = document.createElement('input');
+    this._editNode.className = ROW_EDIT_CLASS;
   }
 
   /**
@@ -532,13 +590,23 @@ class FileBrowser extends Widget {
       return;
     }
 
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Handle the edit node.
+    if (this._editNode.parentNode) {
+      if (!this._editNode.contains(event.target as HTMLElement)) {
+        this._editNode.focus();
+        this._editNode.blur();
+      } else {
+        return;
+      }
+    }
+
     // Check for a breadcrumb hit.
     let index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
     if (index !== -1) {
-      // Stop the event propagation.
-      event.preventDefault();
-      event.stopPropagation();
-
       // If the home node was clicked, set the path to root.
       if (index == Crumb.Home) {
         this._model.path = '';
@@ -557,6 +625,9 @@ class FileBrowser extends Widget {
     index = hitTestNodes(this._items, event.clientX, event.clientY);
     if (index !== -1) {
       this._handleFileClick(event, index);;
+    } else {
+      // Remove the pending select flag.
+      this._pendingSelect = false;
     }
   }
 
@@ -569,15 +640,18 @@ class FileBrowser extends Widget {
       return;
     }
 
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
+
     // Find the target file item.
     let index = hitTestNodes(this._items, event.clientX, event.clientY);
     if (index === -1) {
       return;
     }
 
-    // Stop the event propagation.
-    event.preventDefault();
-    event.stopPropagation();
+    // Remove the pending select flag.
+    this._pendingSelect = false;
 
     // Open the selected item.
     this._model.open();
@@ -587,14 +661,10 @@ class FileBrowser extends Widget {
    * Handle a click on a file node.
    */
   private _handleFileClick(event: MouseEvent, index: number) {
-    // Stop the event propagation.
-    event.preventDefault();
-    event.stopPropagation();
-
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
-    let current = nodes[index];
+    var current = nodes[index];
 
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
@@ -638,6 +708,24 @@ class FileBrowser extends Widget {
 
     // Default to selecting the only the item.
     } else {
+      // Handle a rename.
+      if (this._model.selected.length === 1 &&
+          current.classList.contains(SELECTED_CLASS)) {
+        if (this._pendingSelect) {
+          setTimeout(() => {
+            if (this._pendingSelect) {
+              this._doRename(current);
+            } else {
+              this._pendingSelect = true;
+            }
+          }, RENAME_DURATION);
+          return;
+        }
+      } else {
+        this._pendingSelect = true;
+      }
+
+      // Add the selected class to current row, and remove from all others.
       for (let node of nodes) {
         node.classList.remove(SELECTED_CLASS);
       }
@@ -672,13 +760,7 @@ class FileBrowser extends Widget {
             }
           });
         } else {
-          let options = {
-            title: 'Upload Error',
-            host: this.node,
-            body: error.message,
-            buttons: [okButton]
-          }
-          showDialog(options);
+          this._showErrorMessage('Upload Error', error.message);
         }
       });
     }
@@ -692,10 +774,51 @@ class FileBrowser extends Widget {
   }
 
   /**
-   * Handle an `opened` signal from the model.
+   * Allow the user to rename item on a given row.
    */
-  private _onOpened(model: FileBrowserViewModel, contents: IContentsModel): void {
-    if (contents.type === 'directory') {
+  private _doRename(row: HTMLElement): void {
+    let text = row.getElementsByClassName(ROW_TEXT_CLASS)[0] as HTMLElement;
+    let content = text.textContent;
+
+    doRename(row, text, this._editNode).then(changed => {
+      if (!changed) {
+        return;
+      }
+      this._model.rename(content, this._editNode.value).catch(error => {
+        if (error.message.indexOf('already exists') !== -1) {
+          let options = {
+            title: 'Overwrite file?',
+            host: this.node,
+            body: error.message + ', overwrite?'
+          }
+          showDialog(options).then(button => {
+            if (button.text === 'OK') {
+              this._model.rename(content, this._editNode.value, true);
+            } else {
+              text.textContent = content;
+            }
+          });
+        } else {
+          this._showErrorMessage('Rename Error', error.message);
+        }
+      });
+    });
+  }
+
+  private _showErrorMessage(title: string, message: string) {
+    let options = {
+      title: title,
+      host: this.node,
+      body: message,
+      buttons: [okButton]
+    }
+    showDialog(options);
+  }
+  /**
+   * Handle a `changed` signal from the model.
+   */
+  private _onChanged(model: FileBrowserViewModel, change: IChangedArgs<IContentsModel>): void {
+    if (change.name === 'refresh') {
       this.update();
     }
   }
@@ -706,6 +829,8 @@ class FileBrowser extends Widget {
   private _crumbSeps: HTMLElement[] = [];
   private _buttons: HTMLElement[] = [];
   private _newMenu: Menu = null;
+  private _pendingSelect = false;
+  private _editNode: HTMLInputElement = null;
 }
 
 
@@ -895,7 +1020,7 @@ function createMenu(command: ICommand): Menu {
       commandArgs: 'notebook'
     }),
     new MenuItem({
-      text: 'File',
+      text: 'Text File',
       command: command,
       commandArgs: 'file'
     }),
@@ -905,6 +1030,51 @@ function createMenu(command: ICommand): Menu {
       commandArgs: 'directory'
     })
   ]);
+}
+
+
+/**
+ * Handle editing text on a node.
+ *
+ * @returns Boolean indicating whether the name changed.
+ */
+function doRename(parent: HTMLElement, text: HTMLElement, edit: HTMLInputElement): Promise<boolean> {
+  let changed = true;
+  parent.replaceChild(edit, text);
+  edit.value = text.textContent;
+  edit.focus();
+  let index = edit.value.indexOf('.');
+  if (index === -1) {
+    edit.setSelectionRange(0, edit.value.length);
+  } else {
+    edit.setSelectionRange(0, index);
+  }
+
+  return new Promise<boolean>((resolve, reject) => {
+    edit.onblur = () => {
+      parent.replaceChild(text, edit);
+      if (text.textContent === edit.value) {
+        changed = false;
+      }
+      if (changed) text.textContent = edit.value;
+      resolve(changed);
+    }
+    edit.onkeydown = (event: KeyboardEvent) => {
+      switch (event.keyCode) {
+      case 13:  // Enter
+        event.stopPropagation();
+        event.preventDefault();
+        edit.blur();
+        break;
+      case 27:  // Escape
+        event.stopPropagation();
+        event.preventDefault();
+        changed = false;
+        edit.blur();
+        break;
+      }
+    }
+  });
 }
 
 

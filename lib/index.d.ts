@@ -1,5 +1,6 @@
 import { IContents, IContentsModel } from 'jupyter-js-services';
 import { Message } from 'phosphor-messaging';
+import { IChangedArgs } from 'phosphor-properties';
 import { ISignal, Signal } from 'phosphor-signaling';
 import { Widget } from 'phosphor-widget';
 /**
@@ -7,17 +8,17 @@ import { Widget } from 'phosphor-widget';
  */
 export declare class FileBrowserViewModel {
     /**
-     * A signal emitted when an item is opened.
+     * A signal emitted when an item changes.
      */
-    static openedSignal: Signal<FileBrowserViewModel, IContentsModel>;
+    static changedSignal: Signal<FileBrowserViewModel, IChangedArgs<IContentsModel>>;
     /**
      * Construct a new file browser view model.
      */
     constructor(path: string, contents: IContents);
     /**
-     * Get the item opened signal.
+     * Get the item changed signal.
      */
-    opened: ISignal<FileBrowserViewModel, IContentsModel>;
+    changed: ISignal<FileBrowserViewModel, IChangedArgs<IContentsModel>>;
     /**
      * Get the current path.
      */
@@ -52,6 +53,10 @@ export declare class FileBrowserViewModel {
      */
     newUntitled(type: string): Promise<IContentsModel>;
     /**
+     * Rename a file or directory.
+     */
+    rename(path: string, newPath: string, overwrite?: boolean): Promise<IContentsModel>;
+    /**
      * Upload a file object.
      */
     upload(file: File, overwrite?: boolean): Promise<IContentsModel>;
@@ -62,8 +67,7 @@ export declare class FileBrowserViewModel {
     private _max_upload_size_mb;
     private _selectedIndices;
     private _contents;
-    private _items;
-    private _path;
+    private _model;
 }
 /**
  * A widget which hosts a file browser.
@@ -139,13 +143,20 @@ export declare class FileBrowser extends Widget {
      */
     private _handleNewCommand(type);
     /**
-     * Handle an `opened` signal from the model.
+     * Allow the user to rename item on a given row.
      */
-    private _onOpened(model, contents);
+    private _doRename(row);
+    private _showErrorMessage(title, message);
+    /**
+     * Handle a `changed` signal from the model.
+     */
+    private _onChanged(model, change);
     private _model;
     private _items;
     private _crumbs;
     private _crumbSeps;
     private _buttons;
     private _newMenu;
+    private _pendingSelect;
+    private _editNode;
 }

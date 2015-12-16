@@ -13,7 +13,8 @@
     "phosphor-menus": "1.0.0-beta.1",
     "phosphor-messaging": "^1.0.5",
     "phosphor-nodewrapper": "^1.0.4",
-    "phosphor-widget": "^1.0.0-beta.2"
+    "phosphor-properties": "^2.0.0",
+    "phosphor-widget": "1.0.0-beta.2"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
