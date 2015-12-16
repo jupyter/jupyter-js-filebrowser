@@ -54,8 +54,15 @@ export declare class FileBrowserViewModel {
     newUntitled(type: string): Promise<IContentsModel>;
     /**
      * Rename a file or directory.
+     *
+     * @param path - The full path to the original file.
+     *
+     * @param newPath - The full path to the new file.
+     *
+     * @param overwrite - Whether to overwrite an exisiting file.
      */
     rename(path: string, newPath: string, overwrite?: boolean): Promise<IContentsModel>;
+    private _rename(path, newPath);
     /**
      * Upload a file object.
      */
@@ -154,6 +161,10 @@ export declare class FileBrowser extends Widget {
      * Handle a click on a file node.
      */
     private _handleFileClick(event, index);
+    /**
+     * Update the selected indices of the model.
+     */
+    private _updateSelected();
     /**
      * Handle a file upload event.
      */

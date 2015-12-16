@@ -113,6 +113,11 @@ const ROW_CLASS = 'jp-FileBrowser-row';
 const SELECTED_CLASS = 'jp-mod-selected';
 
 /**
+ * The class name added to drop targets.
+ */
+const DROP_TARGET_CLASS = 'jp-mod-drop-target';
+
+/**
  * The class name added to a row icon.
  */
 const ROW_ICON_CLASS = 'jp-FileBrowser-item-icon';
@@ -261,22 +266,29 @@ class FileBrowserViewModel {
 
   /**
    * Rename a file or directory.
+   *
+   * @param path - The path to the original file (can be relative).
+   *
+   * @param newPath - The path to the new file (can be relative).
+   *
+   * @param overwrite - Whether to overwrite an exisiting file.
    */
   rename(path: string, newPath: string, overwrite?: boolean): Promise<IContentsModel> {
-    // Check for existing file.
-    for (let model of this._model.content) {
-      if (model.name === newPath && !overwrite) {
-        return Promise.reject(new Error(`"${newPath}" already exists`));
-      } else if (model.name == path) {
-        var current = model;
-      }
+    // TODO: handle relative paths.
+
+    if (overwrite) {
+      return this._rename(path, newPath);
     }
-    // Add the directory if applicable.
-    if (this._model.path) {
-      path = this._model.path + '/' + path;
-      newPath = this._model.path + '/' + newPath;
-    }
-    // Rename, refresh, and emit a change event.
+
+    return this._contents.get(newPath, {}).then((content): IContentsModel => {
+      throw new Error(`"${newPath}" already exists`);
+    }, () => {
+      return this._rename(path, newPath);
+    });
+  }
+
+  private _rename(path: string, newPath: string): Promise<IContentsModel> {
+    let current = this._model;
     return this._contents.rename(path, newPath).then(contents => {
       this.refresh();
       this.changed.emit({
@@ -605,7 +617,8 @@ class FileBrowser extends Widget {
     // Handle an item selection.
     index = hitTestNodes(this._items, event.clientX, event.clientY);
     if (index !== -1) {
-      this._dragData = { pressX: event.clientX, pressY: event.clientY };
+      this._dragData = { pressX: event.clientX, pressY: event.clientY,
+                         index: index };
       document.addEventListener('mouseup', this, true);
       document.addEventListener('mousemove', this, true);
     }
@@ -634,29 +647,51 @@ class FileBrowser extends Widget {
   private _evtMousemove(event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
+
+    // Bail if we are the one dragging.
     if (this._drag) {
       return;
     }
+
+    // Check for a drag initialization.
     let data = this._dragData;
     let dx = Math.abs(event.clientX - data.pressX);
     let dy = Math.abs(event.clientY - data.pressY);
     if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) {
       return;
     }
-    let rect = this.node.getBoundingClientRect();
+
+    // Make sure the source node is selected.
+    let source = this._items[data.index];
+    if (!source.classList.contains(SELECTED_CLASS)) {
+      source.classList.add(SELECTED_CLASS);
+      this._updateSelected();
+    }
+
+    // Create the drag image.
+    var dragImage = source.cloneNode(true) as HTMLElement;
+    dragImage.removeChild(dragImage.lastChild);
+    if (this._model.selected.length > 1) {
+      let text = dragImage.getElementsByClassName(ROW_TEXT_CLASS)[0];
+      text.textContent = '(' + this._model.selected.length + ')'
+    }
+
+    // Set up the drag event.
     this._drag = new Drag({
+      dragImage: dragImage,
       mimeData: new MimeData(),
       supportedActions: DropActions.Move,
       proposedAction: DropAction.Move
     });
     this._drag.mimeData.setData(CONTENTS_MIME, null);
     let { clientX, clientY } = event;
-    document.removeEventListener('mousemove', this, true);
+
+    // Start the drag and remove the mousemove listener.
     this._drag.start(clientX, clientY).then(action => {
       console.log('action', action);
       this._drag = null;
     });
-
+    document.removeEventListener('mousemove', this, true);
   }
 
   /**
@@ -740,12 +775,24 @@ class FileBrowser extends Widget {
    */
   private _evtDragEnter(event: IDragEvent): void {
     if (event.mimeData.hasData(CONTENTS_MIME)) {
+      // Check for a file item hit.
       let index = hitTestNodes(this._items, event.clientX, event.clientY);
       if (index === -1) {
+        // Check for crumb hits.
         index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
+        if (index !== -1) {
+          this._crumbs[index].classList.add(DROP_TARGET_CLASS);
+        }
+      } else {
+        // Allow dropping on folders.
+        if (this._items[index].getElementsByClassName(FOLDER_ICON_CLASS).length) {
+          this._items[index].classList.add(DROP_TARGET_CLASS);
+        } else {
+          index = -1;
+        }
       }
       if (index !== -1) {
-         event.preventDefault();
+        event.preventDefault();
         event.stopPropagation();
       }
     }
@@ -757,9 +804,9 @@ class FileBrowser extends Widget {
   private _evtDragLeave(event: IDragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    let related = event.relatedTarget as HTMLElement;
-    if (!related || !this.node.contains(related)) {
-      console.log('Drag left');
+    let dropTargets = this.node.getElementsByClassName(DROP_TARGET_CLASS);
+    if (dropTargets.length) {
+      dropTargets[0].classList.remove(DROP_TARGET_CLASS);
     }
   }
 
@@ -770,6 +817,19 @@ class FileBrowser extends Widget {
     event.preventDefault();
     event.stopPropagation();
     event.dropAction = event.proposedAction;
+    let dropTargets = this.node.getElementsByClassName(DROP_TARGET_CLASS);
+    if (dropTargets.length) {
+      dropTargets[0].classList.remove(DROP_TARGET_CLASS);
+    }
+    let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    if (index === -1) {
+      index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
+      if (index !== -1) {
+        this._crumbs[index].classList.add(DROP_TARGET_CLASS);
+      }
+    } else {
+      this._items[index].classList.add(DROP_TARGET_CLASS);
+    }
   }
 
   /**
@@ -782,9 +842,54 @@ class FileBrowser extends Widget {
       event.dropAction = DropAction.None;
       return;
     }
-    let contents = event.mimeData.getData(CONTENTS_MIME);
-    console.log('Got contents', contents);
+    if (!event.mimeData.hasData(CONTENTS_MIME)) {
+      return;
+    }
     event.dropAction = event.proposedAction;
+
+    // Find the appropriate path modifier.
+    let target = event.target as HTMLElement;
+    let index = this._items.indexOf(target);
+    let path = '';
+    if (index !== -1) {
+      path = './' + this._model.items[index];
+    } else {
+      index = this._crumbs.indexOf(target);
+      switch(index) {
+      case Crumb.Home:
+        path = '';
+        break;
+      case Crumb.Ellipsis:
+        path = '../../';
+        break;
+      case Crumb.Second:
+        path = '../'
+        break;
+      case Crumb.First:
+        return;
+      }
+    }
+
+    // Move all of the items.
+    for (let index of this._model.selected) {
+      var newPath = this._model.items[index].name;
+      this._model.rename('./' + newPath, path + newPath).catch(error => {
+        if (error.message.indexOf('already exists') !== -1) {
+          let options = {
+            title: 'Overwrite file?',
+            host: this.node,
+            body: error.message + ', overwrite?'
+          }
+          showDialog(options).then(button => {
+            if (button.text === 'OK') {
+              this._model.rename('./' + newPath, path + newPath, true);
+            }
+          });
+        } else {
+          this._showErrorMessage('Move Error', error.message);
+        }
+      });
+    }
   }
 
   /**
@@ -862,10 +967,17 @@ class FileBrowser extends Widget {
       current.classList.add(SELECTED_CLASS);
     }
 
+    this._updateSelected();
+  }
+
+  /**
+   * Update the selected indices of the model.
+   */
+  private _updateSelected() {
     // Set the selected items on the model.
     let selected: number[] = [];
-    for (let i = 0; i < nodes.length; i++) {
-      if (nodes[i].classList.contains(SELECTED_CLASS)) {
+    for (let i = 0; i < this._items.length; i++) {
+      if (this._items[i].classList.contains(SELECTED_CLASS)) {
         selected.push(i);
       }
     }
@@ -914,7 +1026,8 @@ class FileBrowser extends Widget {
       if (!changed) {
         return;
       }
-      this._model.rename(content, this._editNode.value).catch(error => {
+      this._model.rename('./' + content, './' + text.textContent
+      ).catch(error => {
         if (error.message.indexOf('already exists') !== -1) {
           let options = {
             title: 'Overwrite file?',
@@ -962,7 +1075,7 @@ class FileBrowser extends Widget {
   private _pendingSelect = false;
   private _editNode: HTMLInputElement = null;
   private _drag: Drag = null;
-  private _dragData: { pressX: number, pressY: number } = null;
+  private _dragData: { pressX: number, pressY: number, index: number } = null;
 }
 
 
