@@ -55,7 +55,7 @@ export declare class FileBrowserViewModel {
     /**
      * Rename a file or directory.
      */
-    rename(path: string, newPath: string): Promise<IContentsModel>;
+    rename(path: string, newPath: string, overwrite?: boolean): Promise<IContentsModel>;
     /**
      * Upload a file object.
      */
@@ -143,7 +143,12 @@ export declare class FileBrowser extends Widget {
      */
     private _handleNewCommand(type);
     /**
-     * Handle an `opened` signal from the model.
+     * Allow the user to rename item on a given row.
+     */
+    private _doRename(row);
+    private _showErrorMessage(title, message);
+    /**
+     * Handle a `changed` signal from the model.
      */
     private _onChanged(model, change);
     private _model;

@@ -101,6 +101,7 @@
 
 .jp-FileBrowser-item-edit {
   flex: 1 1 auto;
+  z-index: 10000;
 }
 
 

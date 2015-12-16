@@ -252,11 +252,11 @@ class FileBrowserViewModel {
   /**
    * Rename a file or directory.
    */
-  rename(path: string, newPath: string): Promise<IContentsModel> {
+  rename(path: string, newPath: string, overwrite?: boolean): Promise<IContentsModel> {
     // Check for existing file.
     for (let model of this._model.content) {
-      if (model.name === newPath) {
-        return Promise.reject(new Error(`${newPath} already exists`));
+      if (model.name === newPath && !overwrite) {
+        return Promise.reject(new Error(`"${newPath}" already exists`));
       } else if (model.name == path) {
         var current = model;
       }
@@ -293,7 +293,7 @@ class FileBrowserViewModel {
 
     // Check for existing file.
     for (let model of this._model.content) {
-      if (model.name === file.name) {
+      if (model.name === file.name && !overwrite) {
         return Promise.reject(new Error(`"${file.name}" already exists`));
       }
     }
@@ -599,8 +599,9 @@ class FileBrowser extends Widget {
       if (!this._editNode.contains(event.target as HTMLElement)) {
         this._editNode.focus();
         this._editNode.blur();
+      } else {
+        return;
       }
-      return;
     }
 
     // Check for a breadcrumb hit.
@@ -639,6 +640,10 @@ class FileBrowser extends Widget {
       return;
     }
 
+    // Stop the event propagation.
+    event.preventDefault();
+    event.stopPropagation();
+
     // Find the target file item.
     let index = hitTestNodes(this._items, event.clientX, event.clientY);
     if (index === -1) {
@@ -647,10 +652,6 @@ class FileBrowser extends Widget {
 
     // Remove the pending select flag.
     this._pendingSelect = false;
-
-    // Stop the event propagation.
-    event.preventDefault();
-    event.stopPropagation();
 
     // Open the selected item.
     this._model.open();
@@ -713,22 +714,18 @@ class FileBrowser extends Widget {
         if (this._pendingSelect) {
           setTimeout(() => {
             if (this._pendingSelect) {
-              let text = current.getElementsByClassName(ROW_TEXT_CLASS)[0];
-              var content = text.textContent;
-              handleEdit(current, this._editNode).then(result => {
-                if (result) {
-                  this._model.rename(content, this._editNode.value).catch(error => {
-                    // TODO: display the dialog here.
-                    console.log(error);
-                  });
-                }
-              });
+              this._doRename(current);
+            } else {
+              this._pendingSelect = true;
             }
           }, RENAME_DURATION);
+          return;
         }
       } else {
         this._pendingSelect = true;
       }
+
+      // Add the selected class to current row, and remove from all others.
       for (let node of nodes) {
         node.classList.remove(SELECTED_CLASS);
       }
@@ -763,13 +760,7 @@ class FileBrowser extends Widget {
             }
           });
         } else {
-          let options = {
-            title: 'Upload Error',
-            host: this.node,
-            body: error.message,
-            buttons: [okButton]
-          }
-          showDialog(options);
+          this._showErrorMessage('Upload Error', error.message);
         }
       });
     }
@@ -783,7 +774,46 @@ class FileBrowser extends Widget {
   }
 
   /**
-   * Handle an `opened` signal from the model.
+   * Allow the user to rename item on a given row.
+   */
+  private _doRename(row: HTMLElement): void {
+    let text = row.getElementsByClassName(ROW_TEXT_CLASS)[0] as HTMLElement;
+    let content = text.textContent;
+
+    doRename(row, text, this._editNode).then(changed => {
+      if (!changed) {
+        return;
+      }
+      this._model.rename(content, this._editNode.value).catch(error => {
+        if (error.message.indexOf('already exists') !== -1) {
+          let options = {
+            title: 'Overwrite file?',
+            host: this.node,
+            body: error.message + ', overwrite?'
+          }
+          showDialog(options).then(button => {
+            if (button.text === 'OK') {
+              this._model.rename(content, this._editNode.value, true);
+            }
+          });
+        } else {
+          this._showErrorMessage('Rename Error', error.message);
+        }
+      });
+    });
+  }
+
+  private _showErrorMessage(title: string, message: string) {
+    let options = {
+      title: title,
+      host: this.node,
+      body: message,
+      buttons: [okButton]
+    }
+    showDialog(options);
+  }
+  /**
+   * Handle a `changed` signal from the model.
    */
   private _onChanged(model: FileBrowserViewModel, change: IChangedArgs<IContentsModel>): void {
     if (change.name === 'refresh') {
@@ -1002,23 +1032,32 @@ function createMenu(command: ICommand): Menu {
 
 
 /**
- * Handle editing a file name.
+ * Handle editing a text on a node.
+ *
+ * @returns Boolean indicating whether the name changed.
  */
-function handleEdit(row: HTMLElement, edit: HTMLInputElement): Promise<boolean> {
-  var text = row.getElementsByClassName(ROW_TEXT_CLASS)[0];
+function doRename(parent: HTMLElement, text: HTMLElement, edit: HTMLInputElement): Promise<boolean> {
   var value = true;
-  row.replaceChild(edit, text);
+  parent.replaceChild(edit, text);
   edit.value = text.textContent;
   edit.focus();
-  edit.setSelectionRange(0, edit.value.indexOf('.'));
+  let index = edit.value.indexOf('.');
+  if (index === -1) {
+    edit.setSelectionRange(0, edit.value.length);
+  } else {
+    edit.setSelectionRange(0, index);
+  }
 
   return new Promise<boolean>((resolve, reject) => {
     edit.onblur = () => {
-      row.replaceChild(text, edit);
+      parent.replaceChild(text, edit);
+      if (text.textContent === edit.value) {
+        value = false;
+      }
       if (value) text.textContent = edit.value;
       resolve(value);
     }
-    row.onkeydown = (event: KeyboardEvent) => {
+    parent.onkeydown = (event: KeyboardEvent) => {
       switch (event.keyCode) {
       case 13:  // Enter
         event.stopPropagation();

@@ -5,8 +5,8 @@ The full license is in the file LICENSE, distributed with this software.
 """
 import subprocess
 import sys
+import threading
 
-import webbrowser
 import tornado.web
 
 
@@ -28,7 +28,7 @@ def main(argv):
          {'path': './components/font-awesome/fonts/'}),
     ]
 
-    nb_command = [sys.executable, '-m', 'notebook', '--no-browser',
+    nb_command = [sys.executable, '-m', 'notebook', '--no-browser', '--debug',
                   '--NotebookApp.allow_origin="%s"' % url]
     nb_server = subprocess.Popen(nb_command, stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE)
@@ -42,9 +42,17 @@ def main(argv):
         if 'The IPython Notebook is running at: http://localhost:8888/':
             break
         if 'Control-C' in line:
-            raise ValueError(
-                'The port 8888 was already taken, kill running notebook servers'
-            )
+            raise ValueError('The port 8888 was already taken, kill running '
+                             'notebook servers')
+
+    def print_thread():
+        while 1:
+            line = nb_server.stdout.readline().decode('utf-8').strip()
+            if not line:
+                continue
+            print(line)
+    thread = threading.Thread(target=print_thread, daemon=True)
+    thread.start()
 
     app = tornado.web.Application(handlers, static_path='build',
                                   template_path='.')
@@ -52,7 +60,6 @@ def main(argv):
     app.listen(8765, 'localhost')
     loop = tornado.ioloop.IOLoop.instance()
     print('Browse to http://localhost:8765')
-    #loop.add_callback(webbrowser.open, url)
     try:
         loop.start()
     except KeyboardInterrupt:
