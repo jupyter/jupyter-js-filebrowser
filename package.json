@@ -8,11 +8,12 @@
     "jupyter-js-services": "^0.2.2",
     "moment": "^2.10.6",
     "phosphor-command": "^0.5.0",
+    "phosphor-dialog": "blink1073/phosphor-dialog#f5afb2b",
     "phosphor-domutil": "^1.2.0",
-    "phosphor-menus": "^1.0.0-beta.1",
+    "phosphor-menus": "1.0.0-beta.1",
     "phosphor-messaging": "^1.0.5",
     "phosphor-nodewrapper": "^1.0.4",
-    "phosphor-widget": "^1.0.0-beta.1"
+    "phosphor-widget": "^1.0.0-beta.2"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",

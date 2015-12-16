@@ -14,6 +14,10 @@ import {
 } from 'phosphor-command';
 
 import {
+  okButton, showDialog
+} from 'phosphor-dialog';
+
+import {
   hitTest
 } from 'phosphor-domutil';
 
@@ -228,20 +232,20 @@ class FileBrowserViewModel {
   /**
    * Upload a file object.
    */
-  upload(file: File): Promise<IContentsModel> {
+  upload(file: File, overwrite?: boolean): Promise<IContentsModel> {
 
     // Skip large files with a warning.
     if (file.size > this._max_upload_size_mb * 1024 * 1024) {
-      let msg = `Cannot upload file (>${this._max_upload_size_mb} MB)`;
-      msg += `'${file.name}'`
+      let msg = `Cannot upload file (>${this._max_upload_size_mb} MB) `;
+      msg += `"${file.name}"`
       console.warn(msg);
       return Promise.reject(new Error(msg));
     }
 
     // Check for existing file.
     for (let model of this._items) {
-      if (model.name === file.name) {
-        return Promise.reject(new Error(`${file.name} already exists`));
+      if (model.name === file.name && !overwrite) {
+        return Promise.reject(new Error(`"${file.name}" already exists`));
       }
     }
 
@@ -654,8 +658,29 @@ class FileBrowser extends Widget {
    * Handle a file upload event.
    */
   private _handleUploadEvent(event: Event) {
-    for (let file of (event.target as any).files) {
-      this._model.upload(file);
+    for (var file of (event.target as any).files) {
+      this._model.upload(file).catch(error => {
+        if (error.message.indexOf('already exists') !== -1) {
+          let options = {
+            title: 'Overwrite file?',
+            host: this.node,
+            body: error.message + ', overwrite?'
+          }
+          showDialog(options).then(button => {
+            if (button.text === 'OK') {
+              this._model.upload(file, true);
+            }
+          });
+        } else {
+          let options = {
+            title: 'Upload Error',
+            host: this.node,
+            body: error.message,
+            buttons: [okButton]
+          }
+          showDialog(options);
+        }
+      });
     }
   }
 

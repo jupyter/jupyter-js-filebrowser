@@ -36,12 +36,6 @@
 }
 
 
-
-.jp-EditorWidget {
-  min-height: 200px;
-}
-
-
 .jp-FileBrowser-row.jp-mod-selected {
   background-color: #2196F3;
   color: #F5F5F5;
@@ -62,6 +56,62 @@
   content: "\f016";
 }
 
+
+.jp-EditorWidget {
+  min-height: 200px;
+}
+
+
+.p-Dialog {
+  padding-left: 3px;
+  background: rgba(245, 245, 245, .6);
+}
+
+
+.p-Dialog-content {
+  background-color: #F5F5F5;
+  min-width: 50%;
+  border: 1px solid #757575;
+  border-radius: 5px;
+}
+
+
+.p-Dialog-header {
+  padding: 5px;
+  border-bottom: 1px solid #757575;
+}
+
+
+.p-Dialog-body {
+  padding: 5px;
+}
+
+
+.p-Dialog-footer {
+  padding: 5px;
+}
+
+
+.p-Dialog-button {
+  margin-left: 5px;
+  padding: 5px;
+  border: 1px solid #757575;
+  font-size: 16px;
+  background-color: #FAFAFA;
+  line-height: 20px;
+  border-radius: 3px;
+  max-width: 100px;
+}
+
+.p-Dialog-close {
+  line-height: 21px;
+}
+
+
+.p-Dialog-close:before {
+  content: '\f00d';
+  font-family: FontAwesome;
+}
 
 
 .p-MenuBar {

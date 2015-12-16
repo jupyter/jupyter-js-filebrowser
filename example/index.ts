@@ -45,9 +45,10 @@ function main(): void {
   });
 
   let panel = new SplitPanel();
-  panel.children.assign([fileBrowser, editor]);
+  panel.addChild(fileBrowser);
+  panel.addChild(editor);
 
-  Widget.attach(panel, document.body);
+  panel.attach(document.body);
 
   window.onresize = () => panel.update();
 }

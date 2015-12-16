@@ -54,7 +54,7 @@ export declare class FileBrowserViewModel {
     /**
      * Upload a file object.
      */
-    upload(file: File): Promise<IContentsModel>;
+    upload(file: File, overwrite?: boolean): Promise<IContentsModel>;
     /**
      * Refresh the model contents.
      */
