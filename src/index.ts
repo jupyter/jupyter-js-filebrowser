@@ -243,7 +243,7 @@ class FileBrowserViewModel {
   /**
    * Open the current selected items.
    *
-   * Emits an [[changed]] signal for each item after loading the contents.
+   * Emits a [[changed]] signal for each item after loading the contents.
    */
   open(): void {
     let items = this._model.content;
