@@ -154,10 +154,16 @@ const FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
 const RENAME_DURATION = 500;
 
 
+/**
+ * The threshold in pixels to start a drag event.
+ */
 const DRAG_THRESHOLD = 5;
 
 
-const CONTENTS_MIME = 'application/x-juptyer-icontents';
+/**
+ * The mime type for a contents drag object.
+ */
+const CONTENTS_MIME = 'application/x-jupyter-icontents';
 
 
 /**
@@ -228,9 +234,7 @@ class FileBrowserViewModel {
   /**
    * Open the current selected items.
    *
-   * #### Notes
-   * Emits an [[opened]] signal for each item
-   * after loading the contents.
+   * Emits an [[changed]] signal for each item after loading the contents.
    */
   open(): void {
     let items = this._model.content;
@@ -254,6 +258,11 @@ class FileBrowserViewModel {
 
   /**
    * Create a new untitled file or directory in the current directory.
+   *
+   * @param type - The type of file object to create. One of ['file',
+   *   'notebook', 'directory'].
+   *
+   * @returns A promise containing the new file contents model.
    */
   newUntitled(type: string): Promise<IContentsModel> {
     let ext = type === 'file' ? '.ext': '';
@@ -267,15 +276,25 @@ class FileBrowserViewModel {
   /**
    * Rename a file or directory.
    *
-   * @param path - The path to the original file (can be relative).
+   * @param path - The path to the original file.
    *
-   * @param newPath - The path to the new file (can be relative).
+   * @param newPath - The path to the new file.
    *
    * @param overwrite - Whether to overwrite an exisiting file.
+   *
+   * @returns A promise containing the new file contents model.
+   *
+   * #### Notes
+   * The default behavior is for all paths to be interpreted as relative to
+   * the current directory.  A leading `/` indicates an absolute path.
    */
   rename(path: string, newPath: string, overwrite?: boolean): Promise<IContentsModel> {
-    // TODO: handle relative paths.
+    // Handle relative paths.
+    path = normalizePath(this._model.path, path);
+    newPath = normalizePath(this._model.path, newPath);
+    console.log(path, newPath);
 
+    return;
     if (overwrite) {
       return this._rename(path, newPath);
     }
@@ -287,21 +306,18 @@ class FileBrowserViewModel {
     });
   }
 
-  private _rename(path: string, newPath: string): Promise<IContentsModel> {
-    let current = this._model;
-    return this._contents.rename(path, newPath).then(contents => {
-      this.refresh();
-      this.changed.emit({
-        name: 'rename',
-        oldValue: current,
-        newValue: contents
-      });
-      return contents;
-    });
-  }
-
   /**
-   * Upload a file object.
+   * Upload a `File` object.
+   *
+   * @param file - The `File` object to upload.
+   *
+   * @param overwrite - Whether to overwrite an existing file.
+   *
+   * @returns A promise containing the new file contents model.
+   *
+   * #### Notes
+   * This will fail to upload files that are too big to be sent in one
+   * request to the server.
    */
   upload(file: File, overwrite?: boolean): Promise<IContentsModel> {
 
@@ -320,6 +336,47 @@ class FileBrowserViewModel {
       }
     }
 
+    // Upload the file.
+    return this._upload(file);
+  }
+
+  /**
+   * Refresh the model contents.
+   *
+   * Emits a [changed] signal with the new content.
+   */
+  refresh() {
+    this._contents.listContents(this._model.path).then(model => {
+      let old = this._model;
+      this._model = model;
+      this.changed.emit({
+        name: 'refresh',
+        oldValue: old,
+        newValue: model
+      });
+    });
+  }
+
+  /**
+   * Rename a file, without checking for existing file.
+   */
+  private _rename(path: string, newPath: string): Promise<IContentsModel> {
+    let current = this._model;
+    return this._contents.rename(path, newPath).then(contents => {
+      this.refresh();
+      this.changed.emit({
+        name: 'rename',
+        oldValue: current,
+        newValue: contents
+      });
+      return contents;
+    });
+  }
+
+  /**
+   * Upload a `File` object without checking for file size or existing file.
+   */
+  private _upload(file: File): Promise<IContentsModel> {
     // Gather the file model parameters.
     let path = this._model.path
     path = path ? path + '/' + file.name : file.name;
@@ -338,24 +395,11 @@ class FileBrowserViewModel {
 
     return new Promise<IContentsModel>((resolve, reject) => {
       reader.onload = (event: Event) => {
-        let content = '';
-        if (isNotebook) {
-          content = JSON.parse(reader.result);
-        } else {
-          // Base64-encode binary file data.
-          let bytes = '';
-          let buf = new Uint8Array(reader.result);
-          let nbytes = buf.byteLength;
-          for (let i = 0; i < nbytes; i++) {
-            bytes += String.fromCharCode(buf[i]);
-          }
-          content = btoa(bytes);
-        }
         let model: IContentsOpts = {
           type: type,
           format: format,
           name: name,
-          content: content
+          content: getContent(reader)
         }
         return this._contents.save(path, model).then(model => {
           this.refresh();
@@ -369,27 +413,62 @@ class FileBrowserViewModel {
     });
   }
 
-  /**
-   * Refresh the model contents.
-   */
-  refresh() {
-    this._contents.listContents(this._model.path).then(model => {
-      let old = this._model;
-      this._model = model;
-      this.changed.emit({
-        name: 'refresh',
-        oldValue: old,
-        newValue: model.content
-      });
-    });
-  }
-
   private _max_upload_size_mb = 15;
   private _selectedIndices: number[] = [];
   private _contents: IContents = null;
   private _model: IContentsModel = null;
 }
 
+
+/**
+ * Parse the content of a `FileReader`.
+ *
+ * If the result is an `ArrayBuffer`, return a Base64-encoded string.
+ * Otherwise, return the JSON parsed result.
+ */
+function getContent(reader: FileReader): any {
+  if (reader.result instanceof ArrayBuffer) {
+    // Base64-encode binary file data.
+    let bytes = '';
+    let buf = new Uint8Array(reader.result);
+    let nbytes = buf.byteLength;
+    for (let i = 0; i < nbytes; i++) {
+      bytes += String.fromCharCode(buf[i]);
+    }
+    return btoa(bytes);
+  } else {
+    return JSON.parse(reader.result);
+  }
+}
+
+
+/**
+ * Normalize a path based on a root directory, accounting for relative paths.
+ */
+function normalizePath(root: string, path: string): string {
+  // Root path.
+  if (path.indexOf('/') === 0) {
+    return path.slice(1, path.length);
+  // Current directory.
+  } else if (path.indexOf('./') === 0) {
+    path = path.slice(2, path.length);
+  // Grandparent directory.
+  } else if (path.indexOf('../../') === 0) {
+    let parts = root.split('/');
+    root = parts.splice(0, parts.length - 2).join('/');
+    path = path.slice(6, path.length);
+  // Parent directory.
+  } else if (path.indexOf('../') === 0) {
+    let parts = root.split('/');
+    root = parts.splice(0, parts.length - 1).join('/');
+    path = path.slice(3, path.length);
+  } else {
+    // Current directory.
+  }
+  // Combine the root and the path if necessary.
+  if (root) path = root + '/' + path;
+  return path;
+}
 
 /**
  * A widget which hosts a file browser.
@@ -412,7 +491,7 @@ class FileBrowser extends Widget {
     breadcrumbs.classList.add(BREADCRUMB_CLASS);
 
     // Create the button node.
-    let buttonBar = document.createElement('ul');
+    let buttonBar = document.createElement('div');
     buttonBar.className = BUTTON_CLASS;
 
     // Create the header.
@@ -459,14 +538,23 @@ class FileBrowser extends Widget {
     // Create the button nodes and add to button node.
     let buttons = this.node.getElementsByClassName(BUTTON_CLASS)[0];
     this._buttons = createButtons(buttons as HTMLElement);
-    let input = this._buttons[Button.Upload].lastChild;
-    (input as HTMLElement).onchange = this._handleUploadEvent.bind(this);
+
+    // Set up events on the buttons.
+    let input = this._buttons[Button.Upload].getElementsByTagName('input')[0];
+    input.onchange = this._handleUploadEvent.bind(this);
+
+    this._buttons[Button.Refresh].onclick = () => { this._model.refresh() };
+
+    this._buttons[Button.New].onclick = () => {
+      let rect = this._buttons[Button.New].getBoundingClientRect();
+      this._newMenu.popup(rect.left, rect.bottom, false, true);
+    }
 
     // Create the "new" menu.
     let command = new DelegateCommand((args: string) => {
       this._handleNewCommand(args);
     });
-    this._newMenu = createMenu(command);
+    this._newMenu = createNewItemMenu(command);
 
     // Create the edit node.
     this._editNode = document.createElement('input');
@@ -601,21 +689,8 @@ class FileBrowser extends Widget {
       return;
     }
 
-    // Handle a button selection.
-    let index = hitTestNodes(this._buttons, event.clientX, event.clientY);
-    if (index !== -1) {
-      this._buttons[index].classList.add(SELECTED_CLASS);
-      if (index === Button.Refresh) {
-        this._model.refresh();
-      } else if (index === Button.New) {
-        let rect = this._buttons[index].getBoundingClientRect();
-        this._newMenu.popup(rect.left, rect.bottom, false, true);
-      }
-      return;
-    }
-
     // Handle an item selection.
-    index = hitTestNodes(this._items, event.clientX, event.clientY);
+    let index = hitTestNodes(this._items, event.clientX, event.clientY);
     if (index !== -1) {
       this._dragData = { pressX: event.clientX, pressY: event.clientY,
                          index: index };
@@ -661,37 +736,7 @@ class FileBrowser extends Widget {
       return;
     }
 
-    // Make sure the source node is selected.
-    let source = this._items[data.index];
-    if (!source.classList.contains(SELECTED_CLASS)) {
-      source.classList.add(SELECTED_CLASS);
-      this._updateSelected();
-    }
-
-    // Create the drag image.
-    var dragImage = source.cloneNode(true) as HTMLElement;
-    dragImage.removeChild(dragImage.lastChild);
-    if (this._model.selected.length > 1) {
-      let text = dragImage.getElementsByClassName(ROW_TEXT_CLASS)[0];
-      text.textContent = '(' + this._model.selected.length + ')'
-    }
-
-    // Set up the drag event.
-    this._drag = new Drag({
-      dragImage: dragImage,
-      mimeData: new MimeData(),
-      supportedActions: DropActions.Move,
-      proposedAction: DropAction.Move
-    });
-    this._drag.mimeData.setData(CONTENTS_MIME, null);
-    let { clientX, clientY } = event;
-
-    // Start the drag and remove the mousemove listener.
-    this._drag.start(clientX, clientY).then(action => {
-      console.log('action', action);
-      this._drag = null;
-    });
-    document.removeEventListener('mousemove', this, true);
+    this._startDrag(data.index, event.clientX, event.clientY);
   }
 
   /**
@@ -717,8 +762,14 @@ class FileBrowser extends Widget {
       }
     }
 
+    // Find a valid click target.
+    let target = this._findTarget(event);
+    if (target === null) {
+      return;
+    }
+
     // Check for a breadcrumb hit.
-    let index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
+    let index = this._crumbs.indexOf(target);
     if (index !== -1) {
       // If the home node was clicked, set the path to root.
       if (index == Crumb.Home) {
@@ -735,7 +786,7 @@ class FileBrowser extends Widget {
     }
 
     // Check for a file item hit.
-    index = hitTestNodes(this._items, event.clientX, event.clientY);
+    index = this._items.indexOf(target);
     if (index !== -1) {
       this._handleFileClick(event, index);;
     } else {
@@ -775,25 +826,27 @@ class FileBrowser extends Widget {
    */
   private _evtDragEnter(event: IDragEvent): void {
     if (event.mimeData.hasData(CONTENTS_MIME)) {
-      // Check for a file item hit.
-      let index = hitTestNodes(this._items, event.clientX, event.clientY);
-      if (index === -1) {
-        // Check for crumb hits.
-        index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
-        if (index !== -1) {
-          this._crumbs[index].classList.add(DROP_TARGET_CLASS);
-        }
-      } else {
-        // Allow dropping on folders.
-        if (this._items[index].getElementsByClassName(FOLDER_ICON_CLASS).length) {
-          this._items[index].classList.add(DROP_TARGET_CLASS);
-        } else {
-          index = -1;
-        }
-      }
+      let target = this._findTarget(event as MouseEvent);
+      if (target === null) return;
+
+      let index = this._crumbs.indexOf(target);
       if (index !== -1) {
-        event.preventDefault();
-        event.stopPropagation();
+        if (index !== Crumb.Current) {
+          target.classList.add(DROP_TARGET_CLASS);
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        return;
+      }
+
+      index = this._items.indexOf(target);
+      if (index !== -1) {
+        if (target.getElementsByClassName(FOLDER_ICON_CLASS).length) {
+          target.classList.add(DROP_TARGET_CLASS);
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
       }
     }
   }
@@ -821,15 +874,8 @@ class FileBrowser extends Widget {
     if (dropTargets.length) {
       dropTargets[0].classList.remove(DROP_TARGET_CLASS);
     }
-    let index = hitTestNodes(this._items, event.clientX, event.clientY);
-    if (index === -1) {
-      index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
-      if (index !== -1) {
-        this._crumbs[index].classList.add(DROP_TARGET_CLASS);
-      }
-    } else {
-      this._items[index].classList.add(DROP_TARGET_CLASS);
-    }
+    let target = this._findTarget(event as MouseEvent);
+    target.classList.add(DROP_TARGET_CLASS);
   }
 
   /**
@@ -847,33 +893,12 @@ class FileBrowser extends Widget {
     }
     event.dropAction = event.proposedAction;
 
-    // Find the appropriate path modifier.
-    let target = event.target as HTMLElement;
-    let index = this._items.indexOf(target);
-    let path = '';
-    if (index !== -1) {
-      path = './' + this._model.items[index];
-    } else {
-      index = this._crumbs.indexOf(target);
-      switch(index) {
-      case Crumb.Home:
-        path = '';
-        break;
-      case Crumb.Ellipsis:
-        path = '../../';
-        break;
-      case Crumb.Second:
-        path = '../'
-        break;
-      case Crumb.First:
-        return;
-      }
-    }
+    let path = this._getPath(event as MouseEvent);
 
     // Move all of the items.
     for (let index of this._model.selected) {
-      var newPath = this._model.items[index].name;
-      this._model.rename('./' + newPath, path + newPath).catch(error => {
+      var name = this._model.items[index].name;
+      this._model.rename(name, path + name).catch(error => {
         if (error.message.indexOf('already exists') !== -1) {
           let options = {
             title: 'Overwrite file?',
@@ -882,7 +907,7 @@ class FileBrowser extends Widget {
           }
           showDialog(options).then(button => {
             if (button.text === 'OK') {
-              this._model.rename('./' + newPath, path + newPath, true);
+              this._model.rename(name, path + name, true);
             }
           });
         } else {
@@ -890,6 +915,80 @@ class FileBrowser extends Widget {
         }
       });
     }
+  }
+
+  /**
+   * Start a drag event.
+   */
+  private _startDrag(index: number, clientX: number, clientY: number) {
+    // Make sure the source node is selected.
+    let source = this._items[index];
+    if (!source.classList.contains(SELECTED_CLASS)) {
+      source.classList.add(SELECTED_CLASS);
+      this._updateSelected();
+    }
+
+    // Create the drag image.
+    var dragImage = source.cloneNode(true) as HTMLElement;
+    dragImage.removeChild(dragImage.lastChild);
+    if (this._model.selected.length > 1) {
+      let text = dragImage.getElementsByClassName(ROW_TEXT_CLASS)[0];
+      text.textContent = '(' + this._model.selected.length + ')'
+    }
+
+    // Set up the drag event.
+    this._drag = new Drag({
+      dragImage: dragImage,
+      mimeData: new MimeData(),
+      supportedActions: DropActions.Move,
+      proposedAction: DropAction.Move
+    });
+    this._drag.mimeData.setData(CONTENTS_MIME, null);
+
+    // Start the drag and remove the mousemove listener.
+    this._drag.start(clientX, clientY).then(action => {
+      console.log('action', action);
+      this._drag = null;
+    });
+    document.removeEventListener('mousemove', this, true);
+  }
+
+  /**
+   * Find the appropriate target for a mouse event.
+   */
+ private _findTarget(event: MouseEvent): HTMLElement {
+    let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    if (index !== -1) return this._items[index];
+
+    index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
+    if (index !== -1) return this._crumbs[index];
+
+    return null;
+  }
+
+  /**
+   * Get the path of an item based on a mouse event.
+   */
+  private _getPath(event: MouseEvent): string {
+    let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    let path = '';
+    if (index !== -1) {
+      path = this._model.items[index].name + '/';
+    } else {
+      index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
+      switch(index) {
+      case Crumb.Home:
+        path = '/';
+        break;
+      case Crumb.Ellipsis:
+        path = '../../';
+        break;
+      case Crumb.Parent:
+        path = '../'
+        break;
+      }
+    }
+    return path;
   }
 
   /**
@@ -911,35 +1010,7 @@ class FileBrowser extends Widget {
 
     // Handle multiple select.
     } else if (event.shiftKey) {
-      // Find the "nearest selected".
-      let nearestIndex = -1;
-      for (let i = 0; i < nodes.length; i++) {
-        if (i === index) {
-          continue;
-        }
-        if (nodes[i].classList.contains(SELECTED_CLASS)) {
-          if (nearestIndex === -1) {
-            nearestIndex = i;
-          } else {
-            if (Math.abs(index - i) < Math.abs(nearestIndex - i)) {
-              nearestIndex = i;
-            }
-          }
-        }
-      }
-
-      // Default to the first element (and fill down).
-      if (nearestIndex === -1) {
-        nearestIndex = 0;
-      }
-
-      // Select the rows between the current and the nearest selected.
-      for (let i = 0; i < nodes.length; i++) {
-        if (nearestIndex >= i && index <= i ||
-            nearestIndex <= i && index >= i) {
-          nodes[i].classList.add(SELECTED_CLASS);
-        }
-      }
+      handleMultiSelect(nodes, index);
 
     // Default to selecting the only the item.
     } else {
@@ -1085,8 +1156,8 @@ class FileBrowser extends Widget {
 enum Crumb {
   Home,
   Ellipsis,
-  First,
-  Second
+  Parent,
+  Current
 }
 
 
@@ -1182,14 +1253,14 @@ function updateCrumbs(breadcrumbs: HTMLElement[], separators: HTMLElement[], pat
   }
 
   if (path) {
-    node.appendChild(separators[1]);
-    breadcrumbs[Crumb.First].textContent = parts[0];
-    node.appendChild(breadcrumbs[Crumb.First]);
     if (parts.length === 2) {
       node.appendChild(separators[2]);
-      breadcrumbs[Crumb.Second].textContent = parts[1];
-      node.appendChild(breadcrumbs[Crumb.Second]);
+      breadcrumbs[Crumb.Parent].textContent = parts[1];
+      node.appendChild(breadcrumbs[Crumb.Parent]);
     }
+    node.appendChild(separators[1]);
+    breadcrumbs[Crumb.Current].textContent = parts[0];
+    node.appendChild(breadcrumbs[Crumb.Current]);
   }
 }
 
@@ -1202,11 +1273,11 @@ function createCrumbs(): HTMLElement[] {
   home.className = 'fa fa-home ' + BREADCRUMB_ITEM_CLASS;
   let ellipsis = document.createElement('i');
   ellipsis.className = 'fa fa-ellipsis-h ' + BREADCRUMB_ITEM_CLASS;
-  let first = document.createElement('span');
-  first.className = BREADCRUMB_ITEM_CLASS;
-  let second = document.createElement('span');
-  second.className = BREADCRUMB_ITEM_CLASS;
-  return [home, ellipsis, first, second];
+  let parent = document.createElement('span');
+  parent.className = BREADCRUMB_ITEM_CLASS;
+  let current = document.createElement('span');
+  current.className = BREADCRUMB_ITEM_CLASS;
+  return [home, ellipsis, parent, current];
 }
 
 
@@ -1230,7 +1301,7 @@ function createCrumbSeparators(): HTMLElement[] {
 function createButtons(buttonBar: HTMLElement): HTMLElement[] {
   let buttons: HTMLElement[] = [];
   for (let i = 0; i < 3; i++) {
-    let button = document.createElement('li');
+    let button = document.createElement('button');
     button.className = BUTTON_ITEM_CLASS + ' fa';
     buttonBar.appendChild(button);
     buttons.push(button);
@@ -1257,7 +1328,7 @@ function createButtons(buttonBar: HTMLElement): HTMLElement[] {
 /**
  * Create the "new" menu.
  */
-function createMenu(command: ICommand): Menu {
+function createNewItemMenu(command: ICommand): Menu {
   return new Menu([
     new MenuItem({
       text: 'Notebook',
@@ -1322,6 +1393,41 @@ function doRename(parent: HTMLElement, text: HTMLElement, edit: HTMLInputElement
   });
 }
 
+
+/**
+ * Handle a multiple select on a file item node.
+ */
+function handleMultiSelect(nodes: HTMLElement[], index: number) {
+  // Find the "nearest selected".
+  let nearestIndex = -1;
+  for (let i = 0; i < nodes.length; i++) {
+    if (i === index) {
+      continue;
+    }
+    if (nodes[i].classList.contains(SELECTED_CLASS)) {
+      if (nearestIndex === -1) {
+        nearestIndex = i;
+      } else {
+        if (Math.abs(index - i) < Math.abs(nearestIndex - i)) {
+          nearestIndex = i;
+        }
+      }
+    }
+  }
+
+  // Default to the first element (and fill down).
+  if (nearestIndex === -1) {
+    nearestIndex = 0;
+  }
+
+  // Select the rows between the current and the nearest selected.
+  for (let i = 0; i < nodes.length; i++) {
+    if (nearestIndex >= i && index <= i ||
+        nearestIndex <= i && index >= i) {
+      nodes[i].classList.add(SELECTED_CLASS);
+    }
+  }
+}
 
 /**
  * Get the index of the node at a client position, or `-1`.

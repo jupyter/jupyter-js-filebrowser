@@ -43,34 +43,62 @@ export declare class FileBrowserViewModel {
     /**
      * Open the current selected items.
      *
-     * #### Notes
-     * Emits an [[opened]] signal for each item
-     * after loading the contents.
+     * Emits an [[changed]] signal for each item after loading the contents.
      */
     open(): void;
     /**
      * Create a new untitled file or directory in the current directory.
+     *
+     * @param type - The type of file object to create. One of ['file',
+     *   'notebook', 'directory'].
+     *
+     * @returns A promise containing the new file contents model.
      */
     newUntitled(type: string): Promise<IContentsModel>;
     /**
      * Rename a file or directory.
      *
-     * @param path - The full path to the original file.
+     * @param path - The path to the original file.
      *
-     * @param newPath - The full path to the new file.
+     * @param newPath - The path to the new file.
      *
      * @param overwrite - Whether to overwrite an exisiting file.
+     *
+     * @returns A promise containing the new file contents model.
+     *
+     * #### Notes
+     * The default behavior is for all paths to be interpreted as relative to
+     * the current directory.  A leading `/` indicates an absolute path.
      */
     rename(path: string, newPath: string, overwrite?: boolean): Promise<IContentsModel>;
-    private _rename(path, newPath);
     /**
-     * Upload a file object.
+     * Upload a `File` object.
+     *
+     * @param file - The `File` object to upload.
+     *
+     * @param overwrite - Whether to overwrite an existing file.
+     *
+     * @returns A promise containing the new file contents model.
+     *
+     * #### Notes
+     * This will fail to upload files that are too big to be sent in one
+     * request to the server.
      */
     upload(file: File, overwrite?: boolean): Promise<IContentsModel>;
     /**
      * Refresh the model contents.
+     *
+     * Emits a [changed] signal with the new content.
      */
     refresh(): void;
+    /**
+     * Rename a file, without checking for existing file.
+     */
+    private _rename(path, newPath);
+    /**
+     * Upload a `File` object without checking for file size or existing file.
+     */
+    private _upload(file);
     private _max_upload_size_mb;
     private _selectedIndices;
     private _contents;
@@ -157,6 +185,18 @@ export declare class FileBrowser extends Widget {
      * Handle the `'p-drop'` event for the dock panel.
      */
     private _evtDrop(event);
+    /**
+     * Start a drag event.
+     */
+    private _startDrag(index, clientX, clientY);
+    /**
+     * Find the appropriate target for a mouse event.
+     */
+    private _findTarget(event);
+    /**
+     * Get the path of an item based on a mouse event.
+     */
+    private _getPath(event);
     /**
      * Handle a click on a file node.
      */
