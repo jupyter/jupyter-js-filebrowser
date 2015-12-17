@@ -5,6 +5,10 @@ import { ISignal, Signal } from 'phosphor-signaling';
 import { Widget } from 'phosphor-widget';
 /**
  * An implementation of a file browser view model.
+ *
+ * #### Notes
+ * All paths parameters without a leading `'/'` are interpreted as relative to
+ * the current directory.  Supports `'../'` syntax.
  */
 export declare class FileBrowserViewModel {
     /**
@@ -47,6 +51,14 @@ export declare class FileBrowserViewModel {
      */
     open(): void;
     /**
+     * Delete a file.
+     *
+     * @param: path - The path to the file to be deleted.
+     *
+     * @returns A promise that resolves when the file is deleted.
+     */
+    delete(path: string): Promise<void>;
+    /**
      * Create a new untitled file or directory in the current directory.
      *
      * @param type - The type of file object to create. One of ['file',
@@ -62,21 +74,13 @@ export declare class FileBrowserViewModel {
      *
      * @param newPath - The path to the new file.
      *
-     * @param overwrite - Whether to overwrite an exisiting file.
-     *
      * @returns A promise containing the new file contents model.
-     *
-     * #### Notes
-     * The default behavior is for all paths to be interpreted as relative to
-     * the current directory.  A leading `/` indicates an absolute path.
      */
-    rename(path: string, newPath: string, overwrite?: boolean): Promise<IContentsModel>;
+    rename(path: string, newPath: string): Promise<IContentsModel>;
     /**
      * Upload a `File` object.
      *
      * @param file - The `File` object to upload.
-     *
-     * @param overwrite - Whether to overwrite an existing file.
      *
      * @returns A promise containing the new file contents model.
      *
@@ -84,21 +88,13 @@ export declare class FileBrowserViewModel {
      * This will fail to upload files that are too big to be sent in one
      * request to the server.
      */
-    upload(file: File, overwrite?: boolean): Promise<IContentsModel>;
+    upload(file: File): Promise<IContentsModel>;
     /**
      * Refresh the model contents.
      *
      * Emits a [changed] signal with the new content.
      */
     refresh(): void;
-    /**
-     * Rename a file, without checking for existing file.
-     */
-    private _rename(path, newPath);
-    /**
-     * Upload a `File` object without checking for file size or existing file.
-     */
-    private _upload(file);
     private _max_upload_size_mb;
     private _selectedIndices;
     private _contents;
@@ -194,13 +190,9 @@ export declare class FileBrowser extends Widget {
      */
     private _findTarget(event);
     /**
-     * Get the path of an item based on a mouse event.
-     */
-    private _getPath(event);
-    /**
      * Handle a click on a file node.
      */
-    private _handleFileClick(event, index);
+    private _handleFileClick(event, target);
     /**
      * Update the selected indices of the model.
      */
@@ -209,10 +201,6 @@ export declare class FileBrowser extends Widget {
      * Handle a file upload event.
      */
     private _handleUploadEvent(event);
-    /**
-     * Handle a "new" command execution.
-     */
-    private _handleNewCommand(type);
     /**
      * Allow the user to rename item on a given row.
      */

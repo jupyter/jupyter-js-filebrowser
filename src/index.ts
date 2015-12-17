@@ -165,9 +165,18 @@ const DRAG_THRESHOLD = 5;
  */
 const CONTENTS_MIME = 'application/x-jupyter-icontents';
 
+/**
+ * Bread crumb paths.
+ */
+const BREAD_CRUMB_PATHS = ['/', '../../', '../', ''];
+
 
 /**
  * An implementation of a file browser view model.
+ *
+ * #### Notes
+ * All paths parameters without a leading `'/'` are interpreted as relative to
+ * the current directory.  Supports `'../'` syntax.
  */
 export
 class FileBrowserViewModel {
@@ -203,7 +212,7 @@ class FileBrowserViewModel {
    * Set the current path, triggering a refresh.
    */
   set path(value: string) {
-    this._model.path = value;
+    this._model.path = normalizePath(this._model.path, value);
     this.refresh();
   }
 
@@ -241,7 +250,7 @@ class FileBrowserViewModel {
     for (let index of this._selectedIndices) {
       let item = items[index];
       if (item.type === 'directory') {
-        this.path = item.path;
+        this.path = '/' + item.path;
         continue;
       } else {
         this._contents.get(item.path, { type: item.type }
@@ -257,6 +266,21 @@ class FileBrowserViewModel {
   }
 
   /**
+   * Delete a file.
+   *
+   * @param: path - The path to the file to be deleted.
+   *
+   * @returns A promise that resolves when the file is deleted.
+   */
+  delete(path: string): Promise<void> {
+    path = normalizePath(this._model.path, path);
+    return this._contents.delete(path).then(() => {
+      this.refresh();
+      return void 0;
+    });
+  }
+
+  /**
    * Create a new untitled file or directory in the current directory.
    *
    * @param type - The type of file object to create. One of ['file',
@@ -265,7 +289,7 @@ class FileBrowserViewModel {
    * @returns A promise containing the new file contents model.
    */
   newUntitled(type: string): Promise<IContentsModel> {
-    let ext = type === 'file' ? '.ext': '';
+    let ext = type === 'file' ? '.txt': '';
     return this._contents.newUntitled(this._model.path, { type: type, ext: ext }
     ).then(contents => {
       this.refresh();
@@ -280,89 +304,15 @@ class FileBrowserViewModel {
    *
    * @param newPath - The path to the new file.
    *
-   * @param overwrite - Whether to overwrite an exisiting file.
-   *
    * @returns A promise containing the new file contents model.
-   *
-   * #### Notes
-   * The default behavior is for all paths to be interpreted as relative to
-   * the current directory.  A leading `/` indicates an absolute path.
    */
-  rename(path: string, newPath: string, overwrite?: boolean): Promise<IContentsModel> {
+  rename(path: string, newPath: string): Promise<IContentsModel> {
     // Handle relative paths.
     path = normalizePath(this._model.path, path);
     newPath = normalizePath(this._model.path, newPath);
-    console.log(path, newPath);
 
-    return;
-    if (overwrite) {
-      return this._rename(path, newPath);
-    }
-
-    return this._contents.get(newPath, {}).then((content): IContentsModel => {
-      throw new Error(`"${newPath}" already exists`);
-    }, () => {
-      return this._rename(path, newPath);
-    });
-  }
-
-  /**
-   * Upload a `File` object.
-   *
-   * @param file - The `File` object to upload.
-   *
-   * @param overwrite - Whether to overwrite an existing file.
-   *
-   * @returns A promise containing the new file contents model.
-   *
-   * #### Notes
-   * This will fail to upload files that are too big to be sent in one
-   * request to the server.
-   */
-  upload(file: File, overwrite?: boolean): Promise<IContentsModel> {
-
-    // Skip large files with a warning.
-    if (file.size > this._max_upload_size_mb * 1024 * 1024) {
-      let msg = `Cannot upload file (>${this._max_upload_size_mb} MB) `;
-      msg += `"${file.name}"`
-      console.warn(msg);
-      return Promise.reject(new Error(msg));
-    }
-
-    // Check for existing file.
-    for (let model of this._model.content) {
-      if (model.name === file.name && !overwrite) {
-        return Promise.reject(new Error(`"${file.name}" already exists`));
-      }
-    }
-
-    // Upload the file.
-    return this._upload(file);
-  }
-
-  /**
-   * Refresh the model contents.
-   *
-   * Emits a [changed] signal with the new content.
-   */
-  refresh() {
-    this._contents.listContents(this._model.path).then(model => {
-      let old = this._model;
-      this._model = model;
-      this.changed.emit({
-        name: 'refresh',
-        oldValue: old,
-        newValue: model
-      });
-    });
-  }
-
-  /**
-   * Rename a file, without checking for existing file.
-   */
-  private _rename(path: string, newPath: string): Promise<IContentsModel> {
-    let current = this._model;
     return this._contents.rename(path, newPath).then(contents => {
+      let current = this._model;
       this.refresh();
       this.changed.emit({
         name: 'rename',
@@ -374,9 +324,26 @@ class FileBrowserViewModel {
   }
 
   /**
-   * Upload a `File` object without checking for file size or existing file.
+   * Upload a `File` object.
+   *
+   * @param file - The `File` object to upload.
+   *
+   * @returns A promise containing the new file contents model.
+   *
+   * #### Notes
+   * This will fail to upload files that are too big to be sent in one
+   * request to the server.
    */
-  private _upload(file: File): Promise<IContentsModel> {
+  upload(file: File): Promise<IContentsModel> {
+
+    // Skip large files with a warning.
+    if (file.size > this._max_upload_size_mb * 1024 * 1024) {
+      let msg = `Cannot upload file (>${this._max_upload_size_mb} MB) `;
+      msg += `"${file.name}"`
+      console.warn(msg);
+      return Promise.reject(new Error(msg));
+    }
+
     // Gather the file model parameters.
     let path = this._model.path
     path = path ? path + '/' + file.name : file.name;
@@ -407,9 +374,27 @@ class FileBrowserViewModel {
         });
       }
 
-      reader.onerror = (evt: Event) => {
-        throw Error('Failed to upload `${file.name}`');
+      reader.onerror = (event: Event) => {
+        throw Error(`Failed to upload "${file.name}":` + event);
       }
+    });
+
+  }
+
+  /**
+   * Refresh the model contents.
+   *
+   * Emits a [changed] signal with the new content.
+   */
+  refresh() {
+    this._contents.listContents(this._model.path).then(model => {
+      let old = this._model;
+      this._model = model;
+      this.changed.emit({
+        name: 'refresh',
+        oldValue: old,
+        newValue: model
+      });
     });
   }
 
@@ -448,7 +433,8 @@ function getContent(reader: FileReader): any {
 function normalizePath(root: string, path: string): string {
   // Root path.
   if (path.indexOf('/') === 0) {
-    return path.slice(1, path.length);
+    path = path.slice(1, path.length);
+    root = ''
   // Current directory.
   } else if (path.indexOf('./') === 0) {
     path = path.slice(2, path.length);
@@ -465,8 +451,15 @@ function normalizePath(root: string, path: string): string {
   } else {
     // Current directory.
   }
+  if (path[path.length - 1] === '/') {
+    path = path.slice(0, path.length - 1);
+  }
   // Combine the root and the path if necessary.
-  if (root) path = root + '/' + path;
+  if (root && path) {
+    path = root + '/' + path;
+  } else if (root) {
+    path = root;
+  }
   return path;
 }
 
@@ -551,8 +544,8 @@ class FileBrowser extends Widget {
     }
 
     // Create the "new" menu.
-    let command = new DelegateCommand((args: string) => {
-      this._handleNewCommand(args);
+    let command = new DelegateCommand(args => {
+      this._model.newUntitled(args as string);
     });
     this._newMenu = createNewItemMenu(command);
 
@@ -676,6 +669,8 @@ class FileBrowser extends Widget {
       updateItemNode(items[i], nodes[i]);
     }
 
+    this._updateSelected();
+
     // Update the breadcrumb list.
     updateCrumbs(this._crumbs, this._crumbSeps, this._model.path);
   }
@@ -704,16 +699,16 @@ class FileBrowser extends Widget {
    * Handle the `'mouseup'` event for the file browser.
    */
   private _evtMouseup(event: MouseEvent) {
-    // Do nothing if it's not a left mouse press.
-    if (event.button !== 0) {
+    if (event.button !== 0 || !this._drag) {
+      document.removeEventListener('mousemove', this, true);
       return;
     }
+    event.preventDefault();
+    event.stopPropagation();
 
     for (let node of this._buttons) {
       node.classList.remove(SELECTED_CLASS);
     }
-
-    document.removeEventListener('mousemove', this, true);
   }
 
   /**
@@ -754,7 +749,7 @@ class FileBrowser extends Widget {
 
     // Handle the edit node.
     if (this._editNode.parentNode) {
-      if (!this._editNode.contains(event.target as HTMLElement)) {
+      if (this._editNode !== event.target as HTMLElement) {
         this._editNode.focus();
         this._editNode.blur();
       } else {
@@ -763,36 +758,21 @@ class FileBrowser extends Widget {
     }
 
     // Find a valid click target.
-    let target = this._findTarget(event);
-    if (target === null) {
-      return;
-    }
-
-    // Check for a breadcrumb hit.
-    let index = this._crumbs.indexOf(target);
-    if (index !== -1) {
-      // If the home node was clicked, set the path to root.
-      if (index == Crumb.Home) {
-        this._model.path = '';
+    let node = event.target as HTMLElement;
+    while (node && node !== this.node) {
+      if (node.classList.contains(BREADCRUMB_ITEM_CLASS)) {
+        this._pendingSelect = false;
+        let index = this._crumbs.indexOf(node);
+        this._model.path = BREAD_CRUMB_PATHS[index];
         return;
       }
-
-      // Grab the portion of the path based on which node was clicked.
-      let splice = 3 - index;
-      let path = this._model.path.split('/');
-      path = path.splice(0, path.length - splice);
-      this._model.path = path.join('/');
-      return;
+      if (node.classList.contains(ROW_CLASS)) {
+        this._handleFileClick(event, node);
+        return;
+      }
+      node = node.parentElement;
     }
-
-    // Check for a file item hit.
-    index = this._items.indexOf(target);
-    if (index !== -1) {
-      this._handleFileClick(event, index);;
-    } else {
-      // Remove the pending select flag.
-      this._pendingSelect = false;
-    }
+    this._pendingSelect = false;
   }
 
   /**
@@ -808,17 +788,18 @@ class FileBrowser extends Widget {
     event.preventDefault();
     event.stopPropagation();
 
-    // Find the target file item.
-    let index = hitTestNodes(this._items, event.clientX, event.clientY);
-    if (index === -1) {
-      return;
-    }
-
-    // Remove the pending select flag.
     this._pendingSelect = false;
 
-    // Open the selected item.
-    this._model.open();
+    // Find a valid double click target.
+    let node = event.target as HTMLElement;
+    while (node && node !== this.node) {
+      if (node.classList.contains(ROW_CLASS)) {
+        // Open the selected item.
+        this._model.open();
+        return;
+      }
+      node = node.parentElement;
+    }
   }
 
   /**
@@ -841,7 +822,8 @@ class FileBrowser extends Widget {
 
       index = this._items.indexOf(target);
       if (index !== -1) {
-        if (target.getElementsByClassName(FOLDER_ICON_CLASS).length) {
+        if (target.getElementsByClassName(FOLDER_ICON_CLASS).length &&
+            !target.classList.contains(SELECTED_CLASS)) {
           target.classList.add(DROP_TARGET_CLASS);
           event.preventDefault();
           event.stopPropagation();
@@ -875,7 +857,7 @@ class FileBrowser extends Widget {
       dropTargets[0].classList.remove(DROP_TARGET_CLASS);
     }
     let target = this._findTarget(event as MouseEvent);
-    target.classList.add(DROP_TARGET_CLASS);
+    if (target !== null) target.classList.add(DROP_TARGET_CLASS);
   }
 
   /**
@@ -893,26 +875,45 @@ class FileBrowser extends Widget {
     }
     event.dropAction = event.proposedAction;
 
-    let path = this._getPath(event as MouseEvent);
+    let target = event.target as HTMLElement;
+    while (target && target.parentElement) {
+      if (target.classList.contains(DROP_TARGET_CLASS)) {
+        target.classList.remove(DROP_TARGET_CLASS);
+        break;
+      }
+      target = target.parentElement;
+    }
+
+    // Get the path based on the target node.
+    let index = this._crumbs.indexOf(target)
+    if (index !== -1) {
+      var path = BREAD_CRUMB_PATHS[index];
+    } else {
+      index = this._items.indexOf(target);
+      var path = this._model.items[index].name + '/';
+    }
 
     // Move all of the items.
     for (let index of this._model.selected) {
-      var name = this._model.items[index].name;
-      this._model.rename(name, path + name).catch(error => {
-        if (error.message.indexOf('already exists') !== -1) {
+      var original = this._model.items[index].name;
+      var newPath = path + original;
+      this._model.rename(original, newPath).catch(error => {
+        if (error.message.indexOf('409') !== -1) {
           let options = {
             title: 'Overwrite file?',
             host: this.node,
-            body: error.message + ', overwrite?'
+            body: `"${newPath}" already exists, overwrite?`
           }
           showDialog(options).then(button => {
             if (button.text === 'OK') {
-              this._model.rename(name, path + name, true);
+              return this._model.delete(newPath).then(() => {
+                return this._model.rename(original, newPath);
+              });
             }
           });
-        } else {
-          this._showErrorMessage('Move Error', error.message);
         }
+      }).catch(error => {
+        this._showErrorMessage('Move Error', error.message);
       });
     }
   }
@@ -967,60 +968,34 @@ class FileBrowser extends Widget {
   }
 
   /**
-   * Get the path of an item based on a mouse event.
-   */
-  private _getPath(event: MouseEvent): string {
-    let index = hitTestNodes(this._items, event.clientX, event.clientY);
-    let path = '';
-    if (index !== -1) {
-      path = this._model.items[index].name + '/';
-    } else {
-      index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
-      switch(index) {
-      case Crumb.Home:
-        path = '/';
-        break;
-      case Crumb.Ellipsis:
-        path = '../../';
-        break;
-      case Crumb.Parent:
-        path = '../'
-        break;
-      }
-    }
-    return path;
-  }
-
-  /**
    * Handle a click on a file node.
    */
-  private _handleFileClick(event: MouseEvent, index: number) {
+  private _handleFileClick(event: MouseEvent, target: HTMLElement) {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
-    var current = nodes[index];
 
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
-      if (current.classList.contains(SELECTED_CLASS)) {
-        current.classList.remove(SELECTED_CLASS);
+      if (target.classList.contains(SELECTED_CLASS)) {
+        target.classList.remove(SELECTED_CLASS);
       } else {
-        current.classList.add(SELECTED_CLASS);
+        target.classList.add(SELECTED_CLASS);
       }
 
     // Handle multiple select.
     } else if (event.shiftKey) {
-      handleMultiSelect(nodes, index);
+      handleMultiSelect(nodes, nodes.indexOf(target));
 
     // Default to selecting the only the item.
     } else {
       // Handle a rename.
       if (this._model.selected.length === 1 &&
-          current.classList.contains(SELECTED_CLASS)) {
+          target.classList.contains(SELECTED_CLASS)) {
         if (this._pendingSelect) {
           setTimeout(() => {
             if (this._pendingSelect) {
-              this._doRename(current);
+              this._doRename(target);
             } else {
               this._pendingSelect = true;
             }
@@ -1035,7 +1010,7 @@ class FileBrowser extends Widget {
       for (let node of nodes) {
         node.classList.remove(SELECTED_CLASS);
       }
-      current.classList.add(SELECTED_CLASS);
+      target.classList.add(SELECTED_CLASS);
     }
 
     this._updateSelected();
@@ -1061,29 +1036,24 @@ class FileBrowser extends Widget {
   private _handleUploadEvent(event: Event) {
     for (var file of (event.target as any).files) {
       this._model.upload(file).catch(error => {
-        if (error.message.indexOf('already exists') !== -1) {
+        if (error.message.indexOf('409') !== -1) {
           let options = {
             title: 'Overwrite file?',
             host: this.node,
-            body: error.message + ', overwrite?'
+            body: `"${file.name}" already exists, overwrite?`
           }
           showDialog(options).then(button => {
             if (button.text === 'OK') {
-              this._model.upload(file, true);
+              return this._model.delete(file.name).then(() => {
+                return this._model.upload(file);
+              });
             }
           });
-        } else {
-          this._showErrorMessage('Upload Error', error.message);
         }
+      }).catch(error => {
+        this._showErrorMessage('Upload Error', error.message);
       });
     }
-  }
-
-  /**
-   * Handle a "new" command execution.
-   */
-  private _handleNewCommand(type: string): void {
-    this._model.newUntitled(type);
   }
 
   /**
@@ -1091,30 +1061,32 @@ class FileBrowser extends Widget {
    */
   private _doRename(row: HTMLElement): void {
     let text = row.getElementsByClassName(ROW_TEXT_CLASS)[0] as HTMLElement;
-    let content = text.textContent;
+    let original = text.textContent;
 
     doRename(row, text, this._editNode).then(changed => {
       if (!changed) {
         return;
       }
-      this._model.rename('./' + content, './' + text.textContent
-      ).catch(error => {
-        if (error.message.indexOf('already exists') !== -1) {
+      let newPath = text.textContent;
+      this._model.rename(original, newPath).catch(error => {
+        if (error.message.indexOf('409') !== -1) {
           let options = {
             title: 'Overwrite file?',
             host: this.node,
-            body: error.message + ', overwrite?'
+            body: `"${newPath}" already exists, overwrite?`
           }
           showDialog(options).then(button => {
             if (button.text === 'OK') {
-              this._model.rename(content, this._editNode.value, true);
+              return this._model.delete(newPath).then(() => {
+                return this._model.rename(original, newPath);
+              });
             } else {
-              text.textContent = content;
+              text.textContent = original;
             }
           });
-        } else {
-          this._showErrorMessage('Rename Error', error.message);
         }
+      }).catch(error => {
+        this._showErrorMessage('Rename Error', error.message);
       });
     });
   }
@@ -1176,6 +1148,7 @@ enum Button {
  */
 function createItemNode(): HTMLElement {
   let node = document.createElement('li');
+  node.className = ROW_CLASS;
   let inode = document.createElement('span');
   inode.className = ROW_ICON_CLASS;
   let tnode = document.createElement('span');
@@ -1227,8 +1200,10 @@ function updateItemNode(item: IContentsModel, node: HTMLElement): void {
   let icon = node.firstChild as HTMLElement;
   let text = node.children[1] as HTMLElement;
   let modified = node.lastChild as HTMLElement;
-  node.className = ROW_CLASS;
   icon.className = createIconClass(item);
+  if (text.textContent !== item.name) {
+    node.classList.remove(SELECTED_CLASS);
+  }
   text.textContent = createTextContent(item);
   modified.textContent = createModifiedContent(item);
 }
@@ -1254,12 +1229,12 @@ function updateCrumbs(breadcrumbs: HTMLElement[], separators: HTMLElement[], pat
 
   if (path) {
     if (parts.length === 2) {
-      node.appendChild(separators[2]);
-      breadcrumbs[Crumb.Parent].textContent = parts[1];
+      node.appendChild(separators[1]);
+      breadcrumbs[Crumb.Parent].textContent = parts[0];
       node.appendChild(breadcrumbs[Crumb.Parent]);
     }
-    node.appendChild(separators[1]);
-    breadcrumbs[Crumb.Current].textContent = parts[0];
+    node.appendChild(separators[2]);
+    breadcrumbs[Crumb.Current].textContent = parts[parts.length - 1];
     node.appendChild(breadcrumbs[Crumb.Current]);
   }
 }
