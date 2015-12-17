@@ -754,10 +754,6 @@ class FileBrowser extends Widget {
       return;
     }
 
-    // Stop the event propagation.
-    event.preventDefault();
-    event.stopPropagation();
-
     // Handle the edit node.
     if (this._editNode.parentNode) {
       if (this._editNode !== event.target as HTMLElement) {
@@ -775,10 +771,18 @@ class FileBrowser extends Widget {
         this._pendingSelect = false;
         let index = this._crumbs.indexOf(node);
         this._model.path = BREAD_CRUMB_PATHS[index];
+
+        // Stop the event propagation.
+        event.preventDefault();
+        event.stopPropagation();
         return;
       }
       if (node.classList.contains(ROW_CLASS)) {
         this._handleFileClick(event, node);
+
+        // Stop the event propagation.
+        event.preventDefault();
+        event.stopPropagation();
         return;
       }
       node = node.parentElement;
