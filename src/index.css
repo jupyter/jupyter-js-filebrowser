@@ -3,7 +3,6 @@
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
 .jp-FileBrowser {
-  overflow: auto;
   z-index: 0;
 }
 
@@ -76,6 +75,9 @@
   margin: 0;
   padding: 0;
   list-style-type: none;
+  overflow-y:auto;
+  width: 100%;
+  height: 100%;
 }
 
 

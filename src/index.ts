@@ -283,13 +283,19 @@ class FileBrowserViewModel {
   /**
    * Create a new untitled file or directory in the current directory.
    *
-   * @param type - The type of file object to create. One of ['file',
-   *   'notebook', 'directory'].
+   * @param type - The type of file object to create. One of
+   *  `['file', 'notebook', 'directory']`.
+   *
+   * @param ext - Optional extension for `'file'` types (defaults to `'.txt'`).
    *
    * @returns A promise containing the new file contents model.
    */
-  newUntitled(type: string): Promise<IContentsModel> {
-    let ext = type === 'file' ? '.txt': '';
+  newUntitled(type: string, ext?: string): Promise<IContentsModel> {
+    if (type === 'file') {
+      ext = ext || '.txt';
+    } else {
+      ext = '';
+    }
     return this._contents.newUntitled(this._model.path, { type: type, ext: ext }
     ).then(contents => {
       this.refresh();
@@ -1285,6 +1291,13 @@ function createButtons(buttonBar: HTMLElement): HTMLElement[] {
   buttons[Button.New].title = 'Create New...';
   buttons[Button.Refresh].classList.add('fa-refresh');
   buttons[Button.Refresh].title = 'Refresh File List';
+
+  // Add the dropdown node to the new button.
+  let dropIndicator = document.createElement('span');
+  dropIndicator.className = 'fa fa-chevron-down';
+  dropIndicator.style.position = 'absolute';
+  dropIndicator.style.right = '6px';
+  buttons[Button.New].appendChild(dropIndicator);
 
   // Create the upload button with a hidden input.
   let text = document.createElement('span');

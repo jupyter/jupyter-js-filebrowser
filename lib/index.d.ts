@@ -47,7 +47,7 @@ export declare class FileBrowserViewModel {
     /**
      * Open the current selected items.
      *
-     * Emits an [[changed]] signal for each item after loading the contents.
+     * Emits a [[changed]] signal for each item after loading the contents.
      */
     open(): void;
     /**
@@ -61,12 +61,14 @@ export declare class FileBrowserViewModel {
     /**
      * Create a new untitled file or directory in the current directory.
      *
-     * @param type - The type of file object to create. One of ['file',
-     *   'notebook', 'directory'].
+     * @param type - The type of file object to create. One of
+     *  `['file', 'notebook', 'directory']`.
+     *
+     * @param ext - Optional extension for `'file'` types (defaults to `'.txt'`).
      *
      * @returns A promise containing the new file contents model.
      */
-    newUntitled(type: string): Promise<IContentsModel>;
+    newUntitled(type: string, ext?: string): Promise<IContentsModel>;
     /**
      * Rename a file or directory.
      *
