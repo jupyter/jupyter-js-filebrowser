@@ -15,6 +15,7 @@
 
 .jp-FileBrowser-breadcrumb-item {
   margin-right: 5px;
+  border: 1px solid transparent;
 }
 
 
@@ -41,7 +42,6 @@
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  list-style-type: none;
   margin: 0;
   padding-left: 3px;
 }
@@ -83,6 +83,7 @@
   display: flex;
   flex-direction: row;
   padding: 5px;
+  border: 1px solid transparent;
 }
 
 

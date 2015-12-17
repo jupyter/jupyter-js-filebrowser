@@ -5,6 +5,10 @@ import { ISignal, Signal } from 'phosphor-signaling';
 import { Widget } from 'phosphor-widget';
 /**
  * An implementation of a file browser view model.
+ *
+ * #### Notes
+ * All paths parameters without a leading `'/'` are interpreted as relative to
+ * the current directory.  Supports `'../'` syntax.
  */
 export declare class FileBrowserViewModel {
     /**
@@ -43,25 +47,52 @@ export declare class FileBrowserViewModel {
     /**
      * Open the current selected items.
      *
-     * #### Notes
-     * Emits an [[opened]] signal for each item
-     * after loading the contents.
+     * Emits an [[changed]] signal for each item after loading the contents.
      */
     open(): void;
     /**
+     * Delete a file.
+     *
+     * @param: path - The path to the file to be deleted.
+     *
+     * @returns A promise that resolves when the file is deleted.
+     */
+    delete(path: string): Promise<void>;
+    /**
      * Create a new untitled file or directory in the current directory.
+     *
+     * @param type - The type of file object to create. One of ['file',
+     *   'notebook', 'directory'].
+     *
+     * @returns A promise containing the new file contents model.
      */
     newUntitled(type: string): Promise<IContentsModel>;
     /**
      * Rename a file or directory.
+     *
+     * @param path - The path to the original file.
+     *
+     * @param newPath - The path to the new file.
+     *
+     * @returns A promise containing the new file contents model.
      */
-    rename(path: string, newPath: string, overwrite?: boolean): Promise<IContentsModel>;
+    rename(path: string, newPath: string): Promise<IContentsModel>;
     /**
-     * Upload a file object.
+     * Upload a `File` object.
+     *
+     * @param file - The `File` object to upload.
+     *
+     * @returns A promise containing the new file contents model.
+     *
+     * #### Notes
+     * This will fail to upload files that are too big to be sent in one
+     * request to the server.
      */
-    upload(file: File, overwrite?: boolean): Promise<IContentsModel>;
+    upload(file: File): Promise<IContentsModel>;
     /**
      * Refresh the model contents.
+     *
+     * Emits a [changed] signal with the new content.
      */
     refresh(): void;
     private _max_upload_size_mb;
@@ -123,6 +154,10 @@ export declare class FileBrowser extends Widget {
      */
     private _evtMouseup(event);
     /**
+     * Handle the `'mousemove'` event for the file browser.
+     */
+    private _evtMousemove(event);
+    /**
      * Handle the `'click'` event for the file browser.
      */
     private _evtClick(event);
@@ -131,17 +166,41 @@ export declare class FileBrowser extends Widget {
      */
     private _evtDblClick(event);
     /**
+     * Handle the `'p-dragenter'` event for the dock panel.
+     */
+    private _evtDragEnter(event);
+    /**
+     * Handle the `'p-dragleave'` event for the dock panel.
+     */
+    private _evtDragLeave(event);
+    /**
+     * Handle the `'p-dragover'` event for the dock panel.
+     */
+    private _evtDragOver(event);
+    /**
+     * Handle the `'p-drop'` event for the dock panel.
+     */
+    private _evtDrop(event);
+    /**
+     * Start a drag event.
+     */
+    private _startDrag(index, clientX, clientY);
+    /**
+     * Find the appropriate target for a mouse event.
+     */
+    private _findTarget(event);
+    /**
      * Handle a click on a file node.
      */
-    private _handleFileClick(event, index);
+    private _handleFileClick(event, target);
+    /**
+     * Update the selected indices of the model.
+     */
+    private _updateSelected();
     /**
      * Handle a file upload event.
      */
     private _handleUploadEvent(event);
-    /**
-     * Handle a "new" command execution.
-     */
-    private _handleNewCommand(type);
     /**
      * Allow the user to rename item on a given row.
      */
@@ -159,4 +218,6 @@ export declare class FileBrowser extends Widget {
     private _newMenu;
     private _pendingSelect;
     private _editNode;
+    private _drag;
+    private _dragData;
 }

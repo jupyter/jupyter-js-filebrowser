@@ -26,6 +26,16 @@
 }
 
 
+.jp-FileBrowser-row.jp-mod-drop-target {
+  border: 1px solid #757575;
+}
+
+
+.jp-FileBrowser-breadcrumb-item.jp-mod-drop-target {
+  border: 1px solid #757575;
+}
+
+
 .jp-FileBrowser-breadcrumbs {
 
 }
