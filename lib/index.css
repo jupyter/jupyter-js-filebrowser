@@ -54,6 +54,12 @@
 }
 
 
+.jp-FileBrowser-button-icon {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
 .jp-FileBrowser-header {
   display: flex;
   flex-direction: row;

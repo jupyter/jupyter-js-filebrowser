@@ -68,6 +68,11 @@ const BUTTON_CLASS = 'jp-FileBrowser-button';
 const BUTTON_ITEM_CLASS = 'jp-FileBrowser-button-item';
 
 /**
+ * The class name added to the button icon nodes.
+ */
+const BUTTON_ICON_CLASS = 'jp-FileBrowser-button-icon';
+
+/**
  * The class name added to the upload button node.
  */
 const UPLOAD_CLASS = 'jp-FileBrowser-upload';
@@ -1281,34 +1286,33 @@ function createCrumbSeparators(): HTMLElement[] {
  */
 function createButtons(buttonBar: HTMLElement): HTMLElement[] {
   let buttons: HTMLElement[] = [];
+  let icons = ['fa-plus', 'fa-upload', 'fa-refresh'];
+  let titles = ['Create New...', 'Upload File(s)', 'Refresh File List'];
   for (let i = 0; i < 3; i++) {
     let button = document.createElement('button');
-    button.className = BUTTON_ITEM_CLASS + ' fa';
+    button.className = BUTTON_ITEM_CLASS;
+    button.title = titles[i];
+    let icon = document.createElement('span');
+    icon.className = BUTTON_ICON_CLASS + ' fa ' + icons[i];
+    button.appendChild(icon);
     buttonBar.appendChild(button);
     buttons.push(button);
   }
-  buttons[Button.New].classList.add('fa-plus');
-  buttons[Button.New].title = 'Create New...';
-  buttons[Button.Refresh].classList.add('fa-refresh');
-  buttons[Button.Refresh].title = 'Refresh File List';
 
-  // Add the dropdown node to the new button.
-  let dropIndicator = document.createElement('span');
-  dropIndicator.className = 'fa fa-chevron-down';
-  dropIndicator.style.position = 'absolute';
-  dropIndicator.style.right = '6px';
-  buttons[Button.New].appendChild(dropIndicator);
+  // Add the dropdown node to the "new file" button.
+  var dropIcon = document.createElement('span');
+  dropIcon.className = 'fa fa-caret-down';
+  dropIcon.style.marginLeft = '-0.5em';
+  buttons[Button.New].appendChild(dropIcon);
 
-  // Create the upload button with a hidden input.
-  let text = document.createElement('span');
-  text.classList.add('fa-upload');
+  // Create the hidden upload input field.
   let file = document.createElement('input');
+  file.style.height = "100%";
+  file.style.zIndex = "10000";
   file.setAttribute("type", "file");
   file.setAttribute("multiple", "multiple");
   buttons[Button.Upload].classList.add(UPLOAD_CLASS);
-  buttons[Button.Upload].appendChild(text);
   buttons[Button.Upload].appendChild(file);
-  buttons[Button.Upload].title = 'Upload File(s)';
   return buttons;
 }
 
