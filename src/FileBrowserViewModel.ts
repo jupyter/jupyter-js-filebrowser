@@ -173,13 +173,15 @@ class FileBrowserViewModel {
    *
    * @param file - The `File` object to upload.
    *
+   * @param overwrite - Whether to overwrite an existing file.
+   *
    * @returns A promise containing the new file contents model.
    *
    * #### Notes
    * This will fail to upload files that are too big to be sent in one
    * request to the server.
    */
-  upload(file: File): Promise<IContentsModel> {
+  upload(file: File, overwrite?: boolean): Promise<IContentsModel> {
 
     // Skip large files with a warning.
     if (file.size > this._max_upload_size_mb * 1024 * 1024) {
@@ -189,6 +191,22 @@ class FileBrowserViewModel {
       return Promise.reject(new Error(msg));
     }
 
+    if (overwrite) {
+      return this._upload(file);
+    }
+
+    return this._contents.get(file.name, {}).then(() => {
+      throw new Error(`"${file.name}" already exists`);
+      return null;
+    }, () => {
+      return this._upload(file);
+    });
+  }
+
+  /**
+   * Perform the actual upload.
+   */
+  private _upload(file: File): Promise<IContentsModel> {
     // Gather the file model parameters.
     let path = this._model.path
     path = path ? path + '/' + file.name : file.name;
