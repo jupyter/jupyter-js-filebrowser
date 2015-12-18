@@ -797,7 +797,8 @@ class FileBrowserWidget extends Widget {
       }
       let newPath = text.textContent;
       this._model.rename(original, newPath).catch(error => {
-        if (error.message.indexOf('409') !== -1) {
+        if (error.message.indexOf('409') !== -1 ||
+            error.message.indexOf('already exists') !== -1) {
           let options = {
             title: 'Overwrite file?',
             host: this.node,
