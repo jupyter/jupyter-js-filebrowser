@@ -25,9 +25,9 @@ export declare class FileBrowserViewModel {
     changed: ISignal<FileBrowserViewModel, IChangedArgs<IContentsModel>>;
     /**
      * Get the current path.
-     */
-    /**
-     * Set the current path, triggering a refresh.
+     *
+     * #### Notes
+     * This is a ready-only property.
      */
     path: string;
     /**
@@ -45,11 +45,16 @@ export declare class FileBrowserViewModel {
      */
     selected: number[];
     /**
-     * Open the current selected items.
+     * Open a file or directory.
      *
-     * Emits a [[changed]] signal for each item after loading the contents.
+     * @param path - The path to the file or directory.
+     *
+     * @returns A promise with the contents of the file.
+     *
+     * #### Notes
+     * Emits a [[changed]] signal the after loading the contents.
      */
-    open(): void;
+    open(path: string): Promise<IContentsModel>;
     /**
      * Delete a file.
      *
@@ -91,12 +96,6 @@ export declare class FileBrowserViewModel {
      * request to the server.
      */
     upload(file: File): Promise<IContentsModel>;
-    /**
-     * Refresh the model contents.
-     *
-     * Emits a [changed] signal with the new content.
-     */
-    refresh(): void;
     private _max_upload_size_mb;
     private _selectedIndices;
     private _contents;

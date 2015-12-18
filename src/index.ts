@@ -208,17 +208,12 @@ class FileBrowserViewModel {
 
   /**
    * Get the current path.
+   *
+   * #### Notes
+   * This is a ready-only property.
    */
   get path(): string {
     return this._model.path;
-  }
-
-  /**
-   * Set the current path, triggering a refresh.
-   */
-  set path(value: string) {
-    this._model.path = normalizePath(this._model.path, value);
-    this.refresh();
   }
 
   /**
@@ -246,28 +241,28 @@ class FileBrowserViewModel {
   }
 
   /**
-   * Open the current selected items.
+   * Open a file or directory.
    *
-   * Emits a [[changed]] signal for each item after loading the contents.
+   * @param path - The path to the file or directory.
+   *
+   * @returns A promise with the contents of the file.
+   *
+   * #### Notes
+   * Emits a [[changed]] signal the after loading the contents.
    */
-  open(): void {
-    let items = this._model.content;
-    for (let index of this._selectedIndices) {
-      let item = items[index];
-      if (item.type === 'directory') {
-        this.path = '/' + item.path;
-        continue;
-      } else {
-        this._contents.get(item.path, { type: item.type }
-        ).then((contents: IContentsModel) => {
-          this.changed.emit({
-            name: 'open',
-            newValue: contents ,
-            oldValue: null,
-          });
-        });
+  open(path: string): Promise<IContentsModel> {
+    path = normalizePath(this._model.path, path);
+    return this._contents.get(path, {}).then(contents => {
+      if (contents.type === 'directory') {
+        this._model = contents;
       }
-    }
+      this.changed.emit({
+        name: 'open',
+        oldValue: null,
+        newValue: contents
+      });
+      return contents;
+    });
   }
 
   /**
@@ -280,7 +275,7 @@ class FileBrowserViewModel {
   delete(path: string): Promise<void> {
     path = normalizePath(this._model.path, path);
     return this._contents.delete(path).then(() => {
-      this.refresh();
+      this.open('.');
       return void 0;
     });
   }
@@ -303,7 +298,7 @@ class FileBrowserViewModel {
     }
     return this._contents.newUntitled(this._model.path, { type: type, ext: ext }
     ).then(contents => {
-      this.refresh();
+      this.open('.');
       return contents
     });
   }
@@ -324,7 +319,7 @@ class FileBrowserViewModel {
 
     return this._contents.rename(path, newPath).then(contents => {
       let current = this._model;
-      this.refresh();
+      this.open('.');
       this.changed.emit({
         name: 'rename',
         oldValue: current,
@@ -380,7 +375,7 @@ class FileBrowserViewModel {
           content: getContent(reader)
         }
         return this._contents.save(path, model).then(model => {
-          this.refresh();
+          this.open('.');
           return model;
         });
       }
@@ -390,23 +385,6 @@ class FileBrowserViewModel {
       }
     });
 
-  }
-
-  /**
-   * Refresh the model contents.
-   *
-   * Emits a [changed] signal with the new content.
-   */
-  refresh() {
-    this._contents.listContents(this._model.path).then(model => {
-      let old = this._model;
-      this._model = model;
-      this.changed.emit({
-        name: 'refresh',
-        oldValue: old,
-        newValue: model
-      });
-    });
   }
 
   private _max_upload_size_mb = 15;
@@ -442,6 +420,10 @@ function getContent(reader: FileReader): any {
  * Normalize a path based on a root directory, accounting for relative paths.
  */
 function normalizePath(root: string, path: string): string {
+  // Current directory
+  if (path === '.') {
+    return root;
+  }
   // Root path.
   if (path.indexOf('/') === 0) {
     path = path.slice(1, path.length);
@@ -473,6 +455,7 @@ function normalizePath(root: string, path: string): string {
   }
   return path;
 }
+
 
 /**
  * A widget which hosts a file browser.
@@ -547,7 +530,7 @@ class FileBrowser extends Widget {
     let input = this._buttons[Button.Upload].getElementsByTagName('input')[0];
     input.onchange = this._handleUploadEvent.bind(this);
 
-    this._buttons[Button.Refresh].onclick = () => { this._model.refresh() };
+    this._buttons[Button.Refresh].onclick = () => { this._model.open('.') };
 
     this._buttons[Button.New].onclick = () => {
       let rect = this._buttons[Button.New].getBoundingClientRect();
@@ -633,7 +616,7 @@ class FileBrowser extends Widget {
     node.addEventListener('p-dragleave', this);
     node.addEventListener('p-dragover', this);
     node.addEventListener('p-drop', this);
-    this._model.refresh();
+    this._model.open('/');
   }
 
   /**
@@ -810,7 +793,9 @@ class FileBrowser extends Widget {
     while (node && node !== this.node) {
       if (node.classList.contains(ROW_CLASS)) {
         // Open the selected item.
-        this._model.open();
+        let index = this._items.indexOf(node);
+        let path = this._model.items[index].name;
+        this._model.open(path);
         return;
       }
       node = node.parentElement;
@@ -1119,7 +1104,7 @@ class FileBrowser extends Widget {
    * Handle a `changed` signal from the model.
    */
   private _onChanged(model: FileBrowserViewModel, change: IChangedArgs<IContentsModel>): void {
-    if (change.name === 'refresh') {
+    if (change.name === 'open' && change.newValue.type === 'directory') {
       this.update();
     }
   }
