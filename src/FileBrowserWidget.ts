@@ -248,7 +248,11 @@ class FileBrowserWidget extends Widget {
     let input = this._buttons[Button.Upload].getElementsByTagName('input')[0];
     input.onchange = this._handleUploadEvent.bind(this);
 
-    this._buttons[Button.Refresh].onclick = () => { this._model.open('.') };
+    this._buttons[Button.Refresh].onclick = () => {
+      this._model.open('.').catch(error => {
+          this._showErrorMessage('Open Error', error);
+        });
+    };
 
     this._buttons[Button.New].onclick = () => {
       let rect = this._buttons[Button.New].getBoundingClientRect();
@@ -257,7 +261,9 @@ class FileBrowserWidget extends Widget {
 
     // Create the "new" menu.
     let command = new DelegateCommand(args => {
-      this._model.newUntitled(args as string);
+      this._model.newUntitled(args as string).catch(error => {
+        this._showErrorMessage('New File Error', error);
+       });
     });
     this._newMenu = createNewItemMenu(command);
 
@@ -334,7 +340,9 @@ class FileBrowserWidget extends Widget {
     node.addEventListener('p-dragleave', this);
     node.addEventListener('p-dragover', this);
     node.addEventListener('p-drop', this);
-    this._model.open('/');
+    this._model.open('/').catch(error => {
+      this._showErrorMessage('Open Error', error);
+    });
   }
 
   /**
@@ -471,7 +479,9 @@ class FileBrowserWidget extends Widget {
       if (node.classList.contains(BREADCRUMB_ITEM_CLASS)) {
         this._pendingSelect = false;
         let index = this._crumbs.indexOf(node);
-        this._model.open(BREAD_CRUMB_PATHS[index]);
+        this._model.open(BREAD_CRUMB_PATHS[index]).catch(error => {
+          this._showErrorMessage('Open Error', error);
+        });
 
         // Stop the event propagation.
         event.preventDefault();
@@ -513,7 +523,9 @@ class FileBrowserWidget extends Widget {
         // Open the selected item.
         let index = this._items.indexOf(node);
         let path = this._model.items[index].name;
-        this._model.open(path);
+        this._model.open(path).catch(error => {
+          this._showErrorMessage('Open Error', error);
+        });
         return;
       }
       node = node.parentElement;
