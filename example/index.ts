@@ -10,7 +10,7 @@ import {
 } from 'jupyter-js-editor';
 
 import {
-  FileBrowser, FileBrowserViewModel
+  FileBrowserWidget, FileBrowserViewModel
 } from 'jupyter-js-filebrowser';
 
 import {
@@ -32,7 +32,7 @@ function main(): void {
   let contents = new Contents(baseUrl);
 
   let fbModel = new FileBrowserViewModel('', contents);
-  let fileBrowser = new FileBrowser(fbModel);
+  let fileBrowser = new FileBrowserWidget(fbModel);
 
   var editorModel = new EditorModel();
   let editor = new EditorWidget(editorModel);

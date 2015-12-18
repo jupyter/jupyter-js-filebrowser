@@ -11,10 +11,11 @@
 
 
 .jp-FileBrowser-button-item {
+  display: flex;
   background-color: #FAFAFA;
   font-size: 16px;
   border: 1px solid #757575;
-  line-height: 20px;
+  height: 30px;
   border-radius: 3px;
   max-width: 100px;
 }
