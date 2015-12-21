@@ -7,8 +7,8 @@
     "codemirror": "^5.9.0",
     "jupyter-js-editor": "jupyter/jupyter-js-editor",
     "jupyter-js-filebrowser": "file:..",
-    "phosphor-splitpanel": "^1.0.0-beta.0",
-    "phosphor-widget": "1.0.0-beta.2",
+    "phosphor-splitpanel": "^1.0.0-beta.2",
+    "phosphor-widget": "1.0.0-beta.6",
     "steal": "^0.12.7"
   },
   "devDependencies": {
