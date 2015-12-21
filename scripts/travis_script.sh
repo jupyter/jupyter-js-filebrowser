@@ -13,4 +13,5 @@ npm run docs
 cd example
 npm install
 npm run clean
+npm dedupe
 npm run build

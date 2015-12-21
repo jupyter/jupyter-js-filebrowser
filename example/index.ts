@@ -14,7 +14,7 @@ import {
 } from 'jupyter-js-filebrowser';
 
 import {
-  Contents, ISessionOptions, connectToSession, listRunningSessions
+  ContentsManager, ISessionOptions, NotebookSessionManager
 } from 'jupyter-js-services';
 
 import {
@@ -29,14 +29,14 @@ import {
 function main(): void {
 
   let baseUrl = 'http://localhost:8888'
-  let contents = new Contents(baseUrl);
+  let contents = new ContentsManager(baseUrl);
+  let sessions = new NotebookSessionManager({ baseUrl: baseUrl });
 
-  let fbModel = new FileBrowserViewModel('', contents);
+  let fbModel = new FileBrowserViewModel('', contents, sessions);
   let fileBrowser = new FileBrowserWidget(fbModel);
 
   var editorModel = new EditorModel();
   let editor = new EditorWidget(editorModel);
-
 
   fbModel.changed.connect((fb, change) => {
     if (change.name === 'open' && change.newValue.type === 'file') {
@@ -48,7 +48,12 @@ function main(): void {
   panel.addChild(fileBrowser);
   panel.addChild(editor);
 
-  panel.attach(document.body);
+  // Start a default session.
+  contents.newUntitled('', { type: 'notebook' }).then(content => {
+    sessions.startNew({ notebookPath: content.path }).then(() => {
+      panel.attach(document.body);
+    });
+  });
 
   window.onresize = () => panel.update();
 }
