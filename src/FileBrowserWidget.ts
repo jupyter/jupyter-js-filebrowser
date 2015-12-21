@@ -955,20 +955,24 @@ function updateCrumbs(breadcrumbs: HTMLElement[], separators: HTMLElement[], pat
 
   let parts = path.split('/');
   if (parts.length > 2) {
-    parts = [parts[parts.length - 2], parts[parts.length - 1]];
     node.appendChild(separators[0]);
     node.appendChild(breadcrumbs[Crumb.Ellipsis]);
+    let grandParent = parts.slice(0, parts.length - 2).join('/');
+    breadcrumbs[Crumb.Ellipsis].title = grandParent
   }
 
   if (path) {
-    if (parts.length === 2) {
+    if (parts.length >= 2) {
       node.appendChild(separators[1]);
-      breadcrumbs[Crumb.Parent].textContent = parts[0];
+      breadcrumbs[Crumb.Parent].textContent = parts[parts.length - 2];
       node.appendChild(breadcrumbs[Crumb.Parent]);
+      let parent = parts.slice(0, parts.length - 1).join('/');
+      breadcrumbs[Crumb.Parent].title = parent;
     }
     node.appendChild(separators[2]);
     breadcrumbs[Crumb.Current].textContent = parts[parts.length - 1];
     node.appendChild(breadcrumbs[Crumb.Current]);
+    breadcrumbs[Crumb.Current].title = path;
   }
 }
 
