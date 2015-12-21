@@ -117,6 +117,11 @@ const ROW_CLASS = 'jp-FileBrowser-row';
 const SELECTED_CLASS = 'jp-mod-selected';
 
 /**
+ * The class name added when there are more than one selected rows.
+ */
+const MULTI_SELECTED_CLASS = 'jp-mod-multi-selected';
+
+/**
  * The class name added to drop targets.
  */
 const DROP_TARGET_CLASS = 'jp-mod-drop-target';
@@ -762,6 +767,18 @@ class FileBrowserWidget extends Widget {
       }
     }
     this._model.selected = selected;
+
+    // Handle the selectors on the widget node.
+    if (selected.length <= 1) {
+      this.node.classList.remove(MULTI_SELECTED_CLASS);
+    } else {
+      this.node.classList.add(MULTI_SELECTED_CLASS);
+    }
+    if (!selected.length) {
+      this.node.classList.remove(SELECTED_CLASS);
+    } else {
+      this.node.classList.add(SELECTED_CLASS);
+    }
   }
 
   /**
