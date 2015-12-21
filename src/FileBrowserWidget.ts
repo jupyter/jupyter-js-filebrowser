@@ -281,6 +281,10 @@ class FileBrowserWidget extends Widget {
     this._crumbs = null;
     this._crumbSeps = null;
     this._buttons = null;
+    this._newMenu = null;
+    this._editNode = null;
+    this._drag = null;
+    this._dragData = null;
     super.dispose();
   }
 
