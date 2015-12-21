@@ -7,6 +7,10 @@ import {
 } from 'jupyter-js-services';
 
 import {
+  IDisposable
+} from 'phosphor-disposable';
+
+import {
   IChangedArgs
 } from 'phosphor-properties';
 
@@ -23,7 +27,7 @@ import {
  * the current directory.  Supports `'../'` syntax.
  */
 export
-class FileBrowserViewModel {
+class FileBrowserViewModel implements IDisposable{
   /**
    * A signal emitted when an item changes.
    */
@@ -77,6 +81,22 @@ class FileBrowserViewModel {
    */
   set selected(value: number[]) {
     this._selectedIndices = value.slice();
+  }
+
+  /**
+   * Get whether the view model is disposed.
+   */
+  get isDisposed(): boolean {
+    return this._model === null;
+  }
+
+  /**
+   * Dispose of the resources held by the view model.
+   */
+  dispose(): void {
+    this._model = null;
+    this._contents = null;
+    this._selectedIndices = null;
   }
 
   /**

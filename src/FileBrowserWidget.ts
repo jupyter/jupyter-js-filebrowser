@@ -117,6 +117,11 @@ const ROW_CLASS = 'jp-FileBrowser-row';
 const SELECTED_CLASS = 'jp-mod-selected';
 
 /**
+ * The class name added when there are more than one selected rows.
+ */
+const MULTI_SELECTED_CLASS = 'jp-mod-multi-selected';
+
+/**
  * The class name added to drop targets.
  */
 const DROP_TARGET_CLASS = 'jp-mod-drop-target';
@@ -281,6 +286,10 @@ class FileBrowserWidget extends Widget {
     this._crumbs = null;
     this._crumbSeps = null;
     this._buttons = null;
+    this._newMenu = null;
+    this._editNode = null;
+    this._drag = null;
+    this._dragData = null;
     super.dispose();
   }
 
@@ -758,6 +767,18 @@ class FileBrowserWidget extends Widget {
       }
     }
     this._model.selected = selected;
+
+    // Handle the selectors on the widget node.
+    if (selected.length <= 1) {
+      this.node.classList.remove(MULTI_SELECTED_CLASS);
+    } else {
+      this.node.classList.add(MULTI_SELECTED_CLASS);
+    }
+    if (!selected.length) {
+      this.node.classList.remove(SELECTED_CLASS);
+    } else {
+      this.node.classList.add(SELECTED_CLASS);
+    }
   }
 
   /**
@@ -951,20 +972,24 @@ function updateCrumbs(breadcrumbs: HTMLElement[], separators: HTMLElement[], pat
 
   let parts = path.split('/');
   if (parts.length > 2) {
-    parts = [parts[parts.length - 2], parts[parts.length - 1]];
     node.appendChild(separators[0]);
     node.appendChild(breadcrumbs[Crumb.Ellipsis]);
+    let grandParent = parts.slice(0, parts.length - 2).join('/');
+    breadcrumbs[Crumb.Ellipsis].title = grandParent
   }
 
   if (path) {
-    if (parts.length === 2) {
+    if (parts.length >= 2) {
       node.appendChild(separators[1]);
-      breadcrumbs[Crumb.Parent].textContent = parts[0];
+      breadcrumbs[Crumb.Parent].textContent = parts[parts.length - 2];
       node.appendChild(breadcrumbs[Crumb.Parent]);
+      let parent = parts.slice(0, parts.length - 1).join('/');
+      breadcrumbs[Crumb.Parent].title = parent;
     }
     node.appendChild(separators[2]);
     breadcrumbs[Crumb.Current].textContent = parts[parts.length - 1];
     node.appendChild(breadcrumbs[Crumb.Current]);
+    breadcrumbs[Crumb.Current].title = path;
   }
 }
 
