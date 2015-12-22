@@ -102,7 +102,12 @@ const BREADCRUMB_CLASS = 'jp-FileBrowser-breadcrumbs';
 const BREADCRUMB_ITEM_CLASS = 'jp-FileBrowser-breadcrumb-item';
 
 /**
- * The class name added to FileBrowser rows.
+ * The class name added to FileBrowser list area container.
+ */
+const LIST_CONTAINER_CLASS = 'jp-FileBrowser-list-container';
+
+/**
+ * The class name added to FileBrowser list area.
  */
 const LIST_AREA_CLASS = 'jp-FileBrowser-list-area';
 
@@ -232,14 +237,17 @@ class FileBrowserWidget extends Widget {
     header.appendChild(modified);
 
     // Create the file list.
+    let wrapper = document.createElement('div');
+    wrapper.className = LIST_CONTAINER_CLASS;
     let list = document.createElement('ul');
     list.classList.add(LIST_AREA_CLASS);
+    wrapper.appendChild(list);
 
     // Add the children.
     node.appendChild(breadcrumbs);
     node.appendChild(buttonBar);
     node.appendChild(header);
-    node.appendChild(list);
+    node.appendChild(wrapper);
     return node;
   }
 
@@ -393,7 +401,7 @@ class FileBrowserWidget extends Widget {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
-    let content = this.node.lastChild;
+    let content = this.node.getElementsByClassName(LIST_AREA_CLASS)[0];
 
     // Remove any excess item nodes.
     while (nodes.length > items.length) {
@@ -870,6 +878,10 @@ class FileBrowserWidget extends Widget {
   }
 
   private _showErrorMessage(title: string, message: string) {
+    console.error(message);
+    if (!this.isAttached) {
+      return;
+    }
     let options = {
       title: title,
       host: this.node,
@@ -967,7 +979,8 @@ function createTextContent(item: IContentsModel): string {
  */
 function createModifiedContent(item: IContentsModel): string {
   if (item.last_modified) {
-    return moment(item.last_modified).fromNow();
+    let text = moment(item.last_modified).fromNow();
+    return text === 'a few seconds ago' ? 'seconds ago' : text;
   } else {
     return '';
   }

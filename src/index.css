@@ -3,11 +3,14 @@
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
 .jp-FileBrowser {
+  display: flex;
+  flex-direction: column;
   z-index: 0;
 }
 
 
 .jp-FileBrowser-breadcrumbs {
+  flex: 0 0 auto;
   padding: 5px;
 }
 
@@ -19,6 +22,7 @@
 
 
 .jp-FileBrowser-upload {
+  flex: 0 0 auto;
   position: relative;
   overflow: hidden;
 }
@@ -38,6 +42,7 @@
 
 
 .jp-FileBrowser-button {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -62,6 +67,7 @@
 
 
 .jp-FileBrowser-header {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: row;
   padding: 5px;
@@ -77,45 +83,51 @@
   flex: 0 0 auto;
 }
 
+.jp-FileBrowser-list-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+}
+
 
 .jp-FileBrowser-list-area {
+  display: table;
+  width: 100%;
   margin: 0;
   padding: 0;
+  border-spacing: 0;
   list-style-type: none;
-  overflow-y:auto;
-  width: 100%;
-  height: 100%;
 }
 
 
 .jp-FileBrowser-row {
-  display: flex;
-  flex-direction: row;
-  padding: 5px;
+  display: table-row;
+  padding: 4px 8px;
   border: 1px solid transparent;
 }
 
 
-.jp-FileBrowser-item-icon {
-  flex: 0 0 auto;
-  margin-right: 7px;
+.jp-FileBrowser-row > span {
+  display: table-cell;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
+
+
+
+.jp-FileBrowser-item-icon {
+  width: 21px;
+  padding-left: 2px;
+  padding-right: 2px;
+  text-align: center;
+}
+
 
 
 .jp-FileBrowser-item-text {
-  flex: 1 1 auto;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-.jp-FileBrowser-item-edit {
-  flex: 1 1 auto;
-  z-index: 10000;
-}
-
-
-.jp-FileBrowser-item-modified {
-  flex: 0 0 auto;
-  margin-left: 7px;
+  padding-left: 2px;
+  padding-right: 35px;
 }

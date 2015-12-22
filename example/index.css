@@ -6,7 +6,24 @@
   background-color: #F5F5F5;
   color: #757575;
   font: 13px Helvetica, Arial, sans-serif;
-  min-height: 400px;
+  height: 500px;
+}
+
+
+.jp-FileBrowser-item-edit {
+  z-index: 10000;
+}
+
+
+.jp-FileBrowser-item-spacer {
+}
+
+.jp-FileBrowser-item-modified {
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: right;
+  padding-right: 5px;
+  min-width: 70px;
 }
 
 
@@ -84,7 +101,12 @@
 
 
 .jp-EditorWidget {
-  min-height: 200px;
+  height: 400px;
+}
+
+
+.p-SplitPanel {
+  height: 400px;
 }
 
 
