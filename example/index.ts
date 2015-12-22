@@ -29,10 +29,6 @@ import {
   SplitPanel
 } from 'phosphor-splitpanel';
 
-import {
-  Widget
-} from 'phosphor-widget';
-
 
 function main(): void {
 
@@ -56,17 +52,30 @@ function main(): void {
   panel.addChild(fileBrowser);
   panel.addChild(editor);
 
-  let logCmd = new DelegateCommand(args => {
-    console.log(args);
-  });
-
   let contextMenu = new Menu([
     new MenuItem({
-      text: '&Copy',
-      icon: 'fa fa-copy',
-      shortcut: 'Ctrl+C',
-      command: logCmd,
-      commandArgs: 'Copy'
+      text: '&Open',
+      icon: 'fa fa-folder-open-o',
+      shortcut: 'Ctrl+O',
+      command: new DelegateCommand(args => {
+        fileBrowser.open();
+      })
+    }),
+    new MenuItem({
+      text: '&Rename',
+      icon: 'fa fa-edit',
+      shortcut: 'Ctrl+R',
+      command: new DelegateCommand(args => {
+        fileBrowser.rename();
+      })
+    }),
+    new MenuItem({
+      text: '&Delete',
+      icon: 'fa fa-remove',
+      shortcut: 'Ctrl+D',
+      command: new DelegateCommand(args => {
+        fileBrowser.delete();
+      })
     }),
   ])
 
@@ -77,14 +86,14 @@ function main(): void {
     });
   });
 
-  /*
+
   fileBrowser.node.addEventListener('contextmenu', (event: MouseEvent) => {
     event.preventDefault();
     let x = event.clientX;
     let y = event.clientY;
     contextMenu.popup(x, y);
   });
-  */
+
 
   window.onresize = () => panel.update();
 }

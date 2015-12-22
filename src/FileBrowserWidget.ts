@@ -317,6 +317,39 @@ class FileBrowserWidget extends Widget {
   }
 
   /**
+   * Open the currently selected item(s).
+   */
+  open(): void {
+    for (let index of this._model.selected) {
+      let item = this._model.items[index];
+      this._model.open(item.path).catch(error => {
+        this._showErrorMessage('Open file', error);
+      });
+    }
+  }
+
+  /**
+   * Rename the first currently selected item.
+   */
+  rename(): void {
+    let content = this.node.getElementsByClassName(LIST_AREA_CLASS)[0];
+    let row = content.getElementsByClassName(SELECTED_CLASS)[0];
+    this._doRename(row as HTMLElement);
+  }
+
+  /**
+   * Delete the currently selected item(s).
+   */
+  delete(): void {
+    for (let index of this._model.selected) {
+      let item = this._model.items[index];
+      this._model.delete(item.path).catch(error => {
+        this._showErrorMessage('Delete file', error);
+      });
+    }
+  }
+
+  /**
    * Handle the DOM events for the file browser.
    *
    * @param event - The DOM event sent to the panel.
