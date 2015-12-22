@@ -18,6 +18,14 @@ import {
 } from 'jupyter-js-services';
 
 import {
+  DelegateCommand
+} from 'phosphor-command';
+
+import {
+  Menu, MenuBar, MenuItem
+} from 'phosphor-menus';
+
+import {
   SplitPanel
 } from 'phosphor-splitpanel';
 
@@ -48,12 +56,35 @@ function main(): void {
   panel.addChild(fileBrowser);
   panel.addChild(editor);
 
+  let logCmd = new DelegateCommand(args => {
+    console.log(args);
+  });
+
+  let contextMenu = new Menu([
+    new MenuItem({
+      text: '&Copy',
+      icon: 'fa fa-copy',
+      shortcut: 'Ctrl+C',
+      command: logCmd,
+      commandArgs: 'Copy'
+    }),
+  ])
+
   // Start a default session.
   contents.newUntitled('', { type: 'notebook' }).then(content => {
     sessions.startNew({ notebookPath: content.path }).then(() => {
       panel.attach(document.body);
     });
   });
+
+  /*
+  fileBrowser.node.addEventListener('contextmenu', (event: MouseEvent) => {
+    event.preventDefault();
+    let x = event.clientX;
+    let y = event.clientY;
+    contextMenu.popup(x, y);
+  });
+  */
 
   window.onresize = () => panel.update();
 }
