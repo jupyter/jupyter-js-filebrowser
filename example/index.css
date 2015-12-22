@@ -68,6 +68,21 @@
 }
 
 
+.jp-FileBrowser-nb-icon:before {
+  content: "\f02d";
+}
+
+
+.jp-FileBrowser-nb-icon.jp-mod-success:before {
+  color: #27AE60;
+}
+
+
+.jp-FileBrowser-nb-icon.jp-mod-error:before {
+  color: #E74C3C;
+}
+
+
 .jp-EditorWidget {
   min-height: 200px;
 }

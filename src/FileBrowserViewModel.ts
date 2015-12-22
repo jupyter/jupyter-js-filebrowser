@@ -3,7 +3,8 @@
 'use strict';
 
 import {
-  IContents, IContentsModel, IContentsOpts
+  IContentsManager, IContentsModel, IContentsOpts, INotebookSessionManager,
+  INotebookSession, ISessionId
 } from 'jupyter-js-services';
 
 import {
@@ -36,10 +37,10 @@ class FileBrowserViewModel implements IDisposable{
   /**
    * Construct a new file browser view model.
    */
-  constructor(path: string, contents: IContents) {
-    this._model = { path: path , name: '', type: 'directory',
-                    writable: true, created: '', last_modified: '' };
-    this._contents = contents;
+  constructor(path: string, contentsManager: IContentsManager, sessionManager: INotebookSessionManager) {
+    this._model = { path: path , name: '', type: 'directory' };
+    this._contentsManager = contentsManager;
+    this._sessionManager = sessionManager;
   }
 
   /**
@@ -91,11 +92,21 @@ class FileBrowserViewModel implements IDisposable{
   }
 
   /**
+   * Get the active notebook sessions in the current directory.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get sessions(): INotebookSession[] {
+    return this._sessions.slice();
+  }
+
+  /**
    * Dispose of the resources held by the view model.
    */
   dispose(): void {
     this._model = null;
-    this._contents = null;
+    this._contentsManager = null;
     this._selectedIndices = null;
   }
 
@@ -111,15 +122,20 @@ class FileBrowserViewModel implements IDisposable{
    */
   open(path: string): Promise<IContentsModel> {
     path = normalizePath(this._model.path, path);
-    return this._contents.get(path, {}).then(contents => {
-      if (contents.type === 'directory') {
-        this._model = contents;
-      }
-      this.changed.emit({
+    return this._contentsManager.get(path, {}).then(contents => {
+      let change: IChangedArgs<IContentsModel> = {
         name: 'open',
         oldValue: null,
         newValue: contents
-      });
+      }
+      if (contents.type === 'directory') {
+        this._model = contents;
+        return this._findSessions().then(() => {
+          this.changed.emit(change);
+          return contents;
+        });
+      }
+      this.changed.emit(change);
       return contents;
     });
   }
@@ -133,7 +149,7 @@ class FileBrowserViewModel implements IDisposable{
    */
   delete(path: string): Promise<void> {
     path = normalizePath(this._model.path, path);
-    return this._contents.delete(path).then(() => {
+    return this._contentsManager.delete(path).then(() => {
       this.open('.');
       return void 0;
     });
@@ -155,7 +171,7 @@ class FileBrowserViewModel implements IDisposable{
     } else {
       ext = '';
     }
-    return this._contents.newUntitled(this._model.path, { type: type, ext: ext }
+    return this._contentsManager.newUntitled(this._model.path, { type: type, ext: ext }
     ).then(contents => {
       this.open('.');
       return contents
@@ -176,7 +192,7 @@ class FileBrowserViewModel implements IDisposable{
     path = normalizePath(this._model.path, path);
     newPath = normalizePath(this._model.path, newPath);
 
-    return this._contents.rename(path, newPath).then(contents => {
+    return this._contentsManager.rename(path, newPath).then(contents => {
       let current = this._model;
       this.open('.');
       this.changed.emit({
@@ -215,7 +231,7 @@ class FileBrowserViewModel implements IDisposable{
       return this._upload(file);
     }
 
-    return this._contents.get(file.name, {}).then(() => {
+    return this._contentsManager.get(file.name, {}).then(() => {
       throw new Error(`"${file.name}" already exists`);
       return null;
     }, () => {
@@ -251,7 +267,7 @@ class FileBrowserViewModel implements IDisposable{
           name: name,
           content: getContent(reader)
         }
-        return this._contents.save(path, model).then(model => {
+        return this._contentsManager.save(path, model).then(model => {
           this.open('.');
           return model;
         });
@@ -264,9 +280,42 @@ class FileBrowserViewModel implements IDisposable{
 
   }
 
+  /**
+   * Get the notebook sessions for the current directory.
+   */
+  _findSessions(): Promise<void> {
+    this._sessions = [];
+    let notebooks = this._model.content.filter((content: IContentsModel) => { return content.type === 'notebook'; });
+    if (!notebooks.length) {
+      return Promise.resolve(void 0);
+    }
+
+    return this._sessionManager.listRunning().then(sessionIds => {
+      if (!sessionIds.length) {
+        return;
+      }
+      let promises: Promise<void>[] = [];
+      let paths = notebooks.map((notebook: IContentsModel) => {
+        return notebook.path;
+      });
+      for (let sessionId of sessionIds) {
+        let index = paths.indexOf(sessionId.notebook.path);
+        if (index !== -1) {
+          promises.push(this._sessionManager.connectTo(sessionId.id).then(session => {
+            this._sessions.push(session);
+            return void 0;
+          }));
+        }
+      }
+      return Promise.all(promises).then(() => { return void 0; });
+    });
+  }
+
   private _max_upload_size_mb = 15;
   private _selectedIndices: number[] = [];
-  private _contents: IContents = null;
+  private _contentsManager: IContentsManager = null;
+  private _sessions: INotebookSession[] = null;
+  private _sessionManager: INotebookSessionManager = null;
   private _model: IContentsModel = null;
 }
 

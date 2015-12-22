@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-  IContentsModel
+  IContentsModel, KernelStatus
 } from 'jupyter-js-services';
 
 import * as moment from 'moment';
@@ -155,6 +155,21 @@ const FOLDER_ICON_CLASS = 'jp-FileBrowser-folder-icon';
  * The class name added to a file icon.
  */
 const FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
+
+/**
+ * The class name added to a notebook icon.
+ */
+const NOTEBOOK_ICON_CLASS = 'jp-FileBrowser-nb-icon';
+
+/**
+ * The class name added to indicate success.
+ */
+const SUCCESS_CLASS = 'jp-mod-success';
+
+/**
+ * The class name added to indicated error.
+ */
+const ERROR_CLASS = 'jp-mod-error';
 
 
 /**
@@ -402,6 +417,19 @@ class FileBrowserWidget extends Widget {
 
     // Update the breadcrumb list.
     updateCrumbs(this._crumbs, this._crumbSeps, this._model.path);
+
+    // Handle notebook session statuses.
+    let paths = this._model.items.map(item => item.path);
+    for (let session of this._model.sessions) {
+      let index = paths.indexOf(session.notebookPath);
+      let node = this._items[index].firstChild as HTMLElement;
+      if (session.status === KernelStatus.Idle || session.status === KernelStatus.Idle) {
+        node.classList.add(SUCCESS_CLASS);
+      } else {
+        node.firstElementChild.classList.add(ERROR_CLASS);
+      }
+      node.title = session.kernel.name;
+    }
   }
 
   /**
@@ -918,6 +946,8 @@ function createItemNode(): HTMLElement {
 function createIconClass(item: IContentsModel): string {
   if (item.type === 'directory') {
     return ROW_ICON_CLASS + ' ' + FOLDER_ICON_CLASS;
+  } else if (item.type === 'notebook') {
+    return ROW_ICON_CLASS + ' ' + NOTEBOOK_ICON_CLASS;
   } else {
     return ROW_ICON_CLASS + ' ' + FILE_ICON_CLASS;
   }
