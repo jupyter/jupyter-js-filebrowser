@@ -77,6 +77,27 @@ function main(): void {
         fileBrowser.delete();
       })
     }),
+    new MenuItem({
+      text: 'Duplicate',
+      icon: 'fa fa-copy',
+      command: new DelegateCommand(args => {
+        fileBrowser.duplicate();
+      })
+    }),
+    new MenuItem({
+      text: 'Download',
+      icon: 'fa fa-download',
+      command: new DelegateCommand(args => {
+        fileBrowser.download();
+      })
+    }),
+    new MenuItem({
+      text: 'Shutdown Kernel',
+      icon: 'fa fa-close-o',
+      command: new DelegateCommand(args => {
+        fileBrowser.shutdownKernels();
+      })
+    }),
   ])
 
   // Start a default session.

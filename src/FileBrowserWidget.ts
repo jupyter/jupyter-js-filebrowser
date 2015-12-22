@@ -167,9 +167,9 @@ const FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
 const NOTEBOOK_ICON_CLASS = 'jp-FileBrowser-nb-icon';
 
 /**
- * The class name added to indicate success.
+ * The class name added to indicate running notebook.
  */
-const SUCCESS_CLASS = 'jp-mod-success';
+const RUNNING_CLASS = 'jp-mod-running';
 
 /**
  * The class name added to indicated error.
@@ -320,9 +320,8 @@ class FileBrowserWidget extends Widget {
    * Open the currently selected item(s).
    */
   open(): void {
-    for (let index of this._model.selected) {
-      let item = this._model.items[index];
-      this._model.open(item.path).catch(error => {
+    for (let path of this._model.selected) {
+      this._model.open('/' + path).catch(error => {
         this._showErrorMessage('Open file', error);
       });
     }
@@ -341,11 +340,55 @@ class FileBrowserWidget extends Widget {
    * Delete the currently selected item(s).
    */
   delete(): void {
-    for (let index of this._model.selected) {
-      let item = this._model.items[index];
-      this._model.delete(item.path).catch(error => {
+    for (let path of this._model.selected) {
+      this._model.delete('/' + path).catch(error => {
         this._showErrorMessage('Delete file', error);
       });
+    }
+  }
+
+  /**
+   * Duplicate the currently selected item(s).
+   */
+  duplicate(): void {
+    for (let name of this._model.selected) {
+      let index = '';
+      let item = this._model.items[index];
+      if (item.type !== 'directory') {
+        this._model.copy(path, this._model.path).catch(error => {
+          this._showErrorMessage('Duplicate file', error);
+        });
+      }
+    }
+  }
+
+  /**
+   * Download the currently selected item(s).
+   */
+  download(): void {
+    for (let index of this._model.selected) {
+      let item = this._model.items[index];
+      if (item.type !== 'directory') {
+        this._model.download(item.path).catch(error => {
+          this._showErrorMessage('Download file', error);
+        });
+      }
+    }
+  }
+
+  /**
+   * Shut down kernels on the applicable currently selected items.
+   */
+  shutdownKernels() {
+    // Handle notebook session statuses.
+    let paths = this._model.items.map(item => item.path);
+    for (let sessionId of this._model.sessionIds) {
+      let index = paths.indexOf(sessionId.notebook.path);
+      if (this._items[index].classList.contains(SELECTED_CLASS)) {
+        this._model.shutdown(sessionId).catch(error => {
+          this._showErrorMessage('Download file', error);
+        });
+      }
     }
   }
 
@@ -461,15 +504,16 @@ class FileBrowserWidget extends Widget {
 
     // Handle notebook session statuses.
     let paths = this._model.items.map(item => item.path);
-    for (let session of this._model.sessions) {
-      let index = paths.indexOf(session.notebookPath);
+    for (let sessionId of this._model.sessionIds) {
+      let index = paths.indexOf(sessionId.notebook.path);
       let node = this._items[index].firstChild as HTMLElement;
-      if (session.status === KernelStatus.Idle || session.status === KernelStatus.Idle) {
-        node.classList.add(SUCCESS_CLASS);
-      } else {
-        node.firstElementChild.classList.add(ERROR_CLASS);
-      }
-      node.title = session.kernel.name;
+      node.classList.add(RUNNING_CLASS);
+      node.title = sessionId.kernel.name;
+    }
+    if (this._model.sessionIds.length) {
+      this.node.classList.add(RUNNING_CLASS);
+    } else {
+      this.node.classList.remove(RUNNING_CLASS);
     }
   }
 
@@ -1027,9 +1071,6 @@ function updateItemNode(item: IContentsModel, node: HTMLElement): void {
   let text = node.children[1] as HTMLElement;
   let modified = node.lastChild as HTMLElement;
   icon.className = createIconClass(item);
-  if (text.textContent !== item.name) {
-    node.classList.remove(SELECTED_CLASS);
-  }
   text.textContent = createTextContent(item);
   modified.textContent = createModifiedContent(item);
 }
