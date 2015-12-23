@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
-    "glob-copy": "^0.1.0",
+    "fs-extra": "^0.26.3",
     "karma": "^0.13.9",
     "karma-chrome-launcher": "^0.2.0",
     "karma-coverage": "^0.5.3",
