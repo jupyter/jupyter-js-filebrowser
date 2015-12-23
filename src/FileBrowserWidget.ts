@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-  IContentsModel, KernelStatus
+  IContentsModel
 } from 'jupyter-js-services';
 
 import * as moment from 'moment';
