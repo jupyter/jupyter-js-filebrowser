@@ -171,11 +171,6 @@ const NOTEBOOK_ICON_CLASS = 'jp-FileBrowser-nb-icon';
  */
 const RUNNING_CLASS = 'jp-mod-running';
 
-/**
- * The class name added to indicated error.
- */
-const ERROR_CLASS = 'jp-mod-error';
-
 
 /**
  * The minimum duration for a rename select in ms.
