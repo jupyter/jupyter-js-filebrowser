@@ -380,7 +380,7 @@ class FileBrowserWidget extends Widget {
       let index = paths.indexOf(sessionId.notebook.path);
       if (this._items[index].classList.contains(SELECTED_CLASS)) {
         this._model.shutdown(sessionId).catch(error => {
-          this._showErrorMessage('Download file', error);
+          this._showErrorMessage('Shutdown kernel', error);
         });
       }
     }
