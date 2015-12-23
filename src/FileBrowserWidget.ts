@@ -529,20 +529,23 @@ class FileBrowserWidget extends Widget {
    * Handle the `'mousedown'` event for the file browser.
    */
   private _evtMousedown(event: MouseEvent) {
-    // Do nothing if it's not a left mouse press.
-    if (event.button !== 0) {
+    let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    if (index == -1) {
       return;
     }
 
-    // Handle an item selection.
-    let index = hitTestNodes(this._items, event.clientX, event.clientY);
-    if (index !== -1) {
+    // Left mouse press for drag start.
+    if (event.button === 0) {
       this._dragData = { pressX: event.clientX, pressY: event.clientY,
-                         index: index };
+                           index: index };
       document.addEventListener('mouseup', this, true);
       document.addEventListener('mousemove', this, true);
-    }
 
+    // Right mouse press for implicit item select.
+    } else if (event.button === 2) {
+      this._items[index].classList.add(SELECTED_CLASS);
+      this._updateSelected();
+    }
   }
 
   /**
