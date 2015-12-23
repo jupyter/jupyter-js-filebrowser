@@ -11,9 +11,7 @@ then
     git add .
     git commit -m "Deploy to GitHub Pages"
     git push --force --quiet "https://${GHTOKEN}@${GH_REF}" master:gh-pages > /dev/null 2>&1
-    )
-
-    echo "-- pushed docs --"
+    ) && echo "-- pushed docs --"
 else
     echo "-- will only push docs from master --"
 fi
