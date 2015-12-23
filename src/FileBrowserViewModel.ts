@@ -301,6 +301,9 @@ class FileBrowserViewModel implements IDisposable{
       for (let sessionId of sessionIds) {
         let index = paths.indexOf(sessionId.notebook.path);
         if (index !== -1) {
+          let options = {
+
+          }
           promises.push(this._sessionManager.connectTo(sessionId.id).then(session => {
             this._sessions.push(session);
             return void 0;

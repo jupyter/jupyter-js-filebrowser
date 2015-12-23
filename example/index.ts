@@ -18,12 +18,16 @@ import {
 } from 'jupyter-js-services';
 
 import {
-  SplitPanel
-} from 'phosphor-splitpanel';
+  DelegateCommand
+} from 'phosphor-command';
 
 import {
-  Widget
-} from 'phosphor-widget';
+  Menu, MenuBar, MenuItem
+} from 'phosphor-menus';
+
+import {
+  SplitPanel
+} from 'phosphor-splitpanel';
 
 
 function main(): void {
@@ -48,12 +52,48 @@ function main(): void {
   panel.addChild(fileBrowser);
   panel.addChild(editor);
 
+  let contextMenu = new Menu([
+    new MenuItem({
+      text: '&Open',
+      icon: 'fa fa-folder-open-o',
+      shortcut: 'Ctrl+O',
+      command: new DelegateCommand(args => {
+        fileBrowser.open();
+      })
+    }),
+    new MenuItem({
+      text: '&Rename',
+      icon: 'fa fa-edit',
+      shortcut: 'Ctrl+R',
+      command: new DelegateCommand(args => {
+        fileBrowser.rename();
+      })
+    }),
+    new MenuItem({
+      text: '&Delete',
+      icon: 'fa fa-remove',
+      shortcut: 'Ctrl+D',
+      command: new DelegateCommand(args => {
+        fileBrowser.delete();
+      })
+    }),
+  ])
+
   // Start a default session.
   contents.newUntitled('', { type: 'notebook' }).then(content => {
     sessions.startNew({ notebookPath: content.path }).then(() => {
       panel.attach(document.body);
     });
   });
+
+
+  fileBrowser.node.addEventListener('contextmenu', (event: MouseEvent) => {
+    event.preventDefault();
+    let x = event.clientX;
+    let y = event.clientY;
+    contextMenu.popup(x, y);
+  });
+
 
   window.onresize = () => panel.update();
 }
