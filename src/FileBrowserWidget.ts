@@ -189,6 +189,12 @@ const RENAME_DURATION = 500;
 
 
 /**
+ * The duration of auto-refresh in ms.
+ */
+const REFRESH_DURATION = 30000;
+
+
+/**
  * The threshold in pixels to start a drag event.
  */
 const DRAG_THRESHOLD = 5;
@@ -282,9 +288,7 @@ class FileBrowserWidget extends Widget {
     input.onchange = this._handleUploadEvent.bind(this);
 
     this._buttons[Button.Refresh].onclick = () => {
-      this._model.open('.').catch(error => {
-          this._showErrorMessage('Open Error', error);
-        });
+      this._refresh();
     };
 
     this._buttons[Button.New].onclick = () => {
@@ -296,7 +300,7 @@ class FileBrowserWidget extends Widget {
     let command = new DelegateCommand(args => {
       this._model.newUntitled(args as string).catch(error => {
         this._showErrorMessage('New File Error', error);
-       }).then(() => this._model.open('.'));
+       }).then(() => this._refresh);
     });
     this._newMenu = createNewItemMenu(command);
 
@@ -388,7 +392,7 @@ class FileBrowserWidget extends Widget {
     this._clipboard = [];
     this._isCut = false;
     this.node.classList.remove(CLIPBOARD_CLASS);
-    Promise.all(promises).then(() => this._model.open('.'));
+    Promise.all(promises).then(() => this._refresh);
   }
 
   /**
@@ -401,7 +405,7 @@ class FileBrowserWidget extends Widget {
         this._showErrorMessage('Delete file', error);
       }));
     }
-    Promise.all(promises).then(() => this._model.open('.'));
+    Promise.all(promises).then(() => this._refresh);
   }
 
   /**
@@ -418,7 +422,7 @@ class FileBrowserWidget extends Widget {
         }));
       }
     }
-    Promise.all(promises).then(() => this._model.open('.'));
+    Promise.all(promises).then(() => this._refresh);
   }
 
   /**
@@ -449,7 +453,7 @@ class FileBrowserWidget extends Widget {
         }));
       }
     }
-    Promise.all(promises).then(() => this._model.open('.'));
+    Promise.all(promises).then(() => this._refresh);
   }
 
   /**
@@ -508,9 +512,7 @@ class FileBrowserWidget extends Widget {
     node.addEventListener('p-dragleave', this);
     node.addEventListener('p-dragover', this);
     node.addEventListener('p-drop', this);
-    this._model.open('/').catch(error => {
-      this._showErrorMessage('Open Error', error);
-    });
+    this._refresh('/');
   }
 
   /**
@@ -1082,6 +1084,34 @@ class FileBrowserWidget extends Widget {
     }
     showDialog(options);
   }
+
+  /**
+   * Force a refresh of the current directory, and trigger auto-refresh.
+   */
+  private _refresh(path = '.'): void {
+    // When we do a manual refresh, set the timer.
+    this._model.open(path);
+    if (this._pendingRefresh) {
+      this._pendingRefresh = false;
+    } else {
+      this._pendingRefresh = true;
+      setTimeout(() => {
+        if (this._pendingRefresh) {
+          this._pendingRefresh = false;
+          this._refresh();
+        } else {
+          this._pendingRefresh = true;
+          setTimeout(() => {
+            if (this._pendingRefresh) {
+              this._pendingRefresh = false;
+              this._refresh();
+            }
+          }, REFRESH_DURATION);
+        }
+      }, REFRESH_DURATION);
+    }
+  }
+
   /**
    * Handle a `changed` signal from the model.
    */
@@ -1102,6 +1132,7 @@ class FileBrowserWidget extends Widget {
   private _selectedNames: string[] = [];
   private _editNode: HTMLInputElement = null;
   private _clipboard: string[] = [];
+  private _pendingRefresh = false;
   private _isCut = false;
   private _drag: Drag = null;
   private _dragData: { pressX: number, pressY: number, index: number } = null;
