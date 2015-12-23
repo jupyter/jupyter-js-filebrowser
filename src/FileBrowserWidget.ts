@@ -1090,7 +1090,9 @@ class FileBrowserWidget extends Widget {
    */
   private _refresh(path = '.'): void {
     // When we do a manual refresh, set the timer.
-    this._model.open(path);
+    this._model.open(path).catch(error => {
+      this._showErrorMessage('Refresh', error);
+    });
     if (this._pendingRefresh) {
       this._pendingRefresh = false;
     } else {
