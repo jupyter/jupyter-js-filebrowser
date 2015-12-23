@@ -153,10 +153,7 @@ class FileBrowserViewModel implements IDisposable {
   copy(fromFile: string, toDir: string): Promise<IContentsModel> {
     fromFile = normalizePath(this._model.path, fromFile);
     toDir = normalizePath(this._model.path, toDir);
-    return this._contentsManager.copy(fromFile, toDir).then(contents => {
-      if (toDir === this.path) this.open('.');
-      return contents;
-    });
+    return this._contentsManager.copy(fromFile, toDir);
   }
 
   /**
@@ -168,10 +165,7 @@ class FileBrowserViewModel implements IDisposable {
    */
   delete(path: string): Promise<void> {
     path = normalizePath(this._model.path, path);
-    return this._contentsManager.delete(path).then(() => {
-      this.open('.');
-      return void 0;
-    });
+    return this._contentsManager.delete(path);
   }
 
   /**
@@ -209,10 +203,7 @@ class FileBrowserViewModel implements IDisposable {
       ext = '';
     }
     return this._contentsManager.newUntitled(this._model.path, { type: type, ext: ext }
-    ).then(contents => {
-      this.open('.');
-      return contents
-    });
+    );
   }
 
   /**
@@ -231,7 +222,6 @@ class FileBrowserViewModel implements IDisposable {
 
     return this._contentsManager.rename(path, newPath).then(contents => {
       let current = this._model;
-      this.open('.');
       this.changed.emit({
         name: 'rename',
         oldValue: current,
@@ -281,9 +271,7 @@ class FileBrowserViewModel implements IDisposable {
    */
   shutdown(sessionId: ISessionId): Promise<void> {
     return this._sessionManager.connectTo(sessionId.id).then(session => {
-      return session.shutdown().then(() => {
-        this.open('.');
-      });
+      return session.shutdown();
     });
   }
 
@@ -316,7 +304,6 @@ class FileBrowserViewModel implements IDisposable {
           content: getContent(reader)
         }
         return this._contentsManager.save(path, model).then(model => {
-          this.open('.');
           return model;
         });
       }

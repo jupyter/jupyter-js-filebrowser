@@ -85,6 +85,30 @@ function main(): void {
       })
     }),
     new MenuItem({
+      text: 'Cut',
+      icon: 'fa fa-cut',
+      shortcut: 'Ctrl+X',
+      command: new DelegateCommand(args => {
+        fileBrowser.cut();
+      })
+    }),
+    new MenuItem({
+      text: '&Copy',
+      icon: 'fa fa-copy',
+      shortcut: 'Ctrl+C',
+      command: new DelegateCommand(args => {
+        fileBrowser.copy();
+      })
+    }),
+    new MenuItem({
+      text: '&Paste',
+      icon: 'fa fa-paste',
+      shortcut: 'Ctrl+V',
+      command: new DelegateCommand(args => {
+        fileBrowser.paste();
+      })
+    }),
+    new MenuItem({
       text: 'Download',
       icon: 'fa fa-download',
       command: new DelegateCommand(args => {
