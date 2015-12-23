@@ -16,7 +16,7 @@ import {
 } from 'phosphor-properties';
 
 import {
-  ISignal, Signal
+  ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
 
@@ -28,7 +28,7 @@ import {
  * the current directory.  Supports `'../'` syntax.
  */
 export
-class FileBrowserViewModel implements IDisposable{
+class FileBrowserViewModel implements IDisposable {
   /**
    * A signal emitted when an item changes.
    */
@@ -108,6 +108,7 @@ class FileBrowserViewModel implements IDisposable{
     this._model = null;
     this._contentsManager = null;
     this._selectedIndices = null;
+    clearSignalData(this);
   }
 
   /**
