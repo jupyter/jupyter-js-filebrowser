@@ -90,13 +90,8 @@
 }
 
 
-.jp-FileBrowser-nb-icon.jp-mod-success:before {
+.jp-FileBrowser-nb-icon.jp-mod-running:before {
   color: #27AE60;
-}
-
-
-.jp-FileBrowser-nb-icon.jp-mod-error:before {
-  color: #E74C3C;
 }
 
 

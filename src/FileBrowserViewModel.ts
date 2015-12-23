@@ -4,7 +4,7 @@
 
 import {
   IContentsManager, IContentsModel, IContentsOpts, INotebookSessionManager,
-  INotebookSession, ISessionId
+  INotebookSession, ISessionId, KernelStatus
 } from 'jupyter-js-services';
 
 import {
@@ -16,7 +16,7 @@ import {
 } from 'phosphor-properties';
 
 import {
-  ISignal, Signal
+  ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
 
@@ -28,7 +28,7 @@ import {
  * the current directory.  Supports `'../'` syntax.
  */
 export
-class FileBrowserViewModel implements IDisposable{
+class FileBrowserViewModel implements IDisposable {
   /**
    * A signal emitted when an item changes.
    */
@@ -92,13 +92,13 @@ class FileBrowserViewModel implements IDisposable{
   }
 
   /**
-   * Get the active notebook sessions in the current directory.
+   * Get the session ids for active notebooks.
    *
    * #### Notes
    * This is a read-only property.
    */
-  get sessions(): INotebookSession[] {
-    return this._sessions.slice();
+  get sessionIds(): ISessionId[] {
+    return this._sessionIds.slice();
   }
 
   /**
@@ -108,6 +108,7 @@ class FileBrowserViewModel implements IDisposable{
     this._model = null;
     this._contentsManager = null;
     this._selectedIndices = null;
+    clearSignalData(this);
   }
 
   /**
@@ -141,17 +142,53 @@ class FileBrowserViewModel implements IDisposable{
   }
 
   /**
+   * Copy a file.
+   *
+   * @param fromFile - The path of the original file.
+   *
+   * @param toDir - The path to the target directory.
+   *
+   * @returns A promise which resolves to the contents of the file.
+   */
+  copy(fromFile: string, toDir: string): Promise<IContentsModel> {
+    fromFile = normalizePath(this._model.path, fromFile);
+    toDir = normalizePath(this._model.path, toDir);
+    return this._contentsManager.copy(fromFile, toDir).then(contents => {
+      if (toDir === this.path) this.open('.');
+      return contents;
+    });
+  }
+
+  /**
    * Delete a file.
    *
    * @param: path - The path to the file to be deleted.
    *
-   * @returns A promise that resolves when the file is deleted.
+   * @returns A promise which resolves when the file is deleted.
    */
   delete(path: string): Promise<void> {
     path = normalizePath(this._model.path, path);
     return this._contentsManager.delete(path).then(() => {
       this.open('.');
       return void 0;
+    });
+  }
+
+  /**
+   * Download a file.
+   *
+   * @param - path - The path of the file to be downloaded.
+   *
+   * @returns - A promise which resolves to the file contents.
+   */
+  download(path: string): Promise<IContentsModel> {
+    path = normalizePath(this._model.path, path);
+    return this._contentsManager.get(path, {}).then(contents => {
+      let element = document.createElement('a');
+      element.setAttribute('href', 'data:text/text;charset=utf-8,' +      encodeURI(contents.content));
+      element.setAttribute('download', contents.name);
+      element.click();
+      return contents;
     });
   }
 
@@ -240,6 +277,17 @@ class FileBrowserViewModel implements IDisposable{
   }
 
   /**
+   * Shut down a notebook session by session id.
+   */
+  shutdown(sessionId: ISessionId): Promise<void> {
+    return this._sessionManager.connectTo(sessionId.id).then(session => {
+      return session.shutdown().then(() => {
+        this.open('.');
+      });
+    });
+  }
+
+  /**
    * Perform the actual upload.
    */
   private _upload(file: File): Promise<IContentsModel> {
@@ -284,7 +332,7 @@ class FileBrowserViewModel implements IDisposable{
    * Get the notebook sessions for the current directory.
    */
   _findSessions(): Promise<void> {
-    this._sessions = [];
+    this._sessionIds = [];
     let notebooks = this._model.content.filter((content: IContentsModel) => { return content.type === 'notebook'; });
     if (!notebooks.length) {
       return Promise.resolve(void 0);
@@ -298,15 +346,14 @@ class FileBrowserViewModel implements IDisposable{
       let paths = notebooks.map((notebook: IContentsModel) => {
         return notebook.path;
       });
-      for (let sessionId of sessionIds) {
+      for (var sessionId of sessionIds) {
         let index = paths.indexOf(sessionId.notebook.path);
         if (index !== -1) {
-          let options = {
-
-          }
           promises.push(this._sessionManager.connectTo(sessionId.id).then(session => {
-            this._sessions.push(session);
-            return void 0;
+            if (session.status === KernelStatus.Idle || session.status === KernelStatus.Idle) {
+              this._sessionIds.push(sessionId);
+              return void 0;
+            }
           }));
         }
       }
@@ -317,7 +364,7 @@ class FileBrowserViewModel implements IDisposable{
   private _max_upload_size_mb = 15;
   private _selectedIndices: number[] = [];
   private _contentsManager: IContentsManager = null;
-  private _sessions: INotebookSession[] = null;
+  private _sessionIds: ISessionId[] = [];
   private _sessionManager: INotebookSessionManager = null;
   private _model: IContentsModel = null;
 }
