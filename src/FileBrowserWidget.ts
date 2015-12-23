@@ -122,6 +122,11 @@ const ROW_CLASS = 'jp-FileBrowser-row';
 const SELECTED_CLASS = 'jp-mod-selected';
 
 /**
+ * The class name added to cut rows.
+ */
+const CUT_CLASS = 'jp-mod-cut';
+
+/**
  * The class name added when there are more than one selected rows.
  */
 const MULTI_SELECTED_CLASS = 'jp-mod-multi-selected';
@@ -170,6 +175,11 @@ const NOTEBOOK_ICON_CLASS = 'jp-FileBrowser-nb-icon';
  * The class name added to indicate running notebook.
  */
 const RUNNING_CLASS = 'jp-mod-running';
+
+/**
+ * The class name added to the widget when there are items on the clipboard.
+ */
+const CLIPBOARD_CLASS = 'jp-mod-clipboard';
 
 
 /**
@@ -286,7 +296,7 @@ class FileBrowserWidget extends Widget {
     let command = new DelegateCommand(args => {
       this._model.newUntitled(args as string).catch(error => {
         this._showErrorMessage('New File Error', error);
-       });
+       }).then(() => this._model.open('.'));
     });
     this._newMenu = createNewItemMenu(command);
 
@@ -332,28 +342,83 @@ class FileBrowserWidget extends Widget {
   }
 
   /**
+   * Cut the selected items.
+   */
+  cut(): void {
+    this._copy(true);
+  }
+
+  /**
+   * Copy the selected items.
+   */
+  copy(): void {
+    // Remove any cut modifiers.
+    for (let item of this._items) {
+      item.classList.remove(CUT_CLASS);
+    }
+    this._copy(false);
+  }
+
+  /**
+   * Paste the items from the clipboard.
+   */
+  paste(): void {
+    if (!this._clipboard.length) {
+      return;
+    }
+    let promises: Promise<void>[] = [];
+    for (let path of this._clipboard) {
+      if (this._isCut) {
+        let parts = path.split('/');
+        let name = parts[parts.length - 1];
+        promises.push(this._model.rename(path, name).catch(error => {
+          this._showErrorMessage('Paste Error', error);
+        }));
+      } else {
+        promises.push(this._model.copy(path, '.').catch(error => {
+          this._showErrorMessage('Paste Error', error);
+        }));
+      }
+    }
+    // Remove any cut modifiers.
+    for (let item of this._items) {
+      item.classList.remove(CUT_CLASS);
+    }
+
+    this._clipboard = [];
+    this._isCut = false;
+    this.node.classList.remove(CLIPBOARD_CLASS);
+    Promise.all(promises).then(() => this._model.open('.'));
+  }
+
+  /**
    * Delete the currently selected item(s).
    */
   delete(): void {
+    let promises: Promise<void>[] = [];
     for (let name of this._selectedNames) {
-      this._model.delete(name).catch(error => {
+      promises.push(this._model.delete(name).catch(error => {
         this._showErrorMessage('Delete file', error);
-      });
+      }));
     }
+    Promise.all(promises).then(() => this._model.open('.'));
   }
 
   /**
    * Duplicate the currently selected item(s).
    */
   duplicate(): void {
+    let promises: Promise<void>[] = [];
     for (let index of this._model.selected) {
       let item = this._model.items[index];
       if (item.type !== 'directory') {
-        this._model.copy(item.path, this._model.path).catch(error => {
+        promises.push(this._model.copy(item.path, this._model.path)
+        .catch(error => {
           this._showErrorMessage('Duplicate file', error);
-        });
+        }));
       }
     }
+    Promise.all(promises).then(() => this._model.open('.'));
   }
 
   /**
@@ -374,16 +439,17 @@ class FileBrowserWidget extends Widget {
    * Shut down kernels on the applicable currently selected items.
    */
   shutdownKernels() {
-    // Handle notebook session statuses.
+    let promises: Promise<void>[] = [];
     let paths = this._model.items.map(item => item.path);
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
       if (this._items[index].classList.contains(SELECTED_CLASS)) {
-        this._model.shutdown(sessionId).catch(error => {
+        promises.push(this._model.shutdown(sessionId).catch(error => {
           this._showErrorMessage('Shutdown kernel', error);
-        });
+        }));
       }
     }
+    Promise.all(promises).then(() => this._model.open('.'));
   }
 
   /**
@@ -492,13 +558,17 @@ class FileBrowserWidget extends Widget {
     }
 
     // If the path has not changed, select any previously selected names that
-    // have not changed.
+    // have not changed.  Also handle cut modifiers.
     if (this._model.path == this._prevPath) {
       let newNames = this._model.items.map(item => item.name);
       for (let name of this._selectedNames) {
         let index = newNames.indexOf(name);
         if (index !== 1) {
           this._items[index].classList.add(SELECTED_CLASS);
+          let path = '/' + this._model.items[index].path;
+          if (this._isCut && (this._clipboard.indexOf(path) !== -1)) {
+            this._items[index].classList.add(CUT_CLASS);
+          }
         }
       }
     }
@@ -757,10 +827,11 @@ class FileBrowserWidget extends Widget {
     }
 
     // Move all of the items.
+    let promises: Promise<void>[] = [];
     for (let index of this._model.selected) {
       var original = this._model.items[index].name;
       var newPath = path + original;
-      this._model.rename(original, newPath).catch(error => {
+      promises.push(this._model.rename(original, newPath).catch(error => {
         if (error.message.indexOf('409') !== -1) {
           let options = {
             title: 'Overwrite file?',
@@ -777,8 +848,9 @@ class FileBrowserWidget extends Widget {
         }
       }).catch(error => {
         this._showErrorMessage('Move Error', error.message);
-      });
+      }));
     }
+    Promise.all(promises).then(() => this._model.open('.'));
   }
 
   /**
@@ -818,6 +890,29 @@ class FileBrowserWidget extends Widget {
   }
 
   /**
+   * Copy the selected items, and optionally cut as well.
+   */
+  private _copy(isCut: boolean): void {
+    this._clipboard = []
+    this._isCut = isCut;
+    for (let index of this._model.selected) {
+      let item = this._model.items[index];
+      let row = this._items[index];
+      if (item.type !== 'directory') {
+        if (isCut) row.classList.add(CUT_CLASS);
+        // Store the absolute path of the item.
+        this._clipboard.push('/' + item.path)
+      }
+    }
+    // Add the clipboard class to allow "Paste" actions.
+    if (this._clipboard.length) {
+      this.node.classList.add(CLIPBOARD_CLASS);
+    } else {
+      this.node.classList.remove(CLIPBOARD_CLASS);
+    }
+  }
+
+  /**
    * Find the appropriate target for a mouse event.
    */
  private _findTarget(event: MouseEvent): HTMLElement {
@@ -837,6 +932,10 @@ class FileBrowserWidget extends Widget {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
+
+    for (let node of nodes) {
+      node.classList.remove(CUT_CLASS);
+    }
 
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
@@ -911,9 +1010,10 @@ class FileBrowserWidget extends Widget {
   /**
    * Handle a file upload event.
    */
-  private _handleUploadEvent(event: Event) {
+  private _handleUploadEvent(event: Event): void {
+    let promises: Promise<void>[] = [];
     for (var file of (event.target as any).files) {
-      this._model.upload(file).catch(error => {
+      promises.push(this._model.upload(file).catch(error => {
         if (error.message.indexOf('already exists') !== -1) {
           let options = {
             title: 'Overwrite file?',
@@ -928,8 +1028,9 @@ class FileBrowserWidget extends Widget {
         }
       }).catch(error => {
         this._showErrorMessage('Upload Error', error.message);
-      });
+      }));
     }
+    Promise.all(promises).then(() => this._model.open('.'));
   }
 
   /**
@@ -964,7 +1065,7 @@ class FileBrowserWidget extends Widget {
         }
       }).catch(error => {
         this._showErrorMessage('Rename Error', error.message);
-      });
+      }).then(() => this._model.open('.'));
     });
   }
 
@@ -1000,6 +1101,8 @@ class FileBrowserWidget extends Widget {
   private _prevPath = '';
   private _selectedNames: string[] = [];
   private _editNode: HTMLInputElement = null;
+  private _clipboard: string[] = [];
+  private _isCut = false;
   private _drag: Drag = null;
   private _dragData: { pressX: number, pressY: number, index: number } = null;
 }
@@ -1090,6 +1193,7 @@ function updateItemNode(item: IContentsModel, node: HTMLElement): void {
   text.textContent = createTextContent(item);
   modified.textContent = createModifiedContent(item);
   node.classList.remove(SELECTED_CLASS);
+  node.classList.remove(CUT_CLASS);
 }
 
 
