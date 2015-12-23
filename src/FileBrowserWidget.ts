@@ -512,7 +512,7 @@ class FileBrowserWidget extends Widget {
     node.addEventListener('p-dragleave', this);
     node.addEventListener('p-dragover', this);
     node.addEventListener('p-drop', this);
-    this._refresh('/');
+    this._refresh();
   }
 
   /**
@@ -1088,9 +1088,9 @@ class FileBrowserWidget extends Widget {
   /**
    * Force a refresh of the current directory, and trigger auto-refresh.
    */
-  private _refresh(path = '.'): void {
+  private _refresh(): void {
     // When we do a manual refresh, set the timer.
-    this._model.open(path).catch(error => {
+    this._model.open('.').catch(error => {
       this._showErrorMessage('Refresh Error', error);
     });
     if (this._pendingRefresh) {
