@@ -21,6 +21,7 @@
     "build": "tsc",
     "clean": "rimraf *.js",
     "postinstall": "npm dedupe",
+    "prepublish": "npm run build",
     "update": "npm install jupyter-js-filebrowser --force"
   },
   "system": {
