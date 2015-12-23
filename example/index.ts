@@ -117,7 +117,7 @@ function main(): void {
     }),
     new MenuItem({
       text: 'Shutdown Kernel',
-      icon: 'fa fa-close',
+      icon: 'fa fa-stop-circle-o',
       command: new DelegateCommand(args => {
         fileBrowser.shutdownKernels();
       })
