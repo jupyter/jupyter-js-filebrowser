@@ -9,9 +9,10 @@ then
     git config user.name "Travis Bot"
 
     git add .
-    git commit -m "Deployed to GitHub Pages"
+    git commit -m "Deploying to GitHub Pages"
     git push --force --quiet "https://${GHTOKEN}@${GH_REF}" master:gh-pages > /dev/null 2>&1
     )
+    git commit -m "Deployed to GitHub Pages"
 else
     echo "-- will only push docs from master --"
 fi
