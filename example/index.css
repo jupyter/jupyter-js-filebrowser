@@ -70,6 +70,12 @@
 }
 
 
+.jp-FileBrowser-row.jp-mod-selected.jp-mod-cut {
+  background-color: #F1C40F;
+  color: #F5F5F5;
+}
+
+
 .jp-FileBrowser-item-icon {
   font-family: FontAwesome;
 }

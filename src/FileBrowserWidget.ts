@@ -933,6 +933,10 @@ class FileBrowserWidget extends Widget {
     let items = this._model.items;
     let nodes = this._items;
 
+    for (let node of nodes) {
+      node.classList.remove(CUT_CLASS);
+    }
+
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
       if (target.classList.contains(SELECTED_CLASS)) {
