@@ -1089,7 +1089,6 @@ class FileBrowserWidget extends Widget {
    * Force a refresh of the current directory, and trigger auto-refresh.
    */
   private _refresh(): void {
-    // When we do a manual refresh, set the timer.
     this._model.open('.').catch(error => {
       this._showErrorMessage('Refresh Error', error);
     });
@@ -1102,6 +1101,7 @@ class FileBrowserWidget extends Widget {
           this._pendingRefresh = false;
           this._refresh();
         } else {
+          // If we got interrupted, set a new timer.
           this._pendingRefresh = true;
           setTimeout(() => {
             if (this._pendingRefresh) {
