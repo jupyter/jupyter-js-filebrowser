@@ -1093,6 +1093,7 @@ class FileBrowserWidget extends Widget {
       this._showErrorMessage('Refresh Error', error);
     });
     if (this._pendingRefresh) {
+      // Interrupt the current refresh cycle.
       this._pendingRefresh = false;
     } else {
       this._pendingRefresh = true;
