@@ -320,8 +320,8 @@ class FileBrowserWidget extends Widget {
    * Open the currently selected item(s).
    */
   open(): void {
-    for (let path of this._model.selected) {
-      this._model.open('/' + path).catch(error => {
+    for (let name of this._selectedNames) {
+      this._model.open(name).catch(error => {
         this._showErrorMessage('Open file', error);
       });
     }
@@ -333,15 +333,15 @@ class FileBrowserWidget extends Widget {
   rename(): void {
     let content = this.node.getElementsByClassName(LIST_AREA_CLASS)[0];
     let row = content.getElementsByClassName(SELECTED_CLASS)[0];
-    this._doRename(row as HTMLElement);
+    if (row) this._doRename(row as HTMLElement);
   }
 
   /**
    * Delete the currently selected item(s).
    */
   delete(): void {
-    for (let path of this._model.selected) {
-      this._model.delete('/' + path).catch(error => {
+    for (let name of this._selectedNames) {
+      this._model.delete(name).catch(error => {
         this._showErrorMessage('Delete file', error);
       });
     }
@@ -351,11 +351,10 @@ class FileBrowserWidget extends Widget {
    * Duplicate the currently selected item(s).
    */
   duplicate(): void {
-    for (let name of this._model.selected) {
-      let index = '';
+    for (let index of this._model.selected) {
       let item = this._model.items[index];
       if (item.type !== 'directory') {
-        this._model.copy(path, this._model.path).catch(error => {
+        this._model.copy(item.path, this._model.path).catch(error => {
           this._showErrorMessage('Duplicate file', error);
         });
       }
@@ -497,6 +496,18 @@ class FileBrowserWidget extends Widget {
       updateItemNode(items[i], nodes[i]);
     }
 
+    // If the path has not changed, select any previously selected names that
+    // have not changed.
+    if (this._model.path == this._prevPath) {
+      let newNames = this._model.items.map(item => item.name);
+      for (let name of this._selectedNames) {
+        let index = newNames.indexOf(name);
+        if (index !== 1) {
+          this._items[index].classList.add(SELECTED_CLASS);
+        }
+      }
+    }
+
     this._updateSelected();
 
     // Update the breadcrumb list.
@@ -515,6 +526,8 @@ class FileBrowserWidget extends Widget {
     } else {
       this.node.classList.remove(RUNNING_CLASS);
     }
+
+    this._prevPath = this._model.path;
   }
 
   /**
@@ -874,9 +887,12 @@ class FileBrowserWidget extends Widget {
   private _updateSelected() {
     // Set the selected items on the model.
     let selected: number[] = [];
+    this._selectedNames = [];
+    let items = this._model.items;
     for (let i = 0; i < this._items.length; i++) {
       if (this._items[i].classList.contains(SELECTED_CLASS)) {
         selected.push(i);
+        this._selectedNames.push(items[i].name);
       }
     }
     this._model.selected = selected;
@@ -983,6 +999,8 @@ class FileBrowserWidget extends Widget {
   private _buttons: HTMLElement[] = [];
   private _newMenu: Menu = null;
   private _pendingSelect = false;
+  private _prevPath = '';
+  private _selectedNames: string[] = [];
   private _editNode: HTMLInputElement = null;
   private _drag: Drag = null;
   private _dragData: { pressX: number, pressY: number, index: number } = null;
@@ -1073,6 +1091,7 @@ function updateItemNode(item: IContentsModel, node: HTMLElement): void {
   icon.className = createIconClass(item);
   text.textContent = createTextContent(item);
   modified.textContent = createModifiedContent(item);
+  node.classList.remove(SELECTED_CLASS);
 }
 
 

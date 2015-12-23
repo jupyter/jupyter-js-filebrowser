@@ -71,17 +71,17 @@ class FileBrowserViewModel implements IDisposable{
   }
 
   /**
-   * Get the selected file paths.
+   * Get the selected indices.
    */
-  get selected(): string[] {
-    return this._selected.slice();
+  get selected(): number[] {
+    return this._selectedIndices.slice();
   }
 
   /**
-   * Set the selected file paths.
+   * Set the selected indices.
    */
-  set selected(value: string[]) {
-    this._selected = value.slice();
+  set selected(value: number[]) {
+    this._selectedIndices = value.slice();
   }
 
   /**
@@ -107,7 +107,7 @@ class FileBrowserViewModel implements IDisposable{
   dispose(): void {
     this._model = null;
     this._contentsManager = null;
-    this._selected = null;
+    this._selectedIndices = null;
   }
 
   /**
@@ -361,7 +361,7 @@ class FileBrowserViewModel implements IDisposable{
   }
 
   private _max_upload_size_mb = 15;
-  private _selected: string[] = [];
+  private _selectedIndices: number[] = [];
   private _contentsManager: IContentsManager = null;
   private _sessionIds: ISessionId[] = [];
   private _sessionManager: INotebookSessionManager = null;
