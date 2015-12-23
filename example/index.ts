@@ -3,7 +3,7 @@
 |
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
-'use-strict';
+'use strict';
 
 import {
   EditorModel, EditorWidget
