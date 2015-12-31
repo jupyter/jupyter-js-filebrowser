@@ -3,14 +3,19 @@ module.exports = function (config) {
     basePath: '..',
     frameworks: ['mocha'],
     reporters: ['mocha'],
-    files: [
-      { pattern: 'lib/*.*', included: false },
-      { pattern: 'package.json', included: false },
-      { pattern: 'node_modules/**/*.*', included: false },
-      { pattern: 'test/build/index.*', included: false },
-      'node_modules/steal/steal.js',
-      'test/karma.bootstrap.js'
-    ],
+    preprocessors: { 'test/src/*.ts': ['webpack'] },
+    files: ['test/src/*.ts'],
+    webpack: {
+      resolve: {
+        extensions: ['', '.ts', '.js']
+      },
+      module: {
+        loaders: [
+          { test: /\.ts$/, loader: 'ts-loader' },
+          { test: /\.css$/, loader: 'style-loader!css-loader' },
+        ]
+      }
+    },
     port: 9876,
     colors: true,
     singleRun: true,

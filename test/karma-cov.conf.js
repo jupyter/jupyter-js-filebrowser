@@ -1,17 +1,32 @@
+var path = require('path');
+
 module.exports = function (config) {
   config.set({
     basePath: '..',
     browsers: ['Firefox'],
     frameworks: ['mocha'],
     reporters: ['mocha', 'coverage'],
-    files: [
-      { pattern: 'lib/*.*', included: false },
-      { pattern: 'package.json', included: false },
-      { pattern: 'node_modules/**/*.*', included: false },
-      { pattern: 'test/build/index.*', included: false },
-      'node_modules/steal/steal.js',
-      'test/karma.bootstrap.js'
-    ],
+    preprocessors: { 'test/src/*.ts': ['webpack'] },
+    files: ['test/src/*.ts'],
+    webpack: {
+      resolve: {
+        extensions: ['', '.ts', '.js']
+      },
+      module: {
+        loaders: [
+          { test: /\.ts$/, loader: 'ts-loader' },
+          { test: /\.css$/, loader: 'style-loader!css-loader' },
+        ],
+        preLoaders: [
+          // instrument only testing sources with Istanbul
+          {
+            test: /\.js$/,
+            include: path.resolve('lib/'),
+            loader: 'istanbul-instrumenter'
+          }
+        ]
+      }
+    },
     coverageReporter: {
       reporters : [
         { 'type': 'text' },

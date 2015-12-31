@@ -11,7 +11,7 @@ import {
 
 import {
   FileBrowserWidget, FileBrowserViewModel
-} from 'jupyter-js-filebrowser';
+} from '../lib';
 
 import {
   ContentsManager, ISessionOptions, NotebookSessionManager
