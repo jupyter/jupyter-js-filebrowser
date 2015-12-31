@@ -11,13 +11,6 @@
 
 .jp-FileBrowser-breadcrumbs {
   flex: 0 0 auto;
-  padding: 5px;
-}
-
-
-.jp-FileBrowser-breadcrumb-item {
-  margin-right: 5px;
-  border: 1px solid transparent;
 }
 
 
@@ -48,7 +41,6 @@
   align-items: center;
   justify-content: center;
   margin: 0;
-  padding-left: 3px;
 }
 
 
@@ -56,7 +48,6 @@
   flex: 1 1 auto;
   text-align: center;
   vertical-align: middle;
-  margin-right: 3px;
 }
 
 
@@ -66,26 +57,9 @@
 }
 
 
-.jp-FileBrowser-header {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: row;
-  padding: 5px;
-}
-
-
-.jp-FileBrowser-header-file {
-  flex: 1 1 auto;
-}
-
-
-.jp-FileBrowser-header-modified {
-  flex: 0 0 auto;
-}
-
 .jp-FileBrowser-list-container {
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   flex: 1 1 auto;
 }
 
@@ -100,34 +74,38 @@
 }
 
 
+.jp-FileBrowser-item-edit {
+  z-index: 10000;
+}
+
+
 .jp-FileBrowser-row {
   display: table-row;
-  padding: 4px 8px;
-  border: 1px solid transparent;
+  position: relative;
 }
 
 
-.jp-FileBrowser-row > span {
+.jp-FileBrowser-row-file {
   display: table-cell;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  position: relative;
 }
-
 
 
 .jp-FileBrowser-item-icon {
-  width: 21px;
-  padding-left: 2px;
-  padding-right: 2px;
   text-align: center;
 }
-
 
 
 .jp-FileBrowser-item-text {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  padding-left: 2px;
-  padding-right: 35px;
+}
+
+
+.jp-FileBrowser-item-modified {
+  display: table-cell;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: right;
 }

@@ -77,21 +77,6 @@ const BUTTON_ICON_CLASS = 'jp-FileBrowser-button-icon';
 const UPLOAD_CLASS = 'jp-FileBrowser-upload';
 
 /**
- * The class name added to the header node.
- */
-const HEADER_CLASS = 'jp-FileBrowser-header';
-
-/**
- * The class name added to the header file node.
- */
-const HEADER_FILE_CLASS = 'jp-FileBrowser-header-file';
-
-/**
- * The class name added to the header modified node.
- */
-const HEADER_MOD_CLASS = 'jp-FileBrowser-header-modified';
-
-/**
  * The class name added to the breadcrumb node.
  */
 const BREADCRUMB_CLASS = 'jp-FileBrowser-breadcrumbs';
@@ -112,9 +97,29 @@ const LIST_CONTAINER_CLASS = 'jp-FileBrowser-list-container';
 const LIST_AREA_CLASS = 'jp-FileBrowser-list-area';
 
 /**
+ * The class name added to the header node.
+ */
+const HEADER_CLASS = 'jp-FileBrowser-header';
+
+/**
+ * The class name added to the header file node.
+ */
+const HEADER_FILE_CLASS = 'jp-FileBrowser-header-file';
+
+/**
+ * The class name added to the header modified node.
+ */
+const HEADER_MOD_CLASS = 'jp-FileBrowser-header-modified';
+
+/**
  * The class name added to FileBrowser rows.
  */
 const ROW_CLASS = 'jp-FileBrowser-row';
+
+/**
+ * The class name added to FileBrowser row file divs.
+ */
+const ROW_FILE_CLASS = 'jp-FileBrowser-row-file';
 
 /**
  * The class name added to selected rows.
@@ -235,21 +240,10 @@ class FileBrowserWidget extends Widget {
     let buttonBar = document.createElement('div');
     buttonBar.className = BUTTON_CLASS;
 
-    // Create the header.
-    let header = document.createElement('div');
-    header.classList.add(HEADER_CLASS);
-    let fileName = document.createElement('span');
-    fileName.textContent = 'File Name';
-    fileName.className = HEADER_FILE_CLASS;
-    let modified = document.createElement('span');
-    modified.textContent = 'Last Modified';
-    modified.className = HEADER_MOD_CLASS;
-    header.appendChild(fileName);
-    header.appendChild(modified);
-
     // Create the file list.
     let wrapper = document.createElement('div');
     wrapper.className = LIST_CONTAINER_CLASS;
+
     let list = document.createElement('ul');
     list.classList.add(LIST_AREA_CLASS);
     wrapper.appendChild(list);
@@ -257,7 +251,6 @@ class FileBrowserWidget extends Widget {
     // Add the children.
     node.appendChild(breadcrumbs);
     node.appendChild(buttonBar);
-    node.appendChild(header);
     node.appendChild(wrapper);
     return node;
   }
@@ -584,9 +577,9 @@ class FileBrowserWidget extends Widget {
     let paths = this._model.items.map(item => item.path);
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
-      let node = this._items[index].firstChild as HTMLElement;
+      let node = this._items[index].getElementsByClassName(FILE_ICON_CLASS)[0];
       node.classList.add(RUNNING_CLASS);
-      node.title = sessionId.kernel.name;
+      (node as HTMLElement).title = sessionId.kernel.name;
     }
     if (this._model.sessionIds.length) {
       this.node.classList.add(RUNNING_CLASS);
@@ -1169,14 +1162,17 @@ enum Button {
 function createItemNode(): HTMLElement {
   let node = document.createElement('li');
   node.className = ROW_CLASS;
+  let fnode = document.createElement('div');
+  fnode.className = ROW_FILE_CLASS;
   let inode = document.createElement('span');
   inode.className = ROW_ICON_CLASS;
   let tnode = document.createElement('span');
   tnode.className = ROW_TEXT_CLASS;
   let mnode = document.createElement('span');
   mnode.className = ROW_TIME_CLASS;
-  node.appendChild(inode);
-  node.appendChild(tnode);
+  fnode.appendChild(inode);
+  fnode.appendChild(tnode);
+  node.appendChild(fnode);
   node.appendChild(mnode);
   return node;
 }
@@ -1220,8 +1216,8 @@ function createModifiedContent(item: IContentsModel): string {
  * Update the node state for an IContentsModel.
  */
 function updateItemNode(item: IContentsModel, node: HTMLElement): void {
-  let icon = node.firstChild as HTMLElement;
-  let text = node.children[1] as HTMLElement;
+  let icon = node.firstChild.firstChild as HTMLElement;
+  let text = (node.firstChild as HTMLElement).children[1] as HTMLElement;
   let modified = node.lastChild as HTMLElement;
   icon.className = createIconClass(item);
   text.textContent = createTextContent(item);

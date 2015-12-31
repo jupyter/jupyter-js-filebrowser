@@ -132,12 +132,14 @@ function main(): void {
   });
 
 
+  /*
   fileBrowser.node.addEventListener('contextmenu', (event: MouseEvent) => {
     event.preventDefault();
     let x = event.clientX;
     let y = event.clientY;
     contextMenu.popup(x, y);
   });
+*/
 
 
   window.onresize = () => panel.update();
