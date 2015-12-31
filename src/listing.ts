@@ -9,12 +9,12 @@ import {
 import * as moment from 'moment';
 
 import {
-  DelegateCommand, ICommand
-} from 'phosphor-command';
-
-import {
   okButton, showDialog
 } from 'phosphor-dialog';
+
+import {
+  IDisposable
+} from 'phosphor-disposable';
 
 import {
   hitTest
@@ -23,10 +23,6 @@ import {
 import {
   Drag, DropAction, DropActions, IDragEvent, MimeData
 } from 'phosphor-dragdrop';
-
-import {
-  Menu, MenuBar, MenuItem
-} from 'phosphor-menus';
 
 import {
   Message
@@ -46,80 +42,32 @@ import {
 
 import {
   FileBrowserViewModel
-} from './FileBrowserViewModel';
+} from './viewmodel';
 
-import './index.css';
+import {
+  CONTENTS_MIME, DROP_TARGET_CLASS, hitTestNodes, showErrorMessage
+} from './utils';
 
-
-/**
- * The class name added to FileBrowser instances.
- */
-const FILE_BROWSER_CLASS = 'jp-FileBrowser';
 
 /**
- * The class name added to the button node.
+ * The class name added to the Filebrowser list area container.
  */
-const BUTTON_CLASS = 'jp-FileBrowser-button';
-
-/**
- * The class name added to the button nodes.
- */
-const BUTTON_ITEM_CLASS = 'jp-FileBrowser-button-item';
-
-/**
- * The class name added to the button icon nodes.
- */
-const BUTTON_ICON_CLASS = 'jp-FileBrowser-button-icon';
-
-/**
- * The class name added to the upload button node.
- */
-const UPLOAD_CLASS = 'jp-FileBrowser-upload';
-
-/**
- * The class name added to the breadcrumb node.
- */
-const BREADCRUMB_CLASS = 'jp-FileBrowser-breadcrumbs';
-
-/**
- * The class name added to the breadcrumb node.
- */
-const BREADCRUMB_ITEM_CLASS = 'jp-FileBrowser-breadcrumb-item';
-
-/**
- * The class name added to FileBrowser list area container.
- */
-const LIST_CONTAINER_CLASS = 'jp-FileBrowser-list-container';
+const LIST_CONTAINER_CLASS = 'jp-DirListing-container';
 
 /**
  * The class name added to FileBrowser list area.
  */
-const LIST_AREA_CLASS = 'jp-FileBrowser-list-area';
-
-/**
- * The class name added to the header node.
- */
-const HEADER_CLASS = 'jp-FileBrowser-header';
-
-/**
- * The class name added to the header file node.
- */
-const HEADER_FILE_CLASS = 'jp-FileBrowser-header-file';
-
-/**
- * The class name added to the header modified node.
- */
-const HEADER_MOD_CLASS = 'jp-FileBrowser-header-modified';
+const LIST_AREA_CLASS = 'jp-DirListing';
 
 /**
  * The class name added to FileBrowser rows.
  */
-const ROW_CLASS = 'jp-FileBrowser-row';
+const ROW_CLASS = 'jp-DirListing-row';
 
 /**
  * The class name added to FileBrowser row file divs.
  */
-const ROW_FILE_CLASS = 'jp-FileBrowser-row-file';
+const ROW_FILE_CLASS = 'jp-DirListing-file';
 
 /**
  * The class name added to selected rows.
@@ -134,47 +82,42 @@ const CUT_CLASS = 'jp-mod-cut';
 /**
  * The class name added when there are more than one selected rows.
  */
-const MULTI_SELECTED_CLASS = 'jp-mod-multi-selected';
-
-/**
- * The class name added to drop targets.
- */
-const DROP_TARGET_CLASS = 'jp-mod-drop-target';
+const MULTI_SELECTED_CLASS = 'jp-mod-multiSelected';
 
 /**
  * The class name added to a row icon.
  */
-const ROW_ICON_CLASS = 'jp-FileBrowser-item-icon';
+const ROW_ICON_CLASS = 'jp-DirListing-itemIcon';
 
 /**
  * The class name added to a row text.
  */
-const ROW_TEXT_CLASS = 'jp-FileBrowser-item-text';
+const ROW_TEXT_CLASS = 'jp-DirListing-itemText';
 
 /**
  * The class name added to a row filename editor.
  */
-const ROW_EDIT_CLASS = 'jp-FileBrowser-item-edit';
+const ROW_EDIT_CLASS = 'jp-DirListing-itemEdit';
 
 /**
  * The class name added to a row last modified text.
  */
-const ROW_TIME_CLASS = 'jp-FileBrowser-item-modified';
+const ROW_TIME_CLASS = 'jp-DirListing-itemModified';
 
 /**
  * The class name added to a folder icon.
  */
-const FOLDER_ICON_CLASS = 'jp-FileBrowser-folder-icon';
+const FOLDER_ICON_CLASS = 'jp-DirListing-folderIcon';
 
 /**
  * The class name added to a file icon.
  */
-const FILE_ICON_CLASS = 'jp-FileBrowser-file-icon';
+const FILE_ICON_CLASS = 'jp-DirListing-fileIcon';
 
 /**
  * The class name added to a notebook icon.
  */
-const NOTEBOOK_ICON_CLASS = 'jp-FileBrowser-nb-icon';
+const NOTEBOOK_ICON_CLASS = 'jp-DirListing-nbIcon';
 
 /**
  * The class name added to indicate running notebook.
@@ -186,18 +129,10 @@ const RUNNING_CLASS = 'jp-mod-running';
  */
 const CLIPBOARD_CLASS = 'jp-mod-clipboard';
 
-
 /**
  * The minimum duration for a rename select in ms.
  */
 const RENAME_DURATION = 500;
-
-
-/**
- * The duration of auto-refresh in ms.
- */
-const REFRESH_DURATION = 30000;
-
 
 /**
  * The threshold in pixels to start a drag event.
@@ -206,116 +141,45 @@ const DRAG_THRESHOLD = 5;
 
 
 /**
- * The mime type for a contents drag object.
- */
-const CONTENTS_MIME = 'application/x-jupyter-icontents';
-
-/**
- * Bread crumb paths.
- */
-const BREAD_CRUMB_PATHS = ['/', '../../', '../', ''];
-
-
-/**
- * A widget which hosts a file browser.
- *
- * The widget uses the Jupyter Contents API to retreive contents,
- * and presents itself as a flat list of files and directories with
- * breadcrumbs.
+ * A widget which host a file list area.
  */
 export
-class FileBrowserWidget extends Widget {
+class DirListing extends Widget {
 
   /**
    * Create a new node for the file list.
    */
   static createNode(): HTMLElement {
-    let node = document.createElement('div');
-
-    // Create the breadcrumb node.
-    let breadcrumbs = document.createElement('div');
-    breadcrumbs.classList.add(BREADCRUMB_CLASS);
-
-    // Create the button node.
-    let buttonBar = document.createElement('div');
-    buttonBar.className = BUTTON_CLASS;
-
-    // Create the file list.
-    let wrapper = document.createElement('div');
-    wrapper.className = LIST_CONTAINER_CLASS;
-
-    let list = document.createElement('ul');
-    list.classList.add(LIST_AREA_CLASS);
-    wrapper.appendChild(list);
-
-    // Add the children.
-    node.appendChild(breadcrumbs);
-    node.appendChild(buttonBar);
-    node.appendChild(wrapper);
-    return node;
+    return document.createElement('ul');
   }
 
-  /**
-   * Construct a new file browser widget.
-   *
-   * @param model - File browser view model instance.
-   */
   constructor(model: FileBrowserViewModel) {
     super();
-    this.addClass(FILE_BROWSER_CLASS);
+    this.addClass(LIST_AREA_CLASS);
     this._model = model;
     this._model.changed.connect(this._onChanged.bind(this));
-
-    // Create the crumb nodes add add to crumb node.
-    this._crumbs = createCrumbs();
-    this._crumbSeps = createCrumbSeparators();
-    let crumbs = this.node.getElementsByClassName(BREADCRUMB_CLASS)[0];
-    crumbs.appendChild(this._crumbs[Crumb.Home]);
-
-    // Create the button nodes and add to button node.
-    let buttons = this.node.getElementsByClassName(BUTTON_CLASS)[0];
-    this._buttons = createButtons(buttons as HTMLElement);
-
-    // Set up events on the buttons.
-    let input = this._buttons[Button.Upload].getElementsByTagName('input')[0];
-    input.onchange = this._handleUploadEvent.bind(this);
-
-    this._buttons[Button.Refresh].onclick = () => {
-      this._refresh();
-    };
-
-    this._buttons[Button.New].onclick = () => {
-      let rect = this._buttons[Button.New].getBoundingClientRect();
-      this._newMenu.popup(rect.left, rect.bottom, false, true);
-    }
-
-    // Create the "new" menu.
-    let command = new DelegateCommand(args => {
-      this._model.newUntitled(args as string).catch(error => {
-        this._showErrorMessage('New File Error', error);
-       }).then(() => this._refresh);
-    });
-    this._newMenu = createNewItemMenu(command);
-
     // Create the edit node.
     this._editNode = document.createElement('input');
     this._editNode.className = ROW_EDIT_CLASS;
   }
 
   /**
-   * Dispose of the resources held by the file browser.
+   * Dispose of the resources held by the list area.
    */
   dispose(): void {
     this._model = null;
     this._items = null;
-    this._crumbs = null;
-    this._crumbSeps = null;
-    this._buttons = null;
-    this._newMenu = null;
     this._editNode = null;
     this._drag = null;
     this._dragData = null;
     super.dispose();
+  }
+
+  /**
+   * Should get whether the list area is disposed.
+   */
+  get isDisposed(): boolean {
+    return this._model === null;
   }
 
   /**
@@ -324,7 +188,7 @@ class FileBrowserWidget extends Widget {
   open(): void {
     for (let name of this._selectedNames) {
       this._model.open(name).catch(error => {
-        this._showErrorMessage('Open file', error);
+        showErrorMessage(this, 'Open file', error);
       });
     }
   }
@@ -333,9 +197,7 @@ class FileBrowserWidget extends Widget {
    * Rename the first currently selected item.
    */
   rename(): void {
-    let content = this.node.getElementsByClassName(LIST_AREA_CLASS)[0];
-    let row = content.getElementsByClassName(SELECTED_CLASS)[0];
-    if (row) this._doRename(row as HTMLElement);
+    this._doRename();
   }
 
   /**
@@ -360,6 +222,7 @@ class FileBrowserWidget extends Widget {
    * Paste the items from the clipboard.
    */
   paste(): void {
+
     if (!this._clipboard.length) {
       return;
     }
@@ -369,11 +232,11 @@ class FileBrowserWidget extends Widget {
         let parts = path.split('/');
         let name = parts[parts.length - 1];
         promises.push(this._model.rename(path, name).catch(error => {
-          this._showErrorMessage('Paste Error', error);
+          showErrorMessage(this, 'Paste Error', error);
         }));
       } else {
         promises.push(this._model.copy(path, '.').catch(error => {
-          this._showErrorMessage('Paste Error', error);
+          showErrorMessage(this, 'Paste Error', error);
         }));
       }
     }
@@ -385,7 +248,7 @@ class FileBrowserWidget extends Widget {
     this._clipboard = [];
     this._isCut = false;
     this.node.classList.remove(CLIPBOARD_CLASS);
-    Promise.all(promises).then(() => this._refresh);
+    Promise.all(promises).then(() => this._refresh());
   }
 
   /**
@@ -395,10 +258,10 @@ class FileBrowserWidget extends Widget {
     let promises: Promise<void>[] = [];
     for (let name of this._selectedNames) {
       promises.push(this._model.delete(name).catch(error => {
-        this._showErrorMessage('Delete file', error);
+        showErrorMessage(this, 'Delete file', error);
       }));
     }
-    Promise.all(promises).then(() => this._refresh);
+    Promise.all(promises).then(() => this._refresh());
   }
 
   /**
@@ -411,11 +274,11 @@ class FileBrowserWidget extends Widget {
       if (item.type !== 'directory') {
         promises.push(this._model.copy(item.path, this._model.path)
         .catch(error => {
-          this._showErrorMessage('Duplicate file', error);
+          showErrorMessage(this, 'Duplicate file', error);
         }));
       }
     }
-    Promise.all(promises).then(() => this._refresh);
+    Promise.all(promises).then(() => this._refresh());
   }
 
   /**
@@ -426,7 +289,7 @@ class FileBrowserWidget extends Widget {
       let item = this._model.items[index];
       if (item.type !== 'directory') {
         this._model.download(item.path).catch(error => {
-          this._showErrorMessage('Download file', error);
+          showErrorMessage(this, 'Download file', error);
         });
       }
     }
@@ -442,17 +305,17 @@ class FileBrowserWidget extends Widget {
       let index = paths.indexOf(sessionId.notebook.path);
       if (this._items[index].classList.contains(SELECTED_CLASS)) {
         promises.push(this._model.shutdown(sessionId).catch(error => {
-          this._showErrorMessage('Shutdown kernel', error);
+          showErrorMessage(this, 'Shutdown kernel', error);
         }));
       }
     }
-    Promise.all(promises).then(() => this._refresh);
+    Promise.all(promises).then(() => this._refresh());
   }
 
   /**
-   * Handle the DOM events for the file browser.
+   * Handle the DOM events for the list area.
    *
-   * @param event - The DOM event sent to the panel.
+   * @param event - The DOM event sent to the widget.
    *
    * #### Notes
    * This method implements the DOM `EventListener` interface and is
@@ -469,9 +332,6 @@ class FileBrowserWidget extends Widget {
       break;
     case 'mousemove':
       this._evtMousemove(event as MouseEvent);
-      break;
-    case 'click':
-      this._evtClick(event as MouseEvent);
       break;
     case 'dblclick':
       this._evtDblClick(event as MouseEvent);
@@ -499,13 +359,11 @@ class FileBrowserWidget extends Widget {
     let node = this.node;
     node.addEventListener('mousedown', this);
     node.addEventListener('mouseup', this);
-    node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
     node.addEventListener('p-dragenter', this);
     node.addEventListener('p-dragleave', this);
     node.addEventListener('p-dragover', this);
     node.addEventListener('p-drop', this);
-    this._refresh();
   }
 
   /**
@@ -516,7 +374,6 @@ class FileBrowserWidget extends Widget {
     let node = this.node;
     node.removeEventListener('mousedown', this);
     node.removeEventListener('mouseup', this);
-    node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
     node.removeEventListener('mousemove', this);
     node.removeEventListener('p-dragenter', this);
@@ -532,19 +389,18 @@ class FileBrowserWidget extends Widget {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
-    let content = this.node.getElementsByClassName(LIST_AREA_CLASS)[0];
 
     // Remove any excess item nodes.
     while (nodes.length > items.length) {
       let node = nodes.pop();
-      content.removeChild(node);
+      this.node.removeChild(node);
     }
 
     // Add any missing item nodes.
     while (nodes.length < items.length) {
       let node = createItemNode();
       nodes.push(node);
-      content.appendChild(node);
+      this.node.appendChild(node);
     }
 
     // Update the node state to match the model contents.
@@ -568,16 +424,14 @@ class FileBrowserWidget extends Widget {
       }
     }
 
+    // Update the selected items
     this._updateSelected();
-
-    // Update the breadcrumb list.
-    updateCrumbs(this._crumbs, this._crumbSeps, this._model.path);
 
     // Handle notebook session statuses.
     let paths = this._model.items.map(item => item.path);
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
-      let node = this._items[index].getElementsByClassName(FILE_ICON_CLASS)[0];
+      let node = this._items[index].getElementsByClassName(NOTEBOOK_ICON_CLASS)[0];
       node.classList.add(RUNNING_CLASS);
       (node as HTMLElement).title = sessionId.kernel.name;
     }
@@ -591,7 +445,7 @@ class FileBrowserWidget extends Widget {
   }
 
   /**
-   * Handle the `'mousedown'` event for the file browser.
+   * Handle the `'mousedown'` event for the widget.
    */
   private _evtMousedown(event: MouseEvent) {
     let index = hitTestNodes(this._items, event.clientX, event.clientY);
@@ -602,19 +456,32 @@ class FileBrowserWidget extends Widget {
     // Left mouse press for drag start.
     if (event.button === 0) {
       this._dragData = { pressX: event.clientX, pressY: event.clientY,
-                           index: index };
+                         index: index };
       document.addEventListener('mouseup', this, true);
       document.addEventListener('mousemove', this, true);
+    }
 
-    // Right mouse press for implicit item select.
-    } else if (event.button === 2) {
-      this._items[index].classList.add(SELECTED_CLASS);
-      this._updateSelected();
+    // Blur the edit node if necessary.
+    if (this._editNode.parentNode) {
+      if (this._editNode !== event.target as HTMLElement) {
+        this._editNode.focus();
+        this._editNode.blur();
+      } else {
+        return;
+      }
+    }
+
+    // Update our selection.
+    this._handleFileSelect(event);
+    this._updateSelected();
+
+    if (event.button !== 0) {
+      this._pendingSelect = false;
     }
   }
 
   /**
-   * Handle the `'mouseup'` event for the file browser.
+   * Handle the `'mouseup'` event for the widget.
    */
   private _evtMouseup(event: MouseEvent) {
     if (event.button !== 0 || !this._drag) {
@@ -623,14 +490,10 @@ class FileBrowserWidget extends Widget {
     }
     event.preventDefault();
     event.stopPropagation();
-
-    for (let node of this._buttons) {
-      node.classList.remove(SELECTED_CLASS);
-    }
   }
 
   /**
-   * Handle the `'mousemove'` event for the file browser.
+   * Handle the `'mousemove'` event for the widget.
    */
   private _evtMousemove(event: MouseEvent) {
     event.preventDefault();
@@ -653,54 +516,7 @@ class FileBrowserWidget extends Widget {
   }
 
   /**
-   * Handle the `'click'` event for the file browser.
-   */
-  private _evtClick(event: MouseEvent) {
-    // Do nothing if it's not a left mouse press.
-    if (event.button !== 0) {
-      return;
-    }
-
-    // Handle the edit node.
-    if (this._editNode.parentNode) {
-      if (this._editNode !== event.target as HTMLElement) {
-        this._editNode.focus();
-        this._editNode.blur();
-      } else {
-        return;
-      }
-    }
-
-    // Find a valid click target.
-    let node = event.target as HTMLElement;
-    while (node && node !== this.node) {
-      if (node.classList.contains(BREADCRUMB_ITEM_CLASS)) {
-        this._pendingSelect = false;
-        let index = this._crumbs.indexOf(node);
-        this._model.open(BREAD_CRUMB_PATHS[index]).catch(error => {
-          this._showErrorMessage('Open Error', error);
-        });
-
-        // Stop the event propagation.
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-      if (node.classList.contains(ROW_CLASS)) {
-        this._handleFileClick(event, node);
-
-        // Stop the event propagation.
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-      node = node.parentElement;
-    }
-    this._pendingSelect = false;
-  }
-
-  /**
-   * Handle the `'dblclick'` event for the file browser.
+   * Handle the `'dblclick'` event for the widget.
    */
   private _evtDblClick(event: MouseEvent) {
     // Do nothing if it's not a left mouse press.
@@ -722,7 +538,7 @@ class FileBrowserWidget extends Widget {
         let index = this._items.indexOf(node);
         let path = this._model.items[index].name;
         this._model.open(path).catch(error => {
-          this._showErrorMessage('Open Error', error);
+          showErrorMessage(this, 'Open Error', error);
         });
         return;
       }
@@ -731,32 +547,18 @@ class FileBrowserWidget extends Widget {
   }
 
   /**
-   * Handle the `'p-dragenter'` event for the dock panel.
+   * Handle the `'p-dragenter'` event for the widget.
    */
   private _evtDragEnter(event: IDragEvent): void {
     if (event.mimeData.hasData(CONTENTS_MIME)) {
-      let target = this._findTarget(event as MouseEvent);
-      if (target === null) return;
-
-      let index = this._crumbs.indexOf(target);
-      if (index !== -1) {
-        if (index !== Crumb.Current) {
-          target.classList.add(DROP_TARGET_CLASS);
-          event.preventDefault();
-          event.stopPropagation();
-        }
+      let index = hitTestNodes(this._items, event.clientX, event.clientY);
+      let target = this._items[index];
+      if (target.getElementsByClassName(FOLDER_ICON_CLASS).length &&
+          !target.classList.contains(SELECTED_CLASS)) {
+        target.classList.add(DROP_TARGET_CLASS);
+        event.preventDefault();
+        event.stopPropagation();
         return;
-      }
-
-      index = this._items.indexOf(target);
-      if (index !== -1) {
-        if (target.getElementsByClassName(FOLDER_ICON_CLASS).length &&
-            !target.classList.contains(SELECTED_CLASS)) {
-          target.classList.add(DROP_TARGET_CLASS);
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
       }
     }
   }
@@ -784,9 +586,10 @@ class FileBrowserWidget extends Widget {
     if (dropTargets.length) {
       dropTargets[0].classList.remove(DROP_TARGET_CLASS);
     }
-    let target = this._findTarget(event as MouseEvent);
-    if (target !== null) target.classList.add(DROP_TARGET_CLASS);
+    let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    this._items[index].classList.add(DROP_TARGET_CLASS);
   }
+
 
   /**
    * Handle the `'p-drop'` event for the dock panel.
@@ -813,13 +616,8 @@ class FileBrowserWidget extends Widget {
     }
 
     // Get the path based on the target node.
-    let index = this._crumbs.indexOf(target)
-    if (index !== -1) {
-      var path = BREAD_CRUMB_PATHS[index];
-    } else {
-      index = this._items.indexOf(target);
-      var path = this._model.items[index].name + '/';
-    }
+    let index = this._items.indexOf(target);
+    var path = this._model.items[index].name + '/';
 
     // Move all of the items.
     let promises: Promise<void>[] = [];
@@ -842,7 +640,7 @@ class FileBrowserWidget extends Widget {
           });
         }
       }).catch(error => {
-        this._showErrorMessage('Move Error', error.message);
+        showErrorMessage(this, 'Move Error', error.message);
       }));
     }
     Promise.all(promises).then(() => this._model.open('.'));
@@ -885,48 +683,14 @@ class FileBrowserWidget extends Widget {
   }
 
   /**
-   * Copy the selected items, and optionally cut as well.
+   * Handle selection on a file node.
    */
-  private _copy(isCut: boolean): void {
-    this._clipboard = []
-    this._isCut = isCut;
-    for (let index of this._model.selected) {
-      let item = this._model.items[index];
-      let row = this._items[index];
-      if (item.type !== 'directory') {
-        if (isCut) row.classList.add(CUT_CLASS);
-        // Store the absolute path of the item.
-        this._clipboard.push('/' + item.path)
-      }
-    }
-    // Add the clipboard class to allow "Paste" actions.
-    if (this._clipboard.length) {
-      this.node.classList.add(CLIPBOARD_CLASS);
-    } else {
-      this.node.classList.remove(CLIPBOARD_CLASS);
-    }
-  }
-
-  /**
-   * Find the appropriate target for a mouse event.
-   */
- private _findTarget(event: MouseEvent): HTMLElement {
-    let index = hitTestNodes(this._items, event.clientX, event.clientY);
-    if (index !== -1) return this._items[index];
-
-    index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
-    if (index !== -1) return this._crumbs[index];
-
-    return null;
-  }
-
-  /**
-   * Handle a click on a file node.
-   */
-  private _handleFileClick(event: MouseEvent, target: HTMLElement) {
+  private _handleFileSelect(event: MouseEvent) {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
+    let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    let target = this._items[index];
 
     for (let node of nodes) {
       node.classList.remove(CUT_CLASS);
@@ -952,7 +716,7 @@ class FileBrowserWidget extends Widget {
         if (this._pendingSelect) {
           setTimeout(() => {
             if (this._pendingSelect) {
-              this._doRename(target);
+              this._doRename();
             } else {
               this._pendingSelect = true;
             }
@@ -969,8 +733,6 @@ class FileBrowserWidget extends Widget {
       }
       target.classList.add(SELECTED_CLASS);
     }
-
-    this._updateSelected();
   }
 
   /**
@@ -1002,40 +764,39 @@ class FileBrowserWidget extends Widget {
     }
   }
 
+
   /**
-   * Handle a file upload event.
+   * Copy the selected items, and optionally cut as well.
    */
-  private _handleUploadEvent(event: Event): void {
-    let promises: Promise<void>[] = [];
-    for (var file of (event.target as any).files) {
-      promises.push(this._model.upload(file).catch(error => {
-        if (error.message.indexOf('already exists') !== -1) {
-          let options = {
-            title: 'Overwrite file?',
-            host: this.node,
-            body: `"${file.name}" already exists, overwrite?`
-          }
-          showDialog(options).then(button => {
-            if (button.text === 'OK') {
-              return this._model.upload(file, true);
-            }
-          });
-        }
-      }).catch(error => {
-        this._showErrorMessage('Upload Error', error.message);
-      }));
+  private _copy(isCut: boolean): void {
+    this._clipboard = []
+    this._isCut = isCut;
+    for (let index of this._model.selected) {
+      let item = this._model.items[index];
+      let row = this._items[index];
+      if (item.type !== 'directory') {
+        if (isCut) row.classList.add(CUT_CLASS);
+        // Store the absolute path of the item.
+        this._clipboard.push('/' + item.path)
+      }
     }
-    Promise.all(promises).then(() => this._model.open('.'));
+    // Add the clipboard class to allow "Paste" actions.
+    if (this._clipboard.length) {
+      this.node.classList.add(CLIPBOARD_CLASS);
+    } else {
+      this.node.classList.remove(CLIPBOARD_CLASS);
+    }
   }
 
   /**
    * Allow the user to rename item on a given row.
    */
-  private _doRename(row: HTMLElement): void {
+  private _doRename(): void {
+    let row = this.node.getElementsByClassName(SELECTED_CLASS)[0];
     let text = row.getElementsByClassName(ROW_TEXT_CLASS)[0] as HTMLElement;
     let original = text.textContent;
 
-    doRename(row, text, this._editNode).then(changed => {
+    doRename(row as HTMLElement, text, this._editNode).then(changed => {
       if (!changed) {
         return;
       }
@@ -1059,53 +820,18 @@ class FileBrowserWidget extends Widget {
           });
         }
       }).catch(error => {
-        this._showErrorMessage('Rename Error', error.message);
+        showErrorMessage(this, 'Rename Error', error.message);
       }).then(() => this._model.open('.'));
     });
   }
 
-  private _showErrorMessage(title: string, message: string) {
-    console.error(message);
-    if (!this.isAttached) {
-      return;
-    }
-    let options = {
-      title: title,
-      host: this.node,
-      body: message,
-      buttons: [okButton]
-    }
-    showDialog(options);
-  }
-
   /**
-   * Force a refresh of the current directory, and trigger auto-refresh.
+   * Force a refresh of the current directory.
    */
   private _refresh(): void {
     this._model.open('.').catch(error => {
-      this._showErrorMessage('Refresh Error', error);
+      showErrorMessage(this, 'Refresh Error', error);
     });
-    if (this._pendingRefresh) {
-      // Interrupt the current refresh cycle.
-      this._pendingRefresh = false;
-    } else {
-      this._pendingRefresh = true;
-      setTimeout(() => {
-        if (this._pendingRefresh) {
-          this._pendingRefresh = false;
-          this._refresh();
-        } else {
-          // If we got interrupted, set a new timer.
-          this._pendingRefresh = true;
-          setTimeout(() => {
-            if (this._pendingRefresh) {
-              this._pendingRefresh = false;
-              this._refresh();
-            }
-          }, REFRESH_DURATION);
-        }
-      }, REFRESH_DURATION);
-    }
   }
 
   /**
@@ -1118,41 +844,15 @@ class FileBrowserWidget extends Widget {
   }
 
   private _model: FileBrowserViewModel = null;
+  private _editNode: HTMLInputElement = null;
   private _items: HTMLElement[] = [];
-  private _crumbs: HTMLElement[] = [];
-  private _crumbSeps: HTMLElement[] = [];
-  private _buttons: HTMLElement[] = [];
-  private _newMenu: Menu = null;
+  private _drag: Drag = null;
+  private _dragData: { pressX: number, pressY: number, index: number } = null;
   private _pendingSelect = false;
   private _prevPath = '';
   private _selectedNames: string[] = [];
-  private _editNode: HTMLInputElement = null;
-  private _clipboard: string[] = [];
-  private _pendingRefresh = false;
   private _isCut = false;
-  private _drag: Drag = null;
-  private _dragData: { pressX: number, pressY: number, index: number } = null;
-}
-
-
-/**
- * Breadcrumb item list enum.
- */
-enum Crumb {
-  Home,
-  Ellipsis,
-  Parent,
-  Current
-}
-
-
-/**
- * Button item list enum.
- */
-enum Button {
-  New,
-  Upload,
-  Refresh
+  private _clipboard: string[] = [];
 }
 
 
@@ -1212,6 +912,7 @@ function createModifiedContent(item: IContentsModel): string {
   }
 }
 
+
 /**
  * Update the node state for an IContentsModel.
  */
@@ -1224,131 +925,6 @@ function updateItemNode(item: IContentsModel, node: HTMLElement): void {
   modified.textContent = createModifiedContent(item);
   node.classList.remove(SELECTED_CLASS);
   node.classList.remove(CUT_CLASS);
-}
-
-
-/**
- * Populate the breadcrumb node.
- */
-function updateCrumbs(breadcrumbs: HTMLElement[], separators: HTMLElement[], path: string) {
-  let node = breadcrumbs[0].parentNode;
-
-  // Remove all but the home node.
-  while (node.firstChild.nextSibling) {
-    node.removeChild(node.firstChild.nextSibling);
-  }
-
-  let parts = path.split('/');
-  if (parts.length > 2) {
-    node.appendChild(separators[0]);
-    node.appendChild(breadcrumbs[Crumb.Ellipsis]);
-    let grandParent = parts.slice(0, parts.length - 2).join('/');
-    breadcrumbs[Crumb.Ellipsis].title = grandParent
-  }
-
-  if (path) {
-    if (parts.length >= 2) {
-      node.appendChild(separators[1]);
-      breadcrumbs[Crumb.Parent].textContent = parts[parts.length - 2];
-      node.appendChild(breadcrumbs[Crumb.Parent]);
-      let parent = parts.slice(0, parts.length - 1).join('/');
-      breadcrumbs[Crumb.Parent].title = parent;
-    }
-    node.appendChild(separators[2]);
-    breadcrumbs[Crumb.Current].textContent = parts[parts.length - 1];
-    node.appendChild(breadcrumbs[Crumb.Current]);
-    breadcrumbs[Crumb.Current].title = path;
-  }
-}
-
-
-/**
- * Create the breadcrumb nodes.
- */
-function createCrumbs(): HTMLElement[] {
-  let home = document.createElement('i');
-  home.className = 'fa fa-home ' + BREADCRUMB_ITEM_CLASS;
-  let ellipsis = document.createElement('i');
-  ellipsis.className = 'fa fa-ellipsis-h ' + BREADCRUMB_ITEM_CLASS;
-  let parent = document.createElement('span');
-  parent.className = BREADCRUMB_ITEM_CLASS;
-  let current = document.createElement('span');
-  current.className = BREADCRUMB_ITEM_CLASS;
-  return [home, ellipsis, parent, current];
-}
-
-
-/**
- * Create the breadcrumb separator nodes.
- */
-function createCrumbSeparators(): HTMLElement[] {
-  let items: HTMLElement[] = [];
-  for (let i = 0; i < 3; i++) {
-    let item = document.createElement('i');
-    item.className = 'fa fa-angle-right ' + BREADCRUMB_ITEM_CLASS;
-    items.push(item);
-  }
-  return items;
-}
-
-
-/**
- * Create the button nodes.
- */
-function createButtons(buttonBar: HTMLElement): HTMLElement[] {
-  let buttons: HTMLElement[] = [];
-  let icons = ['fa-plus', 'fa-upload', 'fa-refresh'];
-  let titles = ['Create New...', 'Upload File(s)', 'Refresh File List'];
-  for (let i = 0; i < 3; i++) {
-    let button = document.createElement('button');
-    button.className = BUTTON_ITEM_CLASS;
-    button.title = titles[i];
-    let icon = document.createElement('span');
-    icon.className = BUTTON_ICON_CLASS + ' fa ' + icons[i];
-    button.appendChild(icon);
-    buttonBar.appendChild(button);
-    buttons.push(button);
-  }
-
-  // Add the dropdown node to the "new file" button.
-  var dropIcon = document.createElement('span');
-  dropIcon.className = 'fa fa-caret-down';
-  dropIcon.style.marginLeft = '-0.5em';
-  buttons[Button.New].appendChild(dropIcon);
-
-  // Create the hidden upload input field.
-  let file = document.createElement('input');
-  file.style.height = "100%";
-  file.style.zIndex = "10000";
-  file.setAttribute("type", "file");
-  file.setAttribute("multiple", "multiple");
-  buttons[Button.Upload].classList.add(UPLOAD_CLASS);
-  buttons[Button.Upload].appendChild(file);
-  return buttons;
-}
-
-
-/**
- * Create the "new" menu.
- */
-function createNewItemMenu(command: ICommand): Menu {
-  return new Menu([
-    new MenuItem({
-      text: 'Notebook',
-      command: command,
-      commandArgs: 'notebook'
-    }),
-    new MenuItem({
-      text: 'Text File',
-      command: command,
-      commandArgs: 'file'
-    }),
-    new MenuItem({
-      text: 'Directory',
-      command: command,
-      commandArgs: 'directory'
-    })
-  ]);
 }
 
 
@@ -1430,14 +1006,4 @@ function handleMultiSelect(nodes: HTMLElement[], index: number) {
       nodes[i].classList.add(SELECTED_CLASS);
     }
   }
-}
-
-/**
- * Get the index of the node at a client position, or `-1`.
- */
-function hitTestNodes(nodes: HTMLElement[], x: number, y: number): number {
-  for (let i = 0, n = nodes.length; i < n; ++i) {
-    if (hitTest(nodes[i], x, y)) return i;
-  }
-  return -1;
 }
