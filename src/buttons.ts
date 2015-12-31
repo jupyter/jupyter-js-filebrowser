@@ -55,7 +55,7 @@ export
 class FileButtons extends Widget {
 
   /**
-   * Construct a new file browser button widget.
+   * Construct a new file browser buttons widget.
    *
    * @param model - The file browser view model.
    */

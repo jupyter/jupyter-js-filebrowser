@@ -65,9 +65,9 @@ class BreadCrumbs extends Widget {
   }
 
   /**
-   * Handle the DOM events for the file browser.
+   * Handle the DOM events for the bread crumbs.
    *
-   * @param event - The DOM event sent to the panel.
+   * @param event - The DOM event sent to the widget.
    *
    * #### Notes
    * This method implements the DOM `EventListener` interface and is
@@ -121,7 +121,7 @@ class BreadCrumbs extends Widget {
   }
 
   /**
-   * Handle the `'click'` event for the file browser.
+   * Handle the `'click'` event for the widget.
    */
   private _evtClick(event: MouseEvent) {
     // Do nothing if it's not a left mouse press.
@@ -148,7 +148,7 @@ class BreadCrumbs extends Widget {
   }
 
   /**
-   * Handle the `'p-dragenter'` event for the dock panel.
+   * Handle the `'p-dragenter'` event for the widget.
    */
   private _evtDragEnter(event: IDragEvent): void {
     if (event.mimeData.hasData(CONTENTS_MIME)) {
@@ -164,7 +164,7 @@ class BreadCrumbs extends Widget {
   }
 
   /**
-   * Handle the `'p-dragleave'` event for the dock panel.
+   * Handle the `'p-dragleave'` event for the widget.
    */
   private _evtDragLeave(event: IDragEvent): void {
     event.preventDefault();
@@ -176,7 +176,7 @@ class BreadCrumbs extends Widget {
   }
 
   /**
-   * Handle the `'p-dragover'` event for the dock panel.
+   * Handle the `'p-dragover'` event for the widget.
    */
   private _evtDragOver(event: IDragEvent): void {
     event.preventDefault();
@@ -191,7 +191,7 @@ class BreadCrumbs extends Widget {
   }
 
   /**
-   * Handle the `'p-drop'` event for the dock panel.
+   * Handle the `'p-drop'` event for the widget.
    */
   private _evtDrop(event: IDragEvent): void {
     event.preventDefault();

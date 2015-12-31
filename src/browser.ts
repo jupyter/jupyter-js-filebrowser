@@ -44,6 +44,21 @@ import {
 
 
 /**
+ * The class name added to the filebrowser crumbs node.
+ */
+const CRUMBS_CLASS = 'jp-FileBrowser-crumbs';
+
+/**
+ * The class name added to the filebrowser buttons node.
+ */
+const BUTTON_CLASS = 'jp-FileBrowser-buttons';
+
+/**
+ * The class name added to the filebrowser listing node.
+ */
+const LISTING_CLASS = 'jp-FileBrowser-listing';
+
+/**
  * The duration of auto-refresh in ms.
  */
 const REFRESH_DURATION = 30000;
@@ -72,6 +87,10 @@ class FileBrowser extends Widget {
     this._crumbs = new BreadCrumbs(model);
     this._buttons = new FileButtons(model);
     this._listing = new DirListing(model);
+
+    this._crumbs.addClass(CRUMBS_CLASS);
+    this._buttons.addClass(BUTTON_CLASS);
+    this._listing.addClass(LISTING_CLASS);
 
     let layout = new PanelLayout();
     layout.addChild(this._crumbs);

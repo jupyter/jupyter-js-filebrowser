@@ -75,29 +75,29 @@
 }
 
 
-.jp-DirListing-itemEdit {
+.jp-DirListing-itemFileEdit {
   z-index: 10000;
 }
 
 
-.jp-DirListing-row {
+.jp-DirListing-item {
   display: table-row;
   position: relative;
 }
 
 
-.jp-DirListing-file {
+.jp-DirListing-itemFile {
   display: table-cell;
   position: relative;
 }
 
 
-.jp-DirListing-itemIcon {
+.jp-DirListing-itemFileIcon {
   text-align: center;
 }
 
 
-.jp-DirListing-itemText {
+.jp-DirListing-itemFileText {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;

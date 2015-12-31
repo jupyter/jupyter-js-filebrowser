@@ -60,19 +60,54 @@ const LIST_CONTAINER_CLASS = 'jp-DirListing-container';
 const LIST_AREA_CLASS = 'jp-DirListing';
 
 /**
- * The class name added to FileBrowser rows.
+ * The class name added to FileBrowser items.
  */
-const ROW_CLASS = 'jp-DirListing-row';
+const ITEM_CLASS = 'jp-DirListing-item';
 
 /**
- * The class name added to FileBrowser row file divs.
+ * The class name added to FileBrowser item files.
  */
-const ROW_FILE_CLASS = 'jp-DirListing-file';
+const ITEM_FILE_CLASS = 'jp-DirListing-itemFile';
 
 /**
- * The class name added to selected rows.
+ * The class name added to a row icon.
  */
-const SELECTED_CLASS = 'jp-mod-selected';
+const ITEM_ICON_CLASS = 'jp-DirListing-itemFileIcon';
+
+/**
+ * The class name added to a row text.
+ */
+const ITEM_TEXT_CLASS = 'jp-DirListing-itemFileText';
+
+/**
+ * The class name added to a row filename editor.
+ */
+const ITEM_EDIT_CLASS = 'jp-DirListing-itemFileEdit';
+
+/**
+ * The class name added to a row last modified text.
+ */
+const ITEM_TIME_CLASS = 'jp-DirListing-itemModified';
+
+/**
+ * The class name added to a file icon.
+ */
+const FILE_ICON_CLASS = 'jp-DirListing-fileIcon';
+
+/**
+ * The class name added to a folder icon.
+ */
+const FOLDER_ICON_CLASS = 'jp-DirListing-folderIcon';
+
+/**
+ * The class name added to a notebook icon.
+ */
+const NOTEBOOK_ICON_CLASS = 'jp-DirListing-nbIcon';
+
+/**
+ * The class name added to the widget when there are items on the clipboard.
+ */
+const CLIPBOARD_CLASS = 'jp-mod-clipboard';
 
 /**
  * The class name added to cut rows.
@@ -85,49 +120,15 @@ const CUT_CLASS = 'jp-mod-cut';
 const MULTI_SELECTED_CLASS = 'jp-mod-multiSelected';
 
 /**
- * The class name added to a row icon.
- */
-const ROW_ICON_CLASS = 'jp-DirListing-itemIcon';
-
-/**
- * The class name added to a row text.
- */
-const ROW_TEXT_CLASS = 'jp-DirListing-itemText';
-
-/**
- * The class name added to a row filename editor.
- */
-const ROW_EDIT_CLASS = 'jp-DirListing-itemEdit';
-
-/**
- * The class name added to a row last modified text.
- */
-const ROW_TIME_CLASS = 'jp-DirListing-itemModified';
-
-/**
- * The class name added to a folder icon.
- */
-const FOLDER_ICON_CLASS = 'jp-DirListing-folderIcon';
-
-/**
- * The class name added to a file icon.
- */
-const FILE_ICON_CLASS = 'jp-DirListing-fileIcon';
-
-/**
- * The class name added to a notebook icon.
- */
-const NOTEBOOK_ICON_CLASS = 'jp-DirListing-nbIcon';
-
-/**
  * The class name added to indicate running notebook.
  */
 const RUNNING_CLASS = 'jp-mod-running';
 
 /**
- * The class name added to the widget when there are items on the clipboard.
+ * The class name added to selected rows.
  */
-const CLIPBOARD_CLASS = 'jp-mod-clipboard';
+const SELECTED_CLASS = 'jp-mod-selected';
+
 
 /**
  * The minimum duration for a rename select in ms.
@@ -157,6 +158,25 @@ class DirListing extends Widget {
     return node;
   }
 
+  /**
+   * Create a file item.
+   */
+  static createItem(): HTMLElement {
+    return createItemNode();
+  }
+
+  /**
+   * Update a file item.
+   */
+  static updateItem(item: IContentsModel, node: HTMLElement) {
+    updateItemNode(item, node);
+  }
+
+  /**
+   * Construct a new file browser directory listing widget.
+   *
+   * @param model - The file browser view model.
+   */
   constructor(model: FileBrowserViewModel) {
     super();
     this.addClass(LIST_CONTAINER_CLASS);
@@ -164,11 +184,11 @@ class DirListing extends Widget {
     this._model.changed.connect(this._onChanged.bind(this));
     // Create the edit node.
     this._editNode = document.createElement('input');
-    this._editNode.className = ROW_EDIT_CLASS;
+    this._editNode.className = ITEM_EDIT_CLASS;
   }
 
   /**
-   * Dispose of the resources held by the list area.
+   * Dispose of the resources held by the directory listing.
    */
   dispose(): void {
     this._model = null;
@@ -180,7 +200,7 @@ class DirListing extends Widget {
   }
 
   /**
-   * Should get whether the list area is disposed.
+   * Should get whether the directory listing is disposed.
    */
   get isDisposed(): boolean {
     return this._model === null;
@@ -226,7 +246,6 @@ class DirListing extends Widget {
    * Paste the items from the clipboard.
    */
   paste(): void {
-
     if (!this._clipboard.length) {
       return;
     }
@@ -317,7 +336,7 @@ class DirListing extends Widget {
   }
 
   /**
-   * Handle the DOM events for the list area.
+   * Handle the DOM events for the directory listing.
    *
    * @param event - The DOM event sent to the widget.
    *
@@ -394,6 +413,7 @@ class DirListing extends Widget {
     let items = this._model.items;
     let nodes = this._items;
     let content = this.node.firstChild as HTMLElement;
+    let subtype = this.constructor as typeof DirListing;
 
     // Remove any excess item nodes.
     while (nodes.length > items.length) {
@@ -403,14 +423,14 @@ class DirListing extends Widget {
 
     // Add any missing item nodes.
     while (nodes.length < items.length) {
-      let node = createItemNode();
+      let node = subtype.createItem();
       nodes.push(node);
       content.appendChild(node);
     }
 
     // Update the node state to match the model contents.
     for (let i = 0, n = items.length; i < n; ++i) {
-      updateItemNode(items[i], nodes[i]);
+      subtype.updateItem(items[i], nodes[i]);
     }
 
     // If the path has not changed, select any previously selected names that
@@ -458,22 +478,23 @@ class DirListing extends Widget {
       return;
     }
 
+    // Blur the edit node if necessary.
+    if (this._editNode.parentNode) {
+      if (this._editNode !== event.target as HTMLElement) {
+        this._editNode.focus();
+        this._editNode.blur();
+        this._pendingSelect = false;
+      } else {
+        return;
+      }
+    }
+
     // Left mouse press for drag start.
     if (event.button === 0) {
       this._dragData = { pressX: event.clientX, pressY: event.clientY,
                          index: index };
       document.addEventListener('mouseup', this, true);
       document.addEventListener('mousemove', this, true);
-    }
-
-    // Blur the edit node if necessary.
-    if (this._editNode.parentNode) {
-      if (this._editNode !== event.target as HTMLElement) {
-        this._editNode.focus();
-        this._editNode.blur();
-      } else {
-        return;
-      }
     }
 
     // Update our selection.
@@ -538,7 +559,7 @@ class DirListing extends Widget {
     // Find a valid double click target.
     let node = event.target as HTMLElement;
     while (node && node !== this.node) {
-      if (node.classList.contains(ROW_CLASS)) {
+      if (node.classList.contains(ITEM_CLASS)) {
         // Open the selected item.
         let index = this._items.indexOf(node);
         let path = this._model.items[index].name;
@@ -569,7 +590,7 @@ class DirListing extends Widget {
   }
 
   /**
-   * Handle the `'p-dragleave'` event for the dock panel.
+   * Handle the `'p-dragleave'` event for the widget.
    */
   private _evtDragLeave(event: IDragEvent): void {
     event.preventDefault();
@@ -581,7 +602,7 @@ class DirListing extends Widget {
   }
 
   /**
-   * Handle the `'p-dragover'` event for the dock panel.
+   * Handle the `'p-dragover'` event for the widget.
    */
   private _evtDragOver(event: IDragEvent): void {
     event.preventDefault();
@@ -597,7 +618,7 @@ class DirListing extends Widget {
 
 
   /**
-   * Handle the `'p-drop'` event for the dock panel.
+   * Handle the `'p-drop'` event for the widget.
    */
   private _evtDrop(event: IDragEvent): void {
     event.preventDefault();
@@ -666,7 +687,7 @@ class DirListing extends Widget {
     var dragImage = source.cloneNode(true) as HTMLElement;
     dragImage.removeChild(dragImage.lastChild);
     if (this._model.selected.length > 1) {
-      let text = dragImage.getElementsByClassName(ROW_TEXT_CLASS)[0];
+      let text = dragImage.getElementsByClassName(ITEM_TEXT_CLASS)[0];
       text.textContent = '(' + this._model.selected.length + ')'
     }
 
@@ -769,7 +790,6 @@ class DirListing extends Widget {
     }
   }
 
-
   /**
    * Copy the selected items, and optionally cut as well.
    */
@@ -798,10 +818,11 @@ class DirListing extends Widget {
    */
   private _doRename(): void {
     let row = this.node.getElementsByClassName(SELECTED_CLASS)[0];
-    let text = row.getElementsByClassName(ROW_TEXT_CLASS)[0] as HTMLElement;
+    let fileCell = row.getElementsByClassName(ITEM_FILE_CLASS)[0];
+    let text = row.getElementsByClassName(ITEM_TEXT_CLASS)[0] as HTMLElement;
     let original = text.textContent;
 
-    doRename(row as HTMLElement, text, this._editNode).then(changed => {
+    doRename(fileCell as HTMLElement, text, this._editNode).then(changed => {
       if (!changed) {
         return;
       }
@@ -866,15 +887,15 @@ class DirListing extends Widget {
  */
 function createItemNode(): HTMLElement {
   let node = document.createElement('li');
-  node.className = ROW_CLASS;
+  node.className = ITEM_CLASS;
   let fnode = document.createElement('div');
-  fnode.className = ROW_FILE_CLASS;
+  fnode.className = ITEM_FILE_CLASS;
   let inode = document.createElement('span');
-  inode.className = ROW_ICON_CLASS;
+  inode.className = ITEM_ICON_CLASS;
   let tnode = document.createElement('span');
-  tnode.className = ROW_TEXT_CLASS;
+  tnode.className = ITEM_TEXT_CLASS;
   let mnode = document.createElement('span');
-  mnode.className = ROW_TIME_CLASS;
+  mnode.className = ITEM_TIME_CLASS;
   fnode.appendChild(inode);
   fnode.appendChild(tnode);
   node.appendChild(fnode);
@@ -888,11 +909,11 @@ function createItemNode(): HTMLElement {
  */
 function createIconClass(item: IContentsModel): string {
   if (item.type === 'directory') {
-    return ROW_ICON_CLASS + ' ' + FOLDER_ICON_CLASS;
+    return ITEM_ICON_CLASS + ' ' + FOLDER_ICON_CLASS;
   } else if (item.type === 'notebook') {
-    return ROW_ICON_CLASS + ' ' + NOTEBOOK_ICON_CLASS;
+    return ITEM_ICON_CLASS + ' ' + NOTEBOOK_ICON_CLASS;
   } else {
-    return ROW_ICON_CLASS + ' ' + FILE_ICON_CLASS;
+    return ITEM_ICON_CLASS + ' ' + FILE_ICON_CLASS;
   }
 }
 

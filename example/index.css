@@ -40,27 +40,27 @@
 }
 
 
-.jp-DirListing-row {
+.jp-DirListing-item {
   padding: 4px 8px;
   border: 1px solid transparent;
 }
 
 
-.jp-DirListing-file {
+.jp-DirListing-itemFile {
   padding-top: 4px;
   padding-bottom: 4px;
   min-width: 200px;
 }
 
 
-.jp-DirListing-itemIcon {
+.jp-DirListing-itemFileIcon {
   width: 21px;
   padding-left: 2px;
   padding-right: 2px;
 }
 
 
-.jp-DirListing-itemText {
+.jp-DirListing-itemFileText {
   position: absolute;
   left: 21px;
   right: 21px;
@@ -82,7 +82,7 @@
 }
 
 
-.jp-DirListing-row.jp-mod-drop-target {
+.jp-DirListing-item.jp-mod-drop-target {
   border: 1px solid #757575;
 }
 
@@ -92,19 +92,19 @@
 }
 
 
-.jp-DirListing-row.jp-mod-selected {
+.jp-DirListing-item.jp-mod-selected {
   background-color: #2196F3;
   color: #F5F5F5;
 }
 
 
-.jp-DirListing-row.jp-mod-selected.jp-mod-cut {
+.jp-DirListing-item.jp-mod-selected.jp-mod-cut {
   background-color: #F1C40F;
   color: #F5F5F5;
 }
 
 
-.jp-DirListing-itemIcon {
+.jp-DirListing-itemFileIcon {
   font-family: FontAwesome;
 }
 
