@@ -150,12 +150,16 @@ class DirListing extends Widget {
    * Create a new node for the file list.
    */
   static createNode(): HTMLElement {
-    return document.createElement('ul');
+    let node = document.createElement('div');
+    let content = document.createElement('ul') as HTMLElement;
+    content.className = LIST_AREA_CLASS;
+    node.appendChild(content);
+    return node;
   }
 
   constructor(model: FileBrowserViewModel) {
     super();
-    this.addClass(LIST_AREA_CLASS);
+    this.addClass(LIST_CONTAINER_CLASS);
     this._model = model;
     this._model.changed.connect(this._onChanged.bind(this));
     // Create the edit node.
@@ -389,18 +393,19 @@ class DirListing extends Widget {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
+    let content = this.node.firstChild as HTMLElement;
 
     // Remove any excess item nodes.
     while (nodes.length > items.length) {
       let node = nodes.pop();
-      this.node.removeChild(node);
+      content.removeChild(node);
     }
 
     // Add any missing item nodes.
     while (nodes.length < items.length) {
       let node = createItemNode();
       nodes.push(node);
-      this.node.appendChild(node);
+      content.appendChild(node);
     }
 
     // Update the node state to match the model contents.
@@ -436,9 +441,9 @@ class DirListing extends Widget {
       (node as HTMLElement).title = sessionId.kernel.name;
     }
     if (this._model.sessionIds.length) {
-      this.node.classList.add(RUNNING_CLASS);
+      content.classList.add(RUNNING_CLASS);
     } else {
-      this.node.classList.remove(RUNNING_CLASS);
+      content.classList.remove(RUNNING_CLASS);
     }
 
     this._prevPath = this._model.path;
