@@ -10,31 +10,63 @@
 }
 
 
-.jp-FileBrowser-item-edit {
-  z-index: 10000;
+.jp-FileBrowser-breadcrumb-item {
+  margin-right: 5px;
+  border: 1px solid transparent;
 }
 
 
-.jp-FileBrowser-item-spacer {
-}
-
-.jp-FileBrowser-item-modified {
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: right;
-  padding-right: 5px;
-  min-width: 70px;
+.jp-FileBrowser-button {
+  border-bottom: 1px solid #757575;
+  padding-left: 3px;
+  padding-bottom: 8px;
 }
 
 
 .jp-FileBrowser-button-item {
-  display: flex;
   background-color: #FAFAFA;
   font-size: 16px;
   border: 1px solid #757575;
   height: 30px;
   border-radius: 3px;
+  margin-right: 3px;
   max-width: 100px;
+}
+
+
+.jp-FileBrowser-row {
+  padding: 4px 8px;
+  border: 1px solid transparent;
+}
+
+
+.jp-FileBrowser-row-file {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  min-width: 200px;
+}
+
+
+.jp-FileBrowser-item-icon {
+  width: 21px;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+
+.jp-FileBrowser-item-text {
+  position: absolute;
+  left: 21px;
+  right: 21px;
+  padding-left: 2px;
+}
+
+
+.jp-FileBrowser-item-modified {
+  padding-right: 5px;
+  width: 70px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 
@@ -60,7 +92,7 @@
 
 
 .jp-FileBrowser-list-area {
-  border-top: 1px solid #757575;
+
 }
 
 
