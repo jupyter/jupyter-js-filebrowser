@@ -68,7 +68,7 @@ class FileBrowser extends Widget {
     super();
     this.addClass(FILE_BROWSER_CLASS);
     this._model = model;
-    this._model.changed.connect(this._onChanged.bind(this));
+    this._model.changed.connect(this._onChanged, this);
     this._crumbs = new BreadCrumbs(model);
     this._buttons = new FileButtons(model);
     this._listing = new DirListing(model);
@@ -86,6 +86,9 @@ class FileBrowser extends Widget {
    */
   dispose() {
     this._model = null;
+    this._crumbs = null;
+    this._buttons = null;
+    this._listing = null;
     super.dispose();
   }
 
