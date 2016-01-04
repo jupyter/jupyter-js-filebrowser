@@ -6,11 +6,11 @@
 'use strict';
 
 import {
-  EditorModel, EditorWidget
+  EditorViewModel, CodeMirrorWidget
 } from 'jupyter-js-editor';
 
 import {
-  FileBrowserWidget, FileBrowserViewModel
+  FileBrowser, FileBrowserViewModel
 } from '../lib';
 
 import {
@@ -37,10 +37,10 @@ function main(): void {
   let sessions = new NotebookSessionManager({ baseUrl: baseUrl });
 
   let fbModel = new FileBrowserViewModel('', contents, sessions);
-  let fileBrowser = new FileBrowserWidget(fbModel);
+  let fileBrowser = new FileBrowser(fbModel);
 
-  var editorModel = new EditorModel();
-  let editor = new EditorWidget(editorModel);
+  var editorModel = new EditorViewModel();
+  let editor = new CodeMirrorWidget(editorModel);
 
   fbModel.changed.connect((fb, change) => {
     if (change.name === 'open' && change.newValue.type === 'file') {
@@ -130,9 +130,7 @@ function main(): void {
       panel.attach(document.body);
     });
   });
-
-
-  /*
+/*
   fileBrowser.node.addEventListener('contextmenu', (event: MouseEvent) => {
     event.preventDefault();
     let x = event.clientX;
@@ -140,8 +138,6 @@ function main(): void {
     contextMenu.popup(x, y);
   });
 */
-
-
   window.onresize = () => panel.update();
 }
 

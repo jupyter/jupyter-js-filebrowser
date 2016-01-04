@@ -2,5 +2,7 @@
 // Distributed under the terms of the Modified BSD License.
 'use strict';
 
-export * from './FileBrowserViewModel';
-export * from './FileBrowserWidget';
+export * from './viewmodel';
+export * from './browser';
+
+import './index.css';

@@ -9,19 +9,19 @@
 }
 
 
-.jp-FileBrowser-breadcrumbs {
+.jp-BreadCrumbs {
   flex: 0 0 auto;
 }
 
 
-.jp-FileBrowser-upload {
+.jp-FileButtons-upload {
   flex: 0 0 auto;
   position: relative;
   overflow: hidden;
 }
 
 
-.jp-FileBrowser-upload input {
+.jp-FileButtons-upload input {
   position: absolute;
   top: 0;
   right: 0;
@@ -34,7 +34,7 @@
 }
 
 
-.jp-FileBrowser-button {
+.jp-FileButtons {
   flex: 0 0 auto;
   display: flex;
   flex-direction: row;
@@ -44,27 +44,28 @@
 }
 
 
-.jp-FileBrowser-button-item {
+.jp-FileButtons-item {
+  display: flex;
   flex: 1 1 auto;
   text-align: center;
   vertical-align: middle;
 }
 
 
-.jp-FileBrowser-button-icon {
+.jp-FileButton-icon {
   margin-left: auto;
   margin-right: auto;
 }
 
 
-.jp-FileBrowser-list-container {
+.jp-DirListing-container {
   overflow-y: auto;
   overflow-x: auto;
   flex: 1 1 auto;
 }
 
 
-.jp-FileBrowser-list-area {
+.jp-DirListing {
   display: table;
   width: 100%;
   margin: 0;
@@ -74,36 +75,36 @@
 }
 
 
-.jp-FileBrowser-item-edit {
+.jp-DirListing-itemFileEdit {
   z-index: 10000;
 }
 
 
-.jp-FileBrowser-row {
+.jp-DirListing-item {
   display: table-row;
   position: relative;
 }
 
 
-.jp-FileBrowser-row-file {
+.jp-DirListing-itemFile {
   display: table-cell;
   position: relative;
 }
 
 
-.jp-FileBrowser-item-icon {
+.jp-DirListing-itemFileIcon {
   text-align: center;
 }
 
 
-.jp-FileBrowser-item-text {
+.jp-DirListing-itemFileText {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 
-.jp-FileBrowser-item-modified {
+.jp-DirListing-itemModified {
   display: table-cell;
   overflow: hidden;
   white-space: nowrap;

@@ -10,20 +10,26 @@
 }
 
 
-.jp-FileBrowser-breadcrumb-item {
+.jp-BreadCrumbs-item {
   margin-right: 5px;
   border: 1px solid transparent;
 }
 
 
-.jp-FileBrowser-button {
+.jp-FileButtons {
   border-bottom: 1px solid #757575;
   padding-left: 3px;
   padding-bottom: 8px;
 }
 
 
-.jp-FileBrowser-button-item {
+.jp-FileButtons-icon {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+.jp-FileButtons-item {
   background-color: #FAFAFA;
   font-size: 16px;
   border: 1px solid #757575;
@@ -34,27 +40,27 @@
 }
 
 
-.jp-FileBrowser-row {
+.jp-DirListing-item {
   padding: 4px 8px;
   border: 1px solid transparent;
 }
 
 
-.jp-FileBrowser-row-file {
+.jp-DirListing-itemFile {
   padding-top: 4px;
   padding-bottom: 4px;
   min-width: 200px;
 }
 
 
-.jp-FileBrowser-item-icon {
+.jp-DirListing-itemFileIcon {
   width: 21px;
   padding-left: 2px;
   padding-right: 2px;
 }
 
 
-.jp-FileBrowser-item-text {
+.jp-DirListing-itemFileText {
   position: absolute;
   left: 21px;
   right: 21px;
@@ -62,7 +68,7 @@
 }
 
 
-.jp-FileBrowser-item-modified {
+.jp-DirListing-itemModified {
   padding-right: 5px;
   width: 70px;
   padding-top: 4px;
@@ -70,65 +76,55 @@
 }
 
 
-.jp-FileBrowser-button-item.jp-mod-selected {
+.jp-FileButtons-item.jp-mod-selected {
   background-color: #2196F3;
   color: #F5F5F5;
 }
 
 
-.jp-FileBrowser-row.jp-mod-drop-target {
+.jp-DirListing-item.jp-mod-drop-target {
   border: 1px solid #757575;
 }
 
 
-.jp-FileBrowser-breadcrumb-item.jp-mod-drop-target {
+.jp-BreadCrumbs-item.jp-mod-drop-target {
   border: 1px solid #757575;
 }
 
 
-.jp-FileBrowser-breadcrumbs {
-
-}
-
-
-.jp-FileBrowser-list-area {
-
-}
-
-
-.jp-FileBrowser-row.jp-mod-selected {
+.jp-DirListing-item.jp-mod-selected {
   background-color: #2196F3;
   color: #F5F5F5;
 }
 
 
-.jp-FileBrowser-row.jp-mod-selected.jp-mod-cut {
+.jp-DirListing-item.jp-mod-selected.jp-mod-cut {
   background-color: #F1C40F;
   color: #F5F5F5;
 }
 
 
-.jp-FileBrowser-item-icon {
+.jp-DirListing-itemFileIcon {
   font-family: FontAwesome;
 }
 
 
-.jp-FileBrowser-folder-icon:before {
+.jp-DirListing-folderIcon:before {
   content: "\f114";
 }
 
 
-.jp-FileBrowser-file-icon:before {
+.jp-DirListing-fileIcon:before {
   content: "\f016";
 }
 
 
-.jp-FileBrowser-nb-icon:before {
+.jp-DirListing-nbIcon:before {
   content: "\f02d";
 }
 
 
-.jp-FileBrowser-nb-icon.jp-mod-running:before {
+.jp-DirListing-nbIcon.jp-mod-running:before {
   color: #27AE60;
 }
 
