@@ -7,6 +7,10 @@ import {
 } from 'jupyter-js-services';
 
 import {
+  getConfigOption
+} from 'jupyter-js-utils';
+
+import {
   IAppShell
 } from 'phosphide';
 
@@ -40,7 +44,7 @@ class FileBrowserHandler {
   }
 
   run(): void {
-    let baseUrl = 'http://localhost:8888'
+    let baseUrl = getConfigOption('baseUrl');
     let contents = new ContentsManager(baseUrl);
     let sessions = new NotebookSessionManager({ baseUrl: baseUrl });
 

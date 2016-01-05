@@ -10,6 +10,10 @@ import {
 } from 'jupyter-js-editor';
 
 import {
+  getConfigOption
+} from 'jupyter-js-utils';
+
+import {
   FileBrowser, FileBrowserViewModel
 } from '../lib';
 
@@ -32,7 +36,7 @@ import {
 
 function main(): void {
 
-  let baseUrl = 'http://localhost:8888'
+  let baseUrl = getConfigOption('baseUrl');
   let contents = new ContentsManager(baseUrl);
   let sessions = new NotebookSessionManager({ baseUrl: baseUrl });
 

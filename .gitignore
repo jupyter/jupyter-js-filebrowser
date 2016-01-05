@@ -6,5 +6,5 @@ npm-debug.log
 test/build
 test/coverage
 lib/
-example/*.js
+example/build
 docs
