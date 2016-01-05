@@ -11,6 +11,7 @@
   "files": [
     "../typings/es6-promise.d.ts",
     "../typings/moment/moment.d.ts",
-    "index.ts"
+    "index.ts",
+    "plugin.ts"
   ]
 }
