@@ -41,8 +41,8 @@ import {
 } from 'phosphor-widget';
 
 import {
-  FileBrowserViewModel
-} from './viewmodel';
+  FileBrowserModel
+} from './model';
 
 import {
   CONTENTS_MIME, DROP_TARGET_CLASS, hitTestNodes, showErrorMessage
@@ -177,7 +177,7 @@ class DirListing extends Widget {
    *
    * @param model - The file browser view model.
    */
-  constructor(model: FileBrowserViewModel) {
+  constructor(model: FileBrowserModel) {
     super();
     this.addClass(LIST_CONTAINER_CLASS);
     this._model = model;
@@ -863,13 +863,13 @@ class DirListing extends Widget {
   /**
    * Handle a `changed` signal from the model.
    */
-  private _onChanged(model: FileBrowserViewModel, change: IChangedArgs<IContentsModel>): void {
+  private _onChanged(model: FileBrowserModel, change: IChangedArgs<IContentsModel>): void {
     if (change.name === 'open' && change.newValue.type === 'directory') {
       this.update();
     }
   }
 
-  private _model: FileBrowserViewModel = null;
+  private _model: FileBrowserModel = null;
   private _editNode: HTMLInputElement = null;
   private _items: HTMLElement[] = [];
   private _drag: Drag = null;

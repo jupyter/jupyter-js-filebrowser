@@ -35,8 +35,8 @@ import {
 } from './listing';
 
 import {
-  FileBrowserViewModel
-} from './viewmodel';
+  FileBrowserModel
+} from './model';
 
 import {
   FILE_BROWSER_CLASS, showErrorMessage
@@ -79,7 +79,7 @@ class FileBrowser extends Widget {
    *
    * @param model - The file browser view model.
    */
-  constructor(model: FileBrowserViewModel) {
+  constructor(model: FileBrowserModel) {
     super();
     this.addClass(FILE_BROWSER_CLASS);
     this._model = model;
@@ -223,13 +223,13 @@ class FileBrowser extends Widget {
   /**
    * Handle a `changed` signal from the model.
    */
-  private _onChanged(model: FileBrowserViewModel, change: IChangedArgs<IContentsModel>): void {
+  private _onChanged(model: FileBrowserModel, change: IChangedArgs<IContentsModel>): void {
     if (change.name === 'open' && change.newValue.type === 'directory') {
       this.update();
     }
   }
 
-  private _model: FileBrowserViewModel = null;
+  private _model: FileBrowserModel = null;
   private _crumbs: BreadCrumbs = null;
   private _buttons: FileButtons = null;
   private _listing: DirListing = null;
