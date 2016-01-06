@@ -14,7 +14,7 @@ import {
 } from 'jupyter-js-utils';
 
 import {
-  FileBrowser, FileBrowserViewModel
+  FileBrowser, FileBrowserModel
 } from '../lib';
 
 import {
@@ -40,7 +40,7 @@ function main(): void {
   let contents = new ContentsManager(baseUrl);
   let sessions = new NotebookSessionManager({ baseUrl: baseUrl });
 
-  let fbModel = new FileBrowserViewModel('', contents, sessions);
+  let fbModel = new FileBrowserModel('', contents, sessions);
   let fileBrowser = new FileBrowser(fbModel);
 
   var editorModel = new EditorViewModel();

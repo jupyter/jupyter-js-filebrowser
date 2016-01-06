@@ -19,8 +19,8 @@ import {
 } from 'phosphor-widget';
 
 import {
-  FileBrowserViewModel
-} from './viewmodel';
+  FileBrowserModel
+} from './model';
 
 import {
   showErrorMessage
@@ -59,7 +59,7 @@ class FileButtons extends Widget {
    *
    * @param model - The file browser view model.
    */
-  constructor(model: FileBrowserViewModel) {
+  constructor(model: FileBrowserModel) {
     super();
     this.addClass(BUTTON_CLASS);
     this._model = model;
@@ -125,7 +125,7 @@ class FileButtons extends Widget {
   }
 
   private _newMenu: Menu = null;
-  private _model: FileBrowserViewModel = null;
+  private _model: FileBrowserModel = null;
 }
 
 

@@ -28,11 +28,11 @@ import {
  * the current directory.  Supports `'../'` syntax.
  */
 export
-class FileBrowserViewModel implements IDisposable {
+class FileBrowserModel implements IDisposable {
   /**
    * A signal emitted when an item changes.
    */
-  static changedSignal = new Signal<FileBrowserViewModel, IChangedArgs<IContentsModel>>();
+  static changedSignal = new Signal<FileBrowserModel, IChangedArgs<IContentsModel>>();
 
   /**
    * Construct a new file browser view model.
@@ -46,8 +46,8 @@ class FileBrowserViewModel implements IDisposable {
   /**
    * Get the item changed signal.
    */
-  get changed(): ISignal<FileBrowserViewModel, IChangedArgs<IContentsModel>> {
-    return FileBrowserViewModel.changedSignal.bind(this);
+  get changed(): ISignal<FileBrowserModel, IChangedArgs<IContentsModel>> {
+    return FileBrowserModel.changedSignal.bind(this);
   }
 
   /**
