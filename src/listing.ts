@@ -173,11 +173,6 @@ class DirListing extends Widget {
   }
 
   /**
-   * The static type of the constructor.
-   */
-  'constructor': typeof DirListing;
-
-  /**
    * Construct a new file browser directory listing widget.
    *
    * @param model - The file browser view model.
@@ -418,7 +413,7 @@ class DirListing extends Widget {
     let items = this._model.items;
     let nodes = this._items;
     let content = this.node.firstChild as HTMLElement;
-    let subtype = this.constructor;
+    let subtype = this.constructor as typeof DirListing;
 
     // Remove any excess item nodes.
     while (nodes.length > items.length) {
