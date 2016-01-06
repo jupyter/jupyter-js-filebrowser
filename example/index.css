@@ -12,13 +12,15 @@
 
 .jp-BreadCrumbs-item {
   margin-right: 5px;
+  padding-bottom: 8px;
   border: 1px solid transparent;
 }
 
 
 .jp-FileButtons {
   border-bottom: 1px solid #757575;
-  padding-left: 3px;
+  padding-left: 4px;
+  padding-right: 4px;
   padding-bottom: 8px;
 }
 
@@ -47,8 +49,6 @@
 
 
 .jp-DirListing-itemFile {
-  padding-top: 4px;
-  padding-bottom: 4px;
   min-width: 200px;
 }
 

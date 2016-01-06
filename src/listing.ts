@@ -173,11 +173,6 @@ class DirListing extends Widget {
   }
 
   /**
-   * The static type of the constructor.
-   */
-  'constructor': typeof DirListing;
-
-  /**
    * Construct a new file browser directory listing widget.
    *
    * @param model - The file browser view model.
