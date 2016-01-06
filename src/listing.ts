@@ -413,7 +413,7 @@ class DirListing extends Widget {
     let items = this._model.items;
     let nodes = this._items;
     let content = this.node.firstChild as HTMLElement;
-    let subtype = this.constructor;
+    let subtype = this.constructor as typeof DirListing;
 
     // Remove any excess item nodes.
     while (nodes.length > items.length) {
