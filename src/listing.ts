@@ -186,7 +186,7 @@ class DirListing extends Widget {
     super();
     this.addClass(LIST_CONTAINER_CLASS);
     this._model = model;
-    this._model.changed.connect(this._onChanged.bind(this));
+    this._model.changed.connect(this._onChanged, this);
     // Create the edit node.
     this._editNode = document.createElement('input');
     this._editNode.className = ITEM_EDIT_CLASS;
