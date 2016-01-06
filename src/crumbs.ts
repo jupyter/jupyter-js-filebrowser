@@ -3,6 +3,10 @@
 'use strict';
 
 import {
+  IContentsModel
+} from 'jupyter-js-services';
+
+import {
   DropAction, IDragEvent
 } from 'phosphor-dragdrop';
 
@@ -13,6 +17,10 @@ import {
 import {
   Message
 } from 'phosphor-messaging';
+
+import {
+  IChangedArgs
+} from 'phosphor-properties';
 
 import {
   Widget
@@ -62,6 +70,7 @@ class BreadCrumbs extends Widget {
     this._crumbs = createCrumbs();
     this._crumbSeps = createCrumbSeparators();
     this.node.appendChild(this._crumbs[Crumb.Home]);
+    this._model.changed.connect(this._onChanged, this);
   }
 
   /**
@@ -118,6 +127,14 @@ class BreadCrumbs extends Widget {
     node.removeEventListener('p-dragleave', this);
     node.removeEventListener('p-dragover', this);
     node.removeEventListener('p-drop', this);
+  }
+
+  /**
+   * A handler invoked on an `'update-request'` message.
+   */
+  protected onUpdateRequest(msg: Message): void {
+    // Update the breadcrumb list.
+    updateCrumbs(this._crumbs, this._crumbSeps, this._model.path);
   }
 
   /**
@@ -244,6 +261,15 @@ class BreadCrumbs extends Widget {
       }));
     }
     Promise.all(promises).then(() => this._model.open('.'));
+  }
+
+  /**
+   * Handle a `changed` signal from the model.
+   */
+  private _onChanged(model: FileBrowserViewModel, change: IChangedArgs<IContentsModel>): void {
+    if (change.name === 'open' && change.newValue.type === 'directory') {
+      this.update();
+    }
   }
 
   private _model: FileBrowserViewModel = null;
