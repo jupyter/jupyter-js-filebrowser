@@ -151,7 +151,7 @@ class BreadCrumbs extends Widget {
     while (node && node !== this.node) {
       if (node.classList.contains(BREADCRUMB_ITEM_CLASS)) {
         let index = this._crumbs.indexOf(node);
-        this._model.open(BREAD_CRUMB_PATHS[index]).catch(error => {
+        this._model.cd(BREAD_CRUMB_PATHS[index]).catch(error => {
           showErrorMessage(this, 'Open Error', error);
         });
 

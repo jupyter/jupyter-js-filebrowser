@@ -30,24 +30,11 @@ import {
 export
 class FileBrowserModel implements IDisposable {
   /**
-   * A signal emitted when an item changes.
-   */
-  static changedSignal = new Signal<FileBrowserModel, IChangedArgs<IContentsModel>>();
-
-  /**
    * Construct a new file browser view model.
    */
-  constructor(path: string, contentsManager: IContentsManager, sessionManager: INotebookSessionManager) {
-    this._model = { path: path , name: '', type: 'directory' };
+  constructor(contentsManager: IContentsManager, sessionManager: INotebookSessionManager) {
     this._contentsManager = contentsManager;
     this._sessionManager = sessionManager;
-  }
-
-  /**
-   * Get the item changed signal.
-   */
-  get changed(): ISignal<FileBrowserModel, IChangedArgs<IContentsModel>> {
-    return FileBrowserModel.changedSignal.bind(this);
   }
 
   /**
@@ -112,32 +99,19 @@ class FileBrowserModel implements IDisposable {
   }
 
   /**
-   * Open a file or directory.
+   * Change directory.
    *
    * @param path - The path to the file or directory.
    *
-   * @returns A promise with the contents of the file.
-   *
-   * #### Notes
-   * Emits a [[changed]] signal the after loading the contents.
+   * @returns A promise with the contents of the directory.
    */
-  open(path: string): Promise<IContentsModel> {
+  cd(path: string): Promise<IContentsModel> {
     path = normalizePath(this._model.path, path);
     return this._contentsManager.get(path, {}).then(contents => {
-      let change: IChangedArgs<IContentsModel> = {
-        name: 'open',
-        oldValue: null,
-        newValue: contents
-      }
-      if (contents.type === 'directory') {
-        this._model = contents;
-        return this._findSessions().then(() => {
-          this.changed.emit(change);
-          return contents;
-        });
-      }
-      this.changed.emit(change);
-      return contents;
+      this._model = contents;
+      return this._findSessions().then(() => {
+        return contents;
+      });
     });
   }
 
@@ -220,15 +194,7 @@ class FileBrowserModel implements IDisposable {
     path = normalizePath(this._model.path, path);
     newPath = normalizePath(this._model.path, newPath);
 
-    return this._contentsManager.rename(path, newPath).then(contents => {
-      let current = this._model;
-      this.changed.emit({
-        name: 'rename',
-        oldValue: current,
-        newValue: contents
-      });
-      return contents;
-    });
+    return this._contentsManager.rename(path, newPath);
   }
 
   /**

@@ -83,7 +83,6 @@ class FileBrowser extends Widget {
     super();
     this.addClass(FILE_BROWSER_CLASS);
     this._model = model;
-    this._model.changed.connect(this._onChanged, this);
     this._crumbs = new BreadCrumbs(model);
     this._buttons = new FileButtons(model);
     this._listing = new DirListing(model);
@@ -112,10 +111,35 @@ class FileBrowser extends Widget {
   }
 
   /**
+   * Get the model used by the file browser.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get model(): FileBrowserModel {
+    return this._model;
+  }
+
+  /**
+   * Get the open requested signal.
+   */
+  get openRequested(): ISignal<FileBrowser, string> {
+    return FileBrowserPrivate.openRequestedSignal.bind(this);
+  }
+
+  /**
    * Open the currently selected item(s).
    */
   open(): void {
-    this._listing.open();
+    for (let index of this._model.selected) {
+      let item = this._model.items[index];
+      if (item.type === 'directory') {
+        this._model.cd(item.name).then(() => { this._refresh(); },
+          error => { showErrorMessage(this, 'Open directory', error) });
+      } else {
+        this.openRequested.emit(item.path);
+      }
+    }
   }
 
   /**
@@ -175,26 +199,10 @@ class FileBrowser extends Widget {
   }
 
   /**
-   * A message handler invoked on an `'after-attach'` message.
+   * Refresh the current directory, and trigger auto-refresh.
    */
-  protected onAfterAttach(msg: Message): void {
-    super.onAfterAttach(msg);
-    this._refresh();
-  }
-
-  /**
-   * A handler invoked on an `'update-request'` message.
-   */
-  protected onUpdateRequest(msg: Message): void {
-    super.onUpdateRequest(msg);
-    this._pendingRefresh = false;
-  }
-
-  /**
-   * Force a refresh of the current directory, and trigger auto-refresh.
-   */
-  private _refresh(): void {
-    this._model.open('.').catch(error => {
+  refresh(): void {
+    this._model.cd('.').then(() => { this.update(); }, error => {
       showErrorMessage(this, 'Refresh Error', error);
     });
     if (this._pendingRefresh) {
@@ -221,12 +229,19 @@ class FileBrowser extends Widget {
   }
 
   /**
-   * Handle a `changed` signal from the model.
+   * A message handler invoked on an `'after-attach'` message.
    */
-  private _onChanged(model: FileBrowserModel, change: IChangedArgs<IContentsModel>): void {
-    if (change.name === 'open' && change.newValue.type === 'directory') {
-      this.update();
-    }
+  protected onAfterAttach(msg: Message): void {
+    super.onAfterAttach(msg);
+    this._refresh();
+  }
+
+  /**
+   * A handler invoked on an `'update-request'` message.
+   */
+  protected onUpdateRequest(msg: Message): void {
+    super.onUpdateRequest(msg);
+    this._pendingRefresh = false;
   }
 
   private _model: FileBrowserModel = null;
@@ -234,4 +249,16 @@ class FileBrowser extends Widget {
   private _buttons: FileButtons = null;
   private _listing: DirListing = null;
   private _pendingRefresh = false;
+}
+
+
+/**
+ * The namespace for the file browser private data.
+ */
+namespace FileBrowserPrivate {
+  /**
+   * A signal emitted when the an open is requested.
+   */
+  export
+  const openRequestedSignal = new Signal<FileBrowser, string>();
 }

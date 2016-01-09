@@ -177,7 +177,7 @@ class DirListing extends Widget {
    *
    * @param model - The file browser view model.
    */
-  constructor(model: FileBrowserModel) {
+  constructor(parent: FileBrowser) {
     super();
     this.addClass(LIST_CONTAINER_CLASS);
     this._model = model;
@@ -204,17 +204,6 @@ class DirListing extends Widget {
    */
   get isDisposed(): boolean {
     return this._model === null;
-  }
-
-  /**
-   * Open the currently selected item(s).
-   */
-  open(): void {
-    for (let name of this._selectedNames) {
-      this._model.open(name).catch(error => {
-        showErrorMessage(this, 'Open file', error);
-      });
-    }
   }
 
   /**
@@ -849,24 +838,6 @@ class DirListing extends Widget {
         showErrorMessage(this, 'Rename Error', error.message);
       }).then(() => this._model.open('.'));
     });
-  }
-
-  /**
-   * Force a refresh of the current directory.
-   */
-  private _refresh(): void {
-    this._model.open('.').catch(error => {
-      showErrorMessage(this, 'Refresh Error', error);
-    });
-  }
-
-  /**
-   * Handle a `changed` signal from the model.
-   */
-  private _onChanged(model: FileBrowserModel, change: IChangedArgs<IContentsModel>): void {
-    if (change.name === 'open' && change.newValue.type === 'directory') {
-      this.update();
-    }
   }
 
   private _model: FileBrowserModel = null;
