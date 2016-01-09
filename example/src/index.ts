@@ -14,10 +14,6 @@ import {
 } from 'jupyter-js-utils';
 
 import {
-  FileBrowser, FileBrowserModel
-} from '../lib';
-
-import {
   ContentsManager, ISessionOptions, NotebookSessionManager
 } from 'jupyter-js-services';
 
@@ -32,6 +28,10 @@ import {
 import {
   SplitPanel
 } from 'phosphor-splitpanel';
+
+import {
+  FileBrowser, FileBrowserModel
+} from '../../lib';
 
 
 function main(): void {
