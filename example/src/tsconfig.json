@@ -4,10 +4,11 @@
     "noEmitOnError": true,
     "module": "commonjs",
     "moduleResolution": "node",
-    "target": "ES5"
+    "target": "ES5",
+    "outDir": "../build"
   },
   "files": [
-    "../typings/es6-promise.d.ts",
+    "../../typings/es6-promise.d.ts",
     "index.ts"
   ]
 }
