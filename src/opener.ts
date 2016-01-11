@@ -62,7 +62,7 @@ class FileOpener {
 function loadModeByFileName(editor: CodeMirror.Editor, filename: string): void {
   let info = CodeMirror.findModeByFileName(filename);
   if (!info) {
-    editor.setOption('mode', 'text');
+    editor.setOption('mode', 'null');
     return;
   }
   if (CodeMirror.modes.hasOwnProperty(info.mode)) {
