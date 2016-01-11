@@ -150,6 +150,7 @@
   min-width: 50%;
   border: 1px solid #757575;
   border-radius: 5px;
+  padding-bottom: 10px;
 }
 
 
@@ -161,16 +162,17 @@
 
 .jp-Dialog-body {
   padding: 5px;
+  padding-top: 20px;
+  padding-bottom: 20px;
 }
 
 
 .jp-Dialog-footer {
-  padding: 5px;
+  padding: 20px;
 }
 
 
 .jp-Dialog-button {
-  margin-left: 5px;
   padding: 5px;
   border: 1px solid #757575;
   font-size: 16px;
@@ -178,16 +180,12 @@
   line-height: 20px;
   border-radius: 3px;
   max-width: 100px;
+  margin-left: 5px;
 }
+
 
 .jp-Dialog-close {
   line-height: 21px;
-}
-
-
-.p-Dialog-close:before {
-  content: '\f00d';
-  font-family: FontAwesome;
 }
 
 
