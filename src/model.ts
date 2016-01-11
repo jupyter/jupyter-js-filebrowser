@@ -38,6 +38,13 @@ class FileBrowserModel implements IDisposable {
   }
 
   /**
+   * Get the refreshed signal.
+   */
+  get refreshed(): ISignal<FileBrowserModel, void> {
+    return Private.refreshedSignal.bind(this);
+  }
+
+  /**
    * Get the current path.
    *
    * #### Notes
@@ -105,14 +112,21 @@ class FileBrowserModel implements IDisposable {
    *
    * @returns A promise with the contents of the directory.
    */
-  cd(path: string): Promise<IContentsModel> {
+  cd(path: string): Promise<void> {
+    let normalizePath = Private.normalizePath;
     path = normalizePath(this._model.path, path);
     return this._contentsManager.get(path, {}).then(contents => {
       this._model = contents;
-      return this._findSessions().then(() => {
-        return contents;
-      });
+      return this._findSessions().then(() => this.refreshed.emit(void 0)
+      );
     });
+  }
+
+  /**
+   * Refresh the current directory.
+   */
+  refresh(): Promise<void> {
+    return this.cd('.');
   }
 
   /**
@@ -125,6 +139,7 @@ class FileBrowserModel implements IDisposable {
    * @returns A promise which resolves to the contents of the file.
    */
   copy(fromFile: string, toDir: string): Promise<IContentsModel> {
+    let normalizePath = Private.normalizePath;
     fromFile = normalizePath(this._model.path, fromFile);
     toDir = normalizePath(this._model.path, toDir);
     return this._contentsManager.copy(fromFile, toDir);
@@ -138,6 +153,7 @@ class FileBrowserModel implements IDisposable {
    * @returns A promise which resolves when the file is deleted.
    */
   delete(path: string): Promise<void> {
+    let normalizePath = Private.normalizePath;
     path = normalizePath(this._model.path, path);
     return this._contentsManager.delete(path);
   }
@@ -150,6 +166,7 @@ class FileBrowserModel implements IDisposable {
    * @returns - A promise which resolves to the file contents.
    */
   download(path: string): Promise<IContentsModel> {
+    let normalizePath = Private.normalizePath;
     path = normalizePath(this._model.path, path);
     return this._contentsManager.get(path, {}).then(contents => {
       let element = document.createElement('a');
@@ -176,7 +193,8 @@ class FileBrowserModel implements IDisposable {
     } else {
       ext = '';
     }
-    return this._contentsManager.newUntitled(this._model.path, { type: type, ext: ext }
+    return this._contentsManager.newUntitled(this._model.path,
+      { type: type, ext: ext }
     );
   }
 
@@ -191,6 +209,7 @@ class FileBrowserModel implements IDisposable {
    */
   rename(path: string, newPath: string): Promise<IContentsModel> {
     // Handle relative paths.
+    let normalizePath = Private.normalizePath;
     path = normalizePath(this._model.path, path);
     newPath = normalizePath(this._model.path, newPath);
 
@@ -227,9 +246,8 @@ class FileBrowserModel implements IDisposable {
     return this._contentsManager.get(file.name, {}).then(() => {
       throw new Error(`"${file.name}" already exists`);
       return null;
-    }, () => {
-      return this._upload(file);
-    });
+    }, () => this._upload(file)
+    );
   }
 
   /**
@@ -267,11 +285,9 @@ class FileBrowserModel implements IDisposable {
           type: type,
           format: format,
           name: name,
-          content: getContent(reader)
+          content: Private.getContent(reader)
         }
-        return this._contentsManager.save(path, model).then(model => {
-          return model;
-        });
+        return this._contentsManager.save(path, model);
       }
 
       reader.onerror = (event: Event) => {
@@ -310,7 +326,7 @@ class FileBrowserModel implements IDisposable {
           }));
         }
       }
-      return Promise.all(promises).then(() => { return void 0; });
+      return Promise.all(promises).then(() => {});
     });
   }
 
@@ -324,63 +340,75 @@ class FileBrowserModel implements IDisposable {
 
 
 /**
- * Parse the content of a `FileReader`.
- *
- * If the result is an `ArrayBuffer`, return a Base64-encoded string.
- * Otherwise, return the JSON parsed result.
+ * The namespace for the file browser model private data.
  */
-function getContent(reader: FileReader): any {
-  if (reader.result instanceof ArrayBuffer) {
-    // Base64-encode binary file data.
-    let bytes = '';
-    let buf = new Uint8Array(reader.result);
-    let nbytes = buf.byteLength;
-    for (let i = 0; i < nbytes; i++) {
-      bytes += String.fromCharCode(buf[i]);
+namespace Private {
+  /**
+   * A signal emitted when a refresh occurs.
+   */
+  export
+  const refreshedSignal = new Signal<FileBrowserModel, void>();
+
+  /**
+   * Parse the content of a `FileReader`.
+   *
+   * If the result is an `ArrayBuffer`, return a Base64-encoded string.
+   * Otherwise, return the JSON parsed result.
+   */
+  export
+  function getContent(reader: FileReader): any {
+    if (reader.result instanceof ArrayBuffer) {
+      // Base64-encode binary file data.
+      let bytes = '';
+      let buf = new Uint8Array(reader.result);
+      let nbytes = buf.byteLength;
+      for (let i = 0; i < nbytes; i++) {
+        bytes += String.fromCharCode(buf[i]);
+      }
+      return btoa(bytes);
+    } else {
+      return JSON.parse(reader.result);
     }
-    return btoa(bytes);
-  } else {
-    return JSON.parse(reader.result);
   }
-}
 
-
-/**
- * Normalize a path based on a root directory, accounting for relative paths.
- */
-function normalizePath(root: string, path: string): string {
-  // Current directory
-  if (path === '.') {
-    return root;
-  }
-  // Root path.
-  if (path.indexOf('/') === 0) {
-    path = path.slice(1, path.length);
-    root = ''
-  // Current directory.
-  } else if (path.indexOf('./') === 0) {
-    path = path.slice(2, path.length);
-  // Grandparent directory.
-  } else if (path.indexOf('../../') === 0) {
-    let parts = root.split('/');
-    root = parts.splice(0, parts.length - 2).join('/');
-    path = path.slice(6, path.length);
-  // Parent directory.
-  } else if (path.indexOf('../') === 0) {
-    let parts = root.split('/');
-    root = parts.splice(0, parts.length - 1).join('/');
-    path = path.slice(3, path.length);
-  } else {
+  /**
+   * Normalize a path based on a root directory, accounting for relative paths.
+   */
+  export
+  function normalizePath(root: string, path: string): string {
+    // Current directory
+    if (path === '.') {
+      return root;
+    }
+    // Root path.
+    if (path.indexOf('/') === 0) {
+      path = path.slice(1, path.length);
+      root = ''
     // Current directory.
+    } else if (path.indexOf('./') === 0) {
+      path = path.slice(2, path.length);
+    // Grandparent directory.
+    } else if (path.indexOf('../../') === 0) {
+      let parts = root.split('/');
+      root = parts.splice(0, parts.length - 2).join('/');
+      path = path.slice(6, path.length);
+    // Parent directory.
+    } else if (path.indexOf('../') === 0) {
+      let parts = root.split('/');
+      root = parts.splice(0, parts.length - 1).join('/');
+      path = path.slice(3, path.length);
+    } else {
+      // Current directory.
+    }
+    if (path[path.length - 1] === '/') {
+      path = path.slice(0, path.length - 1);
+    }
+    // Combine the root and the path if necessary.
+    if (root && path) {
+      path = root + '/' + path;
+    } else if (root) {
+      path = root;
+    }
+    return path;
   }
-  if (path[path.length - 1] === '/') {
-    path = path.slice(0, path.length - 1);
-  }
-  // Combine the root and the path if necessary.
-  if (root && path) {
-    path = root + '/' + path;
-  } else if (root) {
-    path = root;
-  }
-  return path;
 }
