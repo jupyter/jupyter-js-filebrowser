@@ -6,8 +6,8 @@
 'use strict';
 
 import {
-  EditorViewModel, CodeMirrorWidget
-} from 'jupyter-js-editor';
+  CodeMirrorWidget
+} from 'phosphor-codemirror';
 
 import {
   getConfigOption
@@ -22,6 +22,10 @@ import {
 } from 'phosphor-command';
 
 import {
+  DockPanel
+} from 'phosphor-dockpanel';
+
+import {
   Menu, MenuBar, MenuItem
 } from 'phosphor-menus';
 
@@ -30,31 +34,35 @@ import {
 } from 'phosphor-splitpanel';
 
 import {
-  FileBrowser, FileBrowserModel
+  FileBrowserWidget, FileBrowserModel
 } from '../../lib';
 
 
 function main(): void {
 
   let baseUrl = getConfigOption('baseUrl');
-  let contents = new ContentsManager(baseUrl);
-  let sessions = new NotebookSessionManager({ baseUrl: baseUrl });
+  let contentsManager = new ContentsManager(baseUrl);
+  let sessionsManager = new NotebookSessionManager({ baseUrl: baseUrl });
 
-  let fbModel = new FileBrowserModel('', contents, sessions);
-  let fileBrowser = new FileBrowser(fbModel);
-
-  var editorModel = new EditorViewModel();
-  let editor = new CodeMirrorWidget(editorModel);
-
-  fbModel.changed.connect((fb, change) => {
-    if (change.name === 'open' && change.newValue.type === 'file') {
-      (editor as any)._editor.getDoc().setValue(change.newValue.content);
-    }
-  });
+  let fbModel = new FileBrowserModel(contentsManager, sessionsManager);
+  let fbWidget = new FileBrowserWidget(fbModel);
 
   let panel = new SplitPanel();
-  panel.addChild(fileBrowser);
-  panel.addChild(editor);
+  panel.addChild(fbWidget);
+  let dock = new DockPanel();
+  panel.addChild(dock);
+  dock.spacing = 8;
+
+  fbWidget.openRequested.connect((fb, path) => {
+    let editorWidget = new CodeMirrorWidget();
+    contentsManager.get(path).then(contents => {
+      let editorWidget = new CodeMirrorWidget();
+      editorWidget.title.text = contents.name;
+      editorWidget.editor.getDoc().setValue(contents.content);
+      editorWidget.update();
+      dock.insertTabAfter(editorWidget);
+    });
+  });
 
   let contextMenu = new Menu([
     new MenuItem({
@@ -62,7 +70,7 @@ function main(): void {
       icon: 'fa fa-folder-open-o',
       shortcut: 'Ctrl+O',
       command: new DelegateCommand(args => {
-        fileBrowser.open();
+        fbWidget.open();
       })
     }),
     new MenuItem({
@@ -70,7 +78,7 @@ function main(): void {
       icon: 'fa fa-edit',
       shortcut: 'Ctrl+R',
       command: new DelegateCommand(args => {
-        fileBrowser.rename();
+        fbWidget.rename();
       })
     }),
     new MenuItem({
@@ -78,14 +86,14 @@ function main(): void {
       icon: 'fa fa-remove',
       shortcut: 'Ctrl+D',
       command: new DelegateCommand(args => {
-        fileBrowser.delete();
+        fbWidget.delete();
       })
     }),
     new MenuItem({
       text: 'Duplicate',
       icon: 'fa fa-copy',
       command: new DelegateCommand(args => {
-        fileBrowser.duplicate();
+        fbWidget.duplicate();
       })
     }),
     new MenuItem({
@@ -93,7 +101,7 @@ function main(): void {
       icon: 'fa fa-cut',
       shortcut: 'Ctrl+X',
       command: new DelegateCommand(args => {
-        fileBrowser.cut();
+        fbWidget.cut();
       })
     }),
     new MenuItem({
@@ -101,7 +109,7 @@ function main(): void {
       icon: 'fa fa-copy',
       shortcut: 'Ctrl+C',
       command: new DelegateCommand(args => {
-        fileBrowser.copy();
+        fbWidget.copy();
       })
     }),
     new MenuItem({
@@ -109,33 +117,33 @@ function main(): void {
       icon: 'fa fa-paste',
       shortcut: 'Ctrl+V',
       command: new DelegateCommand(args => {
-        fileBrowser.paste();
+        fbWidget.paste();
       })
     }),
     new MenuItem({
       text: 'Download',
       icon: 'fa fa-download',
       command: new DelegateCommand(args => {
-        fileBrowser.download();
+        fbWidget.download();
       })
     }),
     new MenuItem({
       text: 'Shutdown Kernel',
       icon: 'fa fa-stop-circle-o',
       command: new DelegateCommand(args => {
-        fileBrowser.shutdownKernels();
+        fbWidget.shutdownKernels();
       })
     }),
   ])
 
   // Start a default session.
-  contents.newUntitled('', { type: 'notebook' }).then(content => {
-    sessions.startNew({ notebookPath: content.path }).then(() => {
+  contentsManager.newUntitled('', { type: 'notebook' }).then(contents => {
+    sessionsManager.startNew({ notebookPath: contents.path }).then(() => {
       panel.attach(document.body);
     });
   });
 
-  fileBrowser.node.addEventListener('contextmenu', (event: MouseEvent) => {
+  fbWidget.node.addEventListener('contextmenu', (event: MouseEvent) => {
     event.preventDefault();
     let x = event.clientX;
     let y = event.clientY;
@@ -146,4 +154,4 @@ function main(): void {
 }
 
 
-main();
+window.onload = main;

@@ -7,12 +7,12 @@ import {
 } from 'jupyter-js-services';
 
 import {
-  DropAction, IDragEvent
-} from 'phosphor-dragdrop';
+  showDialog
+} from 'jupyter-js-utils';
 
 import {
-  showDialog
-} from 'phosphor-dialog';
+  DropAction, IDragEvent
+} from 'phosphor-dragdrop';
 
 import {
   Message
@@ -67,10 +67,10 @@ class BreadCrumbs extends Widget {
     super();
     this._model = model;
     this.addClass(BREADCRUMB_CLASS);
-    this._crumbs = createCrumbs();
-    this._crumbSeps = createCrumbSeparators();
-    this.node.appendChild(this._crumbs[Crumb.Home]);
-    this._model.changed.connect(this._onChanged, this);
+    this._crumbs = Private.createCrumbs();
+    this._crumbSeps = Private.createCrumbSeparators();
+    this.node.appendChild(this._crumbs[Private.Crumb.Home]);
+    this._model.refreshed.connect(this.update, this);
   }
 
   /**
@@ -134,7 +134,7 @@ class BreadCrumbs extends Widget {
    */
   protected onUpdateRequest(msg: Message): void {
     // Update the breadcrumb list.
-    updateCrumbs(this._crumbs, this._crumbSeps, this._model.path);
+    Private.updateCrumbs(this._crumbs, this._crumbSeps, this._model.path);
   }
 
   /**
@@ -151,9 +151,9 @@ class BreadCrumbs extends Widget {
     while (node && node !== this.node) {
       if (node.classList.contains(BREADCRUMB_ITEM_CLASS)) {
         let index = this._crumbs.indexOf(node);
-        this._model.open(BREAD_CRUMB_PATHS[index]).catch(error => {
-          showErrorMessage(this, 'Open Error', error);
-        });
+        this._model.cd(BREAD_CRUMB_PATHS[index]).catch(error =>
+          showErrorMessage(this, 'Open Error', error)
+        );
 
         // Stop the event propagation.
         event.preventDefault();
@@ -171,7 +171,7 @@ class BreadCrumbs extends Widget {
     if (event.mimeData.hasData(CONTENTS_MIME)) {
       let index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
       if (index !== -1) {
-        if (index !== Crumb.Current) {
+        if (index !== Private.Crumb.Current) {
           this._crumbs[index].classList.add(DROP_TARGET_CLASS);
           event.preventDefault();
           event.stopPropagation();
@@ -257,19 +257,10 @@ class BreadCrumbs extends Widget {
           });
         }
       }).catch(error => {
-        showErrorMessage(this, 'Move Error', error.message);
+        showErrorMessage(this, 'Move Error', error);
       }));
     }
-    Promise.all(promises).then(() => this._model.open('.'));
-  }
-
-  /**
-   * Handle a `changed` signal from the model.
-   */
-  private _onChanged(model: FileBrowserModel, change: IChangedArgs<IContentsModel>): void {
-    if (change.name === 'open' && change.newValue.type === 'directory') {
-      this.update();
-    }
+    Promise.all(promises).then(this._model.refresh);
   }
 
   private _model: FileBrowserModel = null;
@@ -279,76 +270,83 @@ class BreadCrumbs extends Widget {
 
 
 /**
- * Breadcrumb item list enum.
+ * The namespace for the crumbs private data.
  */
-enum Crumb {
-  Home,
-  Ellipsis,
-  Parent,
-  Current
-}
+namespace Private {
 
-
-/**
- * Populate the breadcrumb node.
- */
-function updateCrumbs(breadcrumbs: HTMLElement[], separators: HTMLElement[], path: string) {
-  let node = breadcrumbs[0].parentNode;
-
-  // Remove all but the home node.
-  while (node.firstChild.nextSibling) {
-    node.removeChild(node.firstChild.nextSibling);
+  /**
+   * Breadcrumb item list enum.
+   */
+  export
+  enum Crumb {
+    Home,
+    Ellipsis,
+    Parent,
+    Current
   }
 
-  let parts = path.split('/');
-  if (parts.length > 2) {
-    node.appendChild(separators[0]);
-    node.appendChild(breadcrumbs[Crumb.Ellipsis]);
-    let grandParent = parts.slice(0, parts.length - 2).join('/');
-    breadcrumbs[Crumb.Ellipsis].title = grandParent
-  }
+  /**
+   * Populate the breadcrumb node.
+   */
+  export
+  function updateCrumbs(breadcrumbs: HTMLElement[], separators: HTMLElement[], path: string) {
+    let node = breadcrumbs[0].parentNode;
 
-  if (path) {
-    if (parts.length >= 2) {
-      node.appendChild(separators[1]);
-      breadcrumbs[Crumb.Parent].textContent = parts[parts.length - 2];
-      node.appendChild(breadcrumbs[Crumb.Parent]);
-      let parent = parts.slice(0, parts.length - 1).join('/');
-      breadcrumbs[Crumb.Parent].title = parent;
+    // Remove all but the home node.
+    while (node.firstChild.nextSibling) {
+      node.removeChild(node.firstChild.nextSibling);
     }
-    node.appendChild(separators[2]);
-    breadcrumbs[Crumb.Current].textContent = parts[parts.length - 1];
-    node.appendChild(breadcrumbs[Crumb.Current]);
-    breadcrumbs[Crumb.Current].title = path;
+
+    let parts = path.split('/');
+    if (parts.length > 2) {
+      node.appendChild(separators[0]);
+      node.appendChild(breadcrumbs[Crumb.Ellipsis]);
+      let grandParent = parts.slice(0, parts.length - 2).join('/');
+      breadcrumbs[Crumb.Ellipsis].title = grandParent
+    }
+
+    if (path) {
+      if (parts.length >= 2) {
+        node.appendChild(separators[1]);
+        breadcrumbs[Crumb.Parent].textContent = parts[parts.length - 2];
+        node.appendChild(breadcrumbs[Crumb.Parent]);
+        let parent = parts.slice(0, parts.length - 1).join('/');
+        breadcrumbs[Crumb.Parent].title = parent;
+      }
+      node.appendChild(separators[2]);
+      breadcrumbs[Crumb.Current].textContent = parts[parts.length - 1];
+      node.appendChild(breadcrumbs[Crumb.Current]);
+      breadcrumbs[Crumb.Current].title = path;
+    }
   }
-}
 
-
-/**
- * Create the breadcrumb nodes.
- */
-function createCrumbs(): HTMLElement[] {
-  let home = document.createElement('i');
-  home.className = 'fa fa-home ' + BREADCRUMB_ITEM_CLASS;
-  let ellipsis = document.createElement('i');
-  ellipsis.className = 'fa fa-ellipsis-h ' + BREADCRUMB_ITEM_CLASS;
-  let parent = document.createElement('span');
-  parent.className = BREADCRUMB_ITEM_CLASS;
-  let current = document.createElement('span');
-  current.className = BREADCRUMB_ITEM_CLASS;
-  return [home, ellipsis, parent, current];
-}
-
-
-/**
- * Create the breadcrumb separator nodes.
- */
-function createCrumbSeparators(): HTMLElement[] {
-  let items: HTMLElement[] = [];
-  for (let i = 0; i < 3; i++) {
-    let item = document.createElement('i');
-    item.className = 'fa fa-angle-right ' + BREADCRUMB_ITEM_CLASS;
-    items.push(item);
+  /**
+   * Create the breadcrumb nodes.
+   */
+  export
+  function createCrumbs(): HTMLElement[] {
+    let home = document.createElement('i');
+    home.className = 'fa fa-home ' + BREADCRUMB_ITEM_CLASS;
+    let ellipsis = document.createElement('i');
+    ellipsis.className = 'fa fa-ellipsis-h ' + BREADCRUMB_ITEM_CLASS;
+    let parent = document.createElement('span');
+    parent.className = BREADCRUMB_ITEM_CLASS;
+    let current = document.createElement('span');
+    current.className = BREADCRUMB_ITEM_CLASS;
+    return [home, ellipsis, parent, current];
   }
-  return items;
+
+  /**
+   * Create the breadcrumb separator nodes.
+   */
+  export
+  function createCrumbSeparators(): HTMLElement[] {
+    let items: HTMLElement[] = [];
+    for (let i = 0; i < 3; i++) {
+      let item = document.createElement('i');
+      item.className = 'fa fa-angle-right ' + BREADCRUMB_ITEM_CLASS;
+      items.push(item);
+    }
+    return items;
+  }
 }

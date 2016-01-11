@@ -19,6 +19,10 @@ import {
 } from 'phosphor-properties';
 
 import {
+  ISignal, Signal
+} from 'phosphor-signaling';
+
+import {
   Widget
 } from 'phosphor-widget';
 
@@ -72,7 +76,7 @@ const REFRESH_DURATION = 30000;
  * breadcrumbs.
  */
 export
-class FileBrowser extends Widget {
+class FileBrowserWidget extends Widget {
 
   /**
    * Construct a new file browser.
@@ -83,10 +87,13 @@ class FileBrowser extends Widget {
     super();
     this.addClass(FILE_BROWSER_CLASS);
     this._model = model;
-    this._model.changed.connect(this._onChanged, this);
+    this._model.refreshed.connect(this._handleRefresh, this)
     this._crumbs = new BreadCrumbs(model);
     this._buttons = new FileButtons(model);
     this._listing = new DirListing(model);
+    this._listing.openRequested.connect((listing, path) => {
+      this.openRequested.emit(path);
+    });
 
     this._crumbs.addClass(CRUMBS_CLASS);
     this._buttons.addClass(BUTTON_CLASS);
@@ -112,17 +119,62 @@ class FileBrowser extends Widget {
   }
 
   /**
+   * Get the model used by the file browser.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get model(): FileBrowserModel {
+    return this._model;
+  }
+
+  /**
+   * Get the open requested signal.
+   */
+  get openRequested(): ISignal<FileBrowserWidget, string> {
+    return Private.openRequestedSignal.bind(this);
+  }
+
+  /**
+   * Change directory.
+   */
+  cd(path: string): Promise<void> {
+    return this._model.cd(path);
+  }
+
+  /**
    * Open the currently selected item(s).
+   *
+   * Changes to the first directory encountered.
+   * Emits [[openRequested]] signals for files.
    */
   open(): void {
-    this._listing.open();
+    let foundDir = false;
+    for (let index of this._model.selected) {
+      let item = this._model.items[index];
+      if (item.type === 'directory' && !foundDir) {
+        foundDir = true;
+        this._model.cd(item.name).catch(error =>
+          showErrorMessage(this, 'Open directory', error)
+        );
+      } else {
+        this.openRequested.emit(item.path);
+      }
+    }
+  }
+
+  /**
+   * Create a new untitled file or directory in the current directory.
+   */
+  newUntitled(type: string, ext?: string): Promise<IContentsModel> {
+    return this.model.newUntitled(type, ext);
   }
 
   /**
    * Rename the first currently selected item.
    */
-  rename(): void {
-    this._listing.rename();
+  rename(): Promise<string> {
+    return this._listing.rename();
   }
 
   /**
@@ -142,36 +194,45 @@ class FileBrowser extends Widget {
   /**
    * Paste the items from the clipboard.
    */
-  paste(): void {
-    this._listing.paste();
+  paste(): Promise<void> {
+    return this._listing.paste();
   }
 
   /**
    * Delete the currently selected item(s).
    */
-  delete(): void {
-    this._listing.delete();
+  delete(): Promise<void> {
+    return this._listing.delete();
   }
 
   /**
    * Duplicate the currently selected item(s).
    */
-  duplicate(): void {
-    this._listing.duplicate();
+  duplicate(): Promise<void> {
+    return this._listing.duplicate();
   }
 
   /**
    * Download the currently selected item(s).
    */
-  download(): void {
-    this._listing.download();
+  download(): Promise<void> {
+    return this._listing.download();
   }
 
   /**
    * Shut down kernels on the applicable currently selected items.
    */
-  shutdownKernels() {
-    this._listing.shutdownKernels();
+  shutdownKernels(): Promise<void> {
+    return this._listing.shutdownKernels();
+  }
+
+  /**
+   * Refresh the current directory.
+   */
+  refresh(): Promise<void> {
+    return this._model.refresh().catch(
+      error => showErrorMessage(this, 'Refresh Error', error)
+    );
   }
 
   /**
@@ -179,59 +240,40 @@ class FileBrowser extends Widget {
    */
   protected onAfterAttach(msg: Message): void {
     super.onAfterAttach(msg);
-    this._refresh();
+    this.refresh();
   }
 
   /**
-   * A handler invoked on an `'update-request'` message.
+   * A message handler invoked on an `'after-show'` message.
    */
-  protected onUpdateRequest(msg: Message): void {
-    super.onUpdateRequest(msg);
-    this._pendingRefresh = false;
+  protected onAfterShow(msg: Message): void {
+    super.onAfterShow(msg);
+    this.refresh();
   }
 
   /**
-   * Force a refresh of the current directory, and trigger auto-refresh.
+   * Handle a model refresh.
    */
-  private _refresh(): void {
-    this._model.open('.').catch(error => {
-      showErrorMessage(this, 'Refresh Error', error);
-    });
-    if (this._pendingRefresh) {
-      // Interrupt the current refresh cycle.
-      this._pendingRefresh = false;
-    } else {
-      this._pendingRefresh = true;
-      setTimeout(() => {
-        if (this._pendingRefresh) {
-          this._pendingRefresh = false;
-          this._refresh();
-        } else {
-          // If we got interrupted, set a new timer.
-          this._pendingRefresh = true;
-          setTimeout(() => {
-            if (this._pendingRefresh) {
-              this._pendingRefresh = false;
-              this._refresh();
-            }
-          }, REFRESH_DURATION);
-        }
-      }, REFRESH_DURATION);
-    }
-  }
-
-  /**
-   * Handle a `changed` signal from the model.
-   */
-  private _onChanged(model: FileBrowserModel, change: IChangedArgs<IContentsModel>): void {
-    if (change.name === 'open' && change.newValue.type === 'directory') {
-      this.update();
-    }
+  private _handleRefresh(): void {
+    clearTimeout(this._timeoutId);
+    this._timeoutId = setTimeout(() => this.refresh(), REFRESH_DURATION);
   }
 
   private _model: FileBrowserModel = null;
   private _crumbs: BreadCrumbs = null;
   private _buttons: FileButtons = null;
   private _listing: DirListing = null;
-  private _pendingRefresh = false;
+  private _timeoutId = -1;
+}
+
+
+/**
+ * The namespace for the file browser private data.
+ */
+namespace Private {
+  /**
+   * A signal emitted when the an open is requested.
+   */
+  export
+  const openRequestedSignal = new Signal<FileBrowserWidget, string>();
 }

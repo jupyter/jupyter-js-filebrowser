@@ -3,12 +3,12 @@
 'use strict';
 
 import {
-  DelegateCommand, ICommand
-} from 'phosphor-command';
+  showDialog
+} from 'jupyter-js-utils';
 
 import {
-  showDialog
-} from 'phosphor-dialog';
+  DelegateCommand, ICommand
+} from 'phosphor-command';
 
 import {
   Menu, MenuItem
@@ -63,15 +63,14 @@ class FileButtons extends Widget {
     super();
     this.addClass(BUTTON_CLASS);
     this._model = model;
-    var buttons = createButtons(this.node);
+    var buttons = Private.createButtons(this.node);
+    let Button = Private.Button;
 
     // Set up events on the buttons.
     let input = buttons[Button.Upload].getElementsByTagName('input')[0];
     input.onchange = this._handleUploadEvent.bind(this);
 
-    buttons[Button.Refresh].onclick = () => {
-      this._model.open('.');
-    };
+    buttons[Button.Refresh].onclick = this._model.refresh;
 
     buttons[Button.New].onclick = () => {
       let rect = buttons[Button.New].getBoundingClientRect();
@@ -80,11 +79,11 @@ class FileButtons extends Widget {
 
     // Create the "new" menu.
     let command = new DelegateCommand(args => {
-      this._model.newUntitled(args as string).catch(error => {
-        showErrorMessage(this, 'New File Error', error);
-       }).then(() => this._model.open('.'));
+      this._model.newUntitled(args as string).catch(error =>
+        showErrorMessage(this, 'New File Error', error)
+       ).then(this._model.refresh);
     });
-    this._newMenu = createNewItemMenu(command);
+    this._newMenu = Private.createNewItemMenu(command);
 
   }
 
@@ -117,11 +116,10 @@ class FileButtons extends Widget {
             }
           });
         }
-      }).catch(error => {
-        showErrorMessage(this, 'Upload Error', error.message);
-      }));
+      }).catch(error => showErrorMessage(this, 'Upload Error', error)
+      ));
     }
-    Promise.all(promises).then(() => this._model.open('.'));
+    Promise.all(promises).then(this._model.refresh);
   }
 
   private _newMenu: Menu = null;
@@ -130,70 +128,76 @@ class FileButtons extends Widget {
 
 
 /**
- * Button item list enum.
+ * The namespace for the buttons private data.
  */
-enum Button {
-  New,
-  Upload,
-  Refresh
-}
-
-
-/**
- * Create the button nodes.
- */
-function createButtons(buttonBar: HTMLElement): HTMLElement[] {
-  let buttons: HTMLElement[] = [];
-  let icons = ['fa-plus', 'fa-upload', 'fa-refresh'];
-  let titles = ['Create New...', 'Upload File(s)', 'Refresh File List'];
-  for (let i = 0; i < 3; i++) {
-    let button = document.createElement('button');
-    button.className = BUTTON_ITEM_CLASS;
-    button.title = titles[i];
-    let icon = document.createElement('span');
-    icon.className = BUTTON_ICON_CLASS + ' fa ' + icons[i];
-    button.appendChild(icon);
-    buttonBar.appendChild(button);
-    buttons.push(button);
+namespace Private {
+  /**
+   * Button item list enum.
+   */
+  export
+  enum Button {
+    New,
+    Upload,
+    Refresh
   }
 
-  // Add the dropdown node to the "new file" button.
-  var dropIcon = document.createElement('span');
-  dropIcon.className = 'fa fa-caret-down';
-  dropIcon.style.marginLeft = '-0.5em';
-  buttons[Button.New].appendChild(dropIcon);
+  /**
+   * Create the button nodes.
+   */
+  export
+  function createButtons(buttonBar: HTMLElement): HTMLElement[] {
+    let buttons: HTMLElement[] = [];
+    let icons = ['fa-plus', 'fa-upload', 'fa-refresh'];
+    let titles = ['Create New...', 'Upload File(s)', 'Refresh File List'];
+    for (let i = 0; i < 3; i++) {
+      let button = document.createElement('button');
+      button.className = BUTTON_ITEM_CLASS;
+      button.title = titles[i];
+      let icon = document.createElement('span');
+      icon.className = BUTTON_ICON_CLASS + ' fa ' + icons[i];
+      button.appendChild(icon);
+      buttonBar.appendChild(button);
+      buttons.push(button);
+    }
 
-  // Create the hidden upload input field.
-  let file = document.createElement('input');
-  file.style.height = "100%";
-  file.style.zIndex = "10000";
-  file.setAttribute("type", "file");
-  file.setAttribute("multiple", "multiple");
-  buttons[Button.Upload].classList.add(UPLOAD_CLASS);
-  buttons[Button.Upload].appendChild(file);
-  return buttons;
-}
+    // Add the dropdown node to the "new file" button.
+    var dropIcon = document.createElement('span');
+    dropIcon.className = 'fa fa-caret-down';
+    dropIcon.style.marginLeft = '-0.5em';
+    buttons[Button.New].appendChild(dropIcon);
 
+    // Create the hidden upload input field.
+    let file = document.createElement('input');
+    file.style.height = "100%";
+    file.style.zIndex = "10000";
+    file.setAttribute("type", "file");
+    file.setAttribute("multiple", "multiple");
+    buttons[Button.Upload].classList.add(UPLOAD_CLASS);
+    buttons[Button.Upload].appendChild(file);
+    return buttons;
+  }
 
-/**
- * Create the "new" menu.
- */
-function createNewItemMenu(command: ICommand): Menu {
-  return new Menu([
-    new MenuItem({
-      text: 'Notebook',
-      command: command,
-      commandArgs: 'notebook'
-    }),
-    new MenuItem({
-      text: 'Text File',
-      command: command,
-      commandArgs: 'file'
-    }),
-    new MenuItem({
-      text: 'Directory',
-      command: command,
-      commandArgs: 'directory'
-    })
-  ]);
+  /**
+   * Create the "new" menu.
+   */
+  export
+  function createNewItemMenu(command: ICommand): Menu {
+    return new Menu([
+      new MenuItem({
+        text: 'Notebook',
+        command: command,
+        commandArgs: 'notebook'
+      }),
+      new MenuItem({
+        text: 'Text File',
+        command: command,
+        commandArgs: 'file'
+      }),
+      new MenuItem({
+        text: 'Directory',
+        command: command,
+        commandArgs: 'directory'
+      })
+    ]);
+  }
 }

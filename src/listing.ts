@@ -6,11 +6,11 @@ import {
   IContentsModel
 } from 'jupyter-js-services';
 
-import * as moment from 'moment';
-
 import {
   okButton, showDialog
-} from 'phosphor-dialog';
+} from 'jupyter-js-utils';
+
+import * as moment from 'moment';
 
 import {
   IDisposable
@@ -35,6 +35,10 @@ import {
 import {
   IChangedArgs
 } from 'phosphor-properties';
+
+import {
+  ISignal, Signal
+} from 'phosphor-signaling';
 
 import {
   Widget
@@ -162,14 +166,14 @@ class DirListing extends Widget {
    * Create a file item.
    */
   static createItem(): HTMLElement {
-    return createItemNode();
+    return Private.createItemNode();
   }
 
   /**
    * Update a file item.
    */
   static updateItem(item: IContentsModel, node: HTMLElement) {
-    updateItemNode(item, node);
+    Private.updateItemNode(item, node);
   }
 
   /**
@@ -181,8 +185,7 @@ class DirListing extends Widget {
     super();
     this.addClass(LIST_CONTAINER_CLASS);
     this._model = model;
-    this._model.changed.connect(this._onChanged, this);
-    // Create the edit node.
+    this._model.refreshed.connect(this.update, this);
     this._editNode = document.createElement('input');
     this._editNode.className = ITEM_EDIT_CLASS;
   }
@@ -207,21 +210,17 @@ class DirListing extends Widget {
   }
 
   /**
-   * Open the currently selected item(s).
+   * Get the open requested signal.
    */
-  open(): void {
-    for (let name of this._selectedNames) {
-      this._model.open(name).catch(error => {
-        showErrorMessage(this, 'Open file', error);
-      });
-    }
+  get openRequested(): ISignal<DirListing, string> {
+    return Private.openRequestedSignal.bind(this);
   }
 
   /**
    * Rename the first currently selected item.
    */
-  rename(): void {
-    this._doRename();
+  rename(): Promise<string> {
+    return this._doRename();
   }
 
   /**
@@ -245,7 +244,7 @@ class DirListing extends Widget {
   /**
    * Paste the items from the clipboard.
    */
-  paste(): void {
+  paste(): Promise<void> {
     if (!this._clipboard.length) {
       return;
     }
@@ -254,13 +253,13 @@ class DirListing extends Widget {
       if (this._isCut) {
         let parts = path.split('/');
         let name = parts[parts.length - 1];
-        promises.push(this._model.rename(path, name).catch(error => {
-          showErrorMessage(this, 'Paste Error', error);
-        }));
+        promises.push(this._model.rename(path, name).catch(error =>
+          showErrorMessage(this, 'Paste Error', error)
+        ));
       } else {
-        promises.push(this._model.copy(path, '.').catch(error => {
-          showErrorMessage(this, 'Paste Error', error);
-        }));
+        promises.push(this._model.copy(path, '.').catch(error =>
+          showErrorMessage(this, 'Paste Error', error)
+        ));
       }
     }
     // Remove any cut modifiers.
@@ -271,49 +270,49 @@ class DirListing extends Widget {
     this._clipboard = [];
     this._isCut = false;
     this.node.classList.remove(CLIPBOARD_CLASS);
-    Promise.all(promises).then(() => this._refresh());
+    return Promise.all(promises).then(this._model.refresh);
   }
 
   /**
    * Delete the currently selected item(s).
    */
-  delete(): void {
+  delete(): Promise<void> {
     let promises: Promise<void>[] = [];
     for (let name of this._selectedNames) {
-      promises.push(this._model.delete(name).catch(error => {
-        showErrorMessage(this, 'Delete file', error);
-      }));
+      promises.push(this._model.delete(name).catch(error =>
+        showErrorMessage(this, 'Delete file', error)
+      ));
     }
-    Promise.all(promises).then(() => this._refresh());
+    return Promise.all(promises).then(this._model.refresh);
   }
 
   /**
    * Duplicate the currently selected item(s).
    */
-  duplicate(): void {
+  duplicate(): Promise<void> {
     let promises: Promise<void>[] = [];
     for (let index of this._model.selected) {
       let item = this._model.items[index];
       if (item.type !== 'directory') {
         promises.push(this._model.copy(item.path, this._model.path)
-        .catch(error => {
-          showErrorMessage(this, 'Duplicate file', error);
-        }));
+        .catch(error =>
+          showErrorMessage(this, 'Duplicate file', error)
+        ));
       }
     }
-    Promise.all(promises).then(() => this._refresh());
+    return Promise.all(promises).then(this._model.refresh);
   }
 
   /**
    * Download the currently selected item(s).
    */
-  download(): void {
+  download(): Promise<void> {
     for (let index of this._model.selected) {
       let item = this._model.items[index];
       if (item.type !== 'directory') {
-        this._model.download(item.path).catch(error => {
-          showErrorMessage(this, 'Download file', error);
-        });
+        return this._model.download(item.path).catch(error =>
+          showErrorMessage(this, 'Download file', error)
+        );
       }
     }
   }
@@ -321,18 +320,18 @@ class DirListing extends Widget {
   /**
    * Shut down kernels on the applicable currently selected items.
    */
-  shutdownKernels() {
+  shutdownKernels(): Promise<void> {
     let promises: Promise<void>[] = [];
     let paths = this._model.items.map(item => item.path);
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
       if (this._items[index].classList.contains(SELECTED_CLASS)) {
-        promises.push(this._model.shutdown(sessionId).catch(error => {
-          showErrorMessage(this, 'Shutdown kernel', error);
-        }));
+        promises.push(this._model.shutdown(sessionId).catch(error =>
+          showErrorMessage(this, 'Shutdown kernel', error)
+        ));
       }
     }
-    Promise.all(promises).then(() => this._refresh());
+    return Promise.all(promises).then(this._model.refresh);
   }
 
   /**
@@ -472,7 +471,7 @@ class DirListing extends Widget {
   /**
    * Handle the `'mousedown'` event for the widget.
    */
-  private _evtMousedown(event: MouseEvent) {
+  private _evtMousedown(event: MouseEvent): void {
     let index = hitTestNodes(this._items, event.clientX, event.clientY);
     if (index == -1) {
       return;
@@ -509,7 +508,7 @@ class DirListing extends Widget {
   /**
    * Handle the `'mouseup'` event for the widget.
    */
-  private _evtMouseup(event: MouseEvent) {
+  private _evtMouseup(event: MouseEvent): void {
     if (event.button !== 0 || !this._drag) {
       document.removeEventListener('mousemove', this, true);
       return;
@@ -521,7 +520,7 @@ class DirListing extends Widget {
   /**
    * Handle the `'mousemove'` event for the widget.
    */
-  private _evtMousemove(event: MouseEvent) {
+  private _evtMousemove(event: MouseEvent): void {
     event.preventDefault();
     event.stopPropagation();
 
@@ -544,7 +543,7 @@ class DirListing extends Widget {
   /**
    * Handle the `'dblclick'` event for the widget.
    */
-  private _evtDblClick(event: MouseEvent) {
+  private _evtDblClick(event: MouseEvent): void {
     // Do nothing if it's not a left mouse press.
     if (event.button !== 0) {
       return;
@@ -562,11 +561,16 @@ class DirListing extends Widget {
       if (node.classList.contains(ITEM_CLASS)) {
         // Open the selected item.
         let index = this._items.indexOf(node);
-        let path = this._model.items[index].name;
-        this._model.open(path).catch(error => {
-          showErrorMessage(this, 'Open Error', error);
-        });
-        return;
+        let item = this._model.items[index];
+        if (item.type === 'directory') {
+          this._model.cd(item.name).catch(error =>
+            showErrorMessage(this, 'Change Directory Error', error)
+          );
+        } else {
+          this.openRequested.emit(item.path);
+          return;
+        }
+
       }
       node = node.parentElement;
     }
@@ -616,7 +620,6 @@ class DirListing extends Widget {
     this._items[index].classList.add(DROP_TARGET_CLASS);
   }
 
-
   /**
    * Handle the `'p-drop'` event for the widget.
    */
@@ -665,17 +668,16 @@ class DirListing extends Widget {
             }
           });
         }
-      }).catch(error => {
-        showErrorMessage(this, 'Move Error', error.message);
-      }));
+      }).catch(error => showErrorMessage(this, 'Move Error', error)
+      ));
     }
-    Promise.all(promises).then(() => this._model.open('.'));
+    Promise.all(promises).then(this._model.refresh);
   }
 
   /**
    * Start a drag event.
    */
-  private _startDrag(index: number, clientX: number, clientY: number) {
+  private _startDrag(index: number, clientX: number, clientY: number): void {
     // Make sure the source node is selected.
     let source = this._items[index];
     if (!source.classList.contains(SELECTED_CLASS)) {
@@ -711,7 +713,7 @@ class DirListing extends Widget {
   /**
    * Handle selection on a file node.
    */
-  private _handleFileSelect(event: MouseEvent) {
+  private _handleFileSelect(event: MouseEvent): void {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
@@ -732,7 +734,7 @@ class DirListing extends Widget {
 
     // Handle multiple select.
     } else if (event.shiftKey) {
-      handleMultiSelect(nodes, nodes.indexOf(target));
+      Private.handleMultiSelect(nodes, nodes.indexOf(target));
 
     // Default to selecting the only the item.
     } else {
@@ -764,7 +766,7 @@ class DirListing extends Widget {
   /**
    * Update the selected indices of the model.
    */
-  private _updateSelected() {
+  private _updateSelected(): void {
     // Set the selected items on the model.
     let selected: number[] = [];
     this._selectedNames = [];
@@ -816,18 +818,18 @@ class DirListing extends Widget {
   /**
    * Allow the user to rename item on a given row.
    */
-  private _doRename(): void {
+  private _doRename(): Promise<string> {
     let row = this.node.getElementsByClassName(SELECTED_CLASS)[0];
     let fileCell = row.getElementsByClassName(ITEM_FILE_CLASS)[0];
     let text = row.getElementsByClassName(ITEM_TEXT_CLASS)[0] as HTMLElement;
     let original = text.textContent;
 
-    doRename(fileCell as HTMLElement, text, this._editNode).then(changed => {
+    return Private.doRename(fileCell as HTMLElement, text, this._editNode).then(changed => {
       if (!changed) {
-        return;
+        return original;
       }
       let newPath = text.textContent;
-      this._model.rename(original, newPath).catch(error => {
+      return this._model.rename(original, newPath).catch(error => {
         if (error.message.indexOf('409') !== -1 ||
             error.message.indexOf('already exists') !== -1) {
           let options = {
@@ -837,36 +839,22 @@ class DirListing extends Widget {
           }
           showDialog(options).then(button => {
             if (button.text === 'OK') {
-              return this._model.delete(newPath).then(() => {
-                return this._model.rename(original, newPath);
-              });
+              return this._model.delete(newPath).then(() =>
+                this._model.rename(original, newPath)
+              );
             } else {
               text.textContent = original;
             }
           });
         }
       }).catch(error => {
-        showErrorMessage(this, 'Rename Error', error.message);
-      }).then(() => this._model.open('.'));
+        showErrorMessage(this, 'Rename Error', error);
+        return original;
+      }).then(() => {
+        this._model.refresh();
+        return text.textContent;
+      });
     });
-  }
-
-  /**
-   * Force a refresh of the current directory.
-   */
-  private _refresh(): void {
-    this._model.open('.').catch(error => {
-      showErrorMessage(this, 'Refresh Error', error);
-    });
-  }
-
-  /**
-   * Handle a `changed` signal from the model.
-   */
-  private _onChanged(model: FileBrowserModel, change: IChangedArgs<IContentsModel>): void {
-    if (change.name === 'open' && change.newValue.type === 'directory') {
-      this.update();
-    }
   }
 
   private _model: FileBrowserModel = null;
@@ -883,153 +871,165 @@ class DirListing extends Widget {
 
 
 /**
- * Create an uninitialized DOM node for an IContentsModel.
+ * The namespace for the listing private data.
  */
-function createItemNode(): HTMLElement {
-  let node = document.createElement('li');
-  node.className = ITEM_CLASS;
-  let fnode = document.createElement('div');
-  fnode.className = ITEM_FILE_CLASS;
-  let inode = document.createElement('span');
-  inode.className = ITEM_ICON_CLASS;
-  let tnode = document.createElement('span');
-  tnode.className = ITEM_TEXT_CLASS;
-  let mnode = document.createElement('span');
-  mnode.className = ITEM_TIME_CLASS;
-  fnode.appendChild(inode);
-  fnode.appendChild(tnode);
-  node.appendChild(fnode);
-  node.appendChild(mnode);
-  return node;
-}
+namespace Private {
+  /**
+   * A signal emitted when the an open is requested.
+   */
+  export
+  const openRequestedSignal = new Signal<DirListing, string>();
 
-
-/**
- * Create the icon node class name for an IContentsModel.
- */
-function createIconClass(item: IContentsModel): string {
-  if (item.type === 'directory') {
-    return ITEM_ICON_CLASS + ' ' + FOLDER_ICON_CLASS;
-  } else if (item.type === 'notebook') {
-    return ITEM_ICON_CLASS + ' ' + NOTEBOOK_ICON_CLASS;
-  } else {
-    return ITEM_ICON_CLASS + ' ' + FILE_ICON_CLASS;
-  }
-}
-
-
-/**
- * Create the text node content for an IContentsModel.
- */
-function createTextContent(item: IContentsModel): string {
-  return item.name;
-}
-
-
-/**
- * Create the last modified node content for an IContentsModel.
- */
-function createModifiedContent(item: IContentsModel): string {
-  if (item.last_modified) {
-    let text = moment(item.last_modified).fromNow();
-    return text === 'a few seconds ago' ? 'seconds ago' : text;
-  } else {
-    return '';
-  }
-}
-
-
-/**
- * Update the node state for an IContentsModel.
- */
-function updateItemNode(item: IContentsModel, node: HTMLElement): void {
-  let icon = node.firstChild.firstChild as HTMLElement;
-  let text = (node.firstChild as HTMLElement).children[1] as HTMLElement;
-  let modified = node.lastChild as HTMLElement;
-  icon.className = createIconClass(item);
-  text.textContent = createTextContent(item);
-  modified.textContent = createModifiedContent(item);
-  node.classList.remove(SELECTED_CLASS);
-  node.classList.remove(CUT_CLASS);
-}
-
-
-/**
- * Handle editing text on a node.
- *
- * @returns Boolean indicating whether the name changed.
- */
-function doRename(parent: HTMLElement, text: HTMLElement, edit: HTMLInputElement): Promise<boolean> {
-  let changed = true;
-  parent.replaceChild(edit, text);
-  edit.value = text.textContent;
-  edit.focus();
-  let index = edit.value.indexOf('.');
-  if (index === -1) {
-    edit.setSelectionRange(0, edit.value.length);
-  } else {
-    edit.setSelectionRange(0, index);
+  /**
+   * Create an uninitialized DOM node for an IContentsModel.
+   */
+  export
+  function createItemNode(): HTMLElement {
+    let node = document.createElement('li');
+    node.className = ITEM_CLASS;
+    let fnode = document.createElement('div');
+    fnode.className = ITEM_FILE_CLASS;
+    let inode = document.createElement('span');
+    inode.className = ITEM_ICON_CLASS;
+    let tnode = document.createElement('span');
+    tnode.className = ITEM_TEXT_CLASS;
+    let mnode = document.createElement('span');
+    mnode.className = ITEM_TIME_CLASS;
+    fnode.appendChild(inode);
+    fnode.appendChild(tnode);
+    node.appendChild(fnode);
+    node.appendChild(mnode);
+    return node;
   }
 
-  return new Promise<boolean>((resolve, reject) => {
-    edit.onblur = () => {
-      parent.replaceChild(text, edit);
-      if (text.textContent === edit.value) {
-        changed = false;
+  /**
+   * Create the icon node class name for an IContentsModel.
+   */
+  export
+  function createIconClass(item: IContentsModel): string {
+    if (item.type === 'directory') {
+      return ITEM_ICON_CLASS + ' ' + FOLDER_ICON_CLASS;
+    } else if (item.type === 'notebook') {
+      return ITEM_ICON_CLASS + ' ' + NOTEBOOK_ICON_CLASS;
+    } else {
+      return ITEM_ICON_CLASS + ' ' + FILE_ICON_CLASS;
+    }
+  }
+
+  /**
+   * Create the text node content for an IContentsModel.
+   */
+  export
+  function createTextContent(item: IContentsModel): string {
+    return item.name;
+  }
+
+  /**
+   * Create the last modified node content for an IContentsModel.
+   */
+  export
+  function createModifiedContent(item: IContentsModel): string {
+    if (item.last_modified) {
+      let text = moment(item.last_modified).fromNow();
+      return text === 'a few seconds ago' ? 'seconds ago' : text;
+    } else {
+      return '';
+    }
+  }
+
+  /**
+   * Update the node state for an IContentsModel.
+   */
+  export
+  function updateItemNode(item: IContentsModel, node: HTMLElement): void {
+    let icon = node.firstChild.firstChild as HTMLElement;
+    let text = (node.firstChild as HTMLElement).children[1] as HTMLElement;
+    let modified = node.lastChild as HTMLElement;
+    icon.className = createIconClass(item);
+    text.textContent = createTextContent(item);
+    modified.textContent = createModifiedContent(item);
+    node.classList.remove(SELECTED_CLASS);
+    node.classList.remove(CUT_CLASS);
+  }
+
+  /**
+   * Handle editing text on a node.
+   *
+   * @returns Boolean indicating whether the name changed.
+   */
+  export
+  function doRename(parent: HTMLElement, text: HTMLElement, edit: HTMLInputElement): Promise<boolean> {
+    let changed = true;
+    parent.replaceChild(edit, text);
+    edit.value = text.textContent;
+    edit.focus();
+    let index = edit.value.indexOf('.');
+    if (index === -1) {
+      edit.setSelectionRange(0, edit.value.length);
+    } else {
+      edit.setSelectionRange(0, index);
+    }
+
+    return new Promise<boolean>((resolve, reject) => {
+      edit.onblur = () => {
+        parent.replaceChild(text, edit);
+        if (text.textContent === edit.value) {
+          changed = false;
+        }
+        if (changed) text.textContent = edit.value;
+        resolve(changed);
       }
-      if (changed) text.textContent = edit.value;
-      resolve(changed);
-    }
-    edit.onkeydown = (event: KeyboardEvent) => {
-      switch (event.keyCode) {
-      case 13:  // Enter
-        event.stopPropagation();
-        event.preventDefault();
-        edit.blur();
-        break;
-      case 27:  // Escape
-        event.stopPropagation();
-        event.preventDefault();
-        changed = false;
-        edit.blur();
-        break;
+      edit.onkeydown = (event: KeyboardEvent) => {
+        switch (event.keyCode) {
+        case 13:  // Enter
+          event.stopPropagation();
+          event.preventDefault();
+          edit.blur();
+          break;
+        case 27:  // Escape
+          event.stopPropagation();
+          event.preventDefault();
+          changed = false;
+          edit.blur();
+          break;
+        }
       }
-    }
-  });
-}
+    });
+  }
 
-
-/**
- * Handle a multiple select on a file item node.
- */
-function handleMultiSelect(nodes: HTMLElement[], index: number) {
-  // Find the "nearest selected".
-  let nearestIndex = -1;
-  for (let i = 0; i < nodes.length; i++) {
-    if (i === index) {
-      continue;
-    }
-    if (nodes[i].classList.contains(SELECTED_CLASS)) {
-      if (nearestIndex === -1) {
-        nearestIndex = i;
-      } else {
-        if (Math.abs(index - i) < Math.abs(nearestIndex - i)) {
+  /**
+   * Handle a multiple select on a file item node.
+   */
+  export
+  function handleMultiSelect(nodes: HTMLElement[], index: number) {
+    // Find the "nearest selected".
+    let nearestIndex = -1;
+    for (let i = 0; i < nodes.length; i++) {
+      if (i === index) {
+        continue;
+      }
+      if (nodes[i].classList.contains(SELECTED_CLASS)) {
+        if (nearestIndex === -1) {
           nearestIndex = i;
+        } else {
+          if (Math.abs(index - i) < Math.abs(nearestIndex - i)) {
+            nearestIndex = i;
+          }
         }
       }
     }
-  }
 
-  // Default to the first element (and fill down).
-  if (nearestIndex === -1) {
-    nearestIndex = 0;
-  }
+    // Default to the first element (and fill down).
+    if (nearestIndex === -1) {
+      nearestIndex = 0;
+    }
 
-  // Select the rows between the current and the nearest selected.
-  for (let i = 0; i < nodes.length; i++) {
-    if (nearestIndex >= i && index <= i ||
-        nearestIndex <= i && index >= i) {
-      nodes[i].classList.add(SELECTED_CLASS);
+    // Select the rows between the current and the nearest selected.
+    for (let i = 0; i < nodes.length; i++) {
+      if (nearestIndex >= i && index <= i ||
+          nearestIndex <= i && index >= i) {
+        nodes[i].classList.add(SELECTED_CLASS);
+      }
     }
   }
 }
