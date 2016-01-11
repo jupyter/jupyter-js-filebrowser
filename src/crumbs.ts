@@ -7,12 +7,12 @@ import {
 } from 'jupyter-js-services';
 
 import {
-  DropAction, IDragEvent
-} from 'phosphor-dragdrop';
+  showDialog
+} from 'jupyter-js-utils';
 
 import {
-  showDialog
-} from 'phosphor-dialog';
+  DropAction, IDragEvent
+} from 'phosphor-dragdrop';
 
 import {
   Message
@@ -257,7 +257,7 @@ class BreadCrumbs extends Widget {
           });
         }
       }).catch(error => {
-        showErrorMessage(this, 'Move Error', error.message);
+        showErrorMessage(this, 'Move Error', error);
       }));
     }
     Promise.all(promises).then(this._model.refresh);

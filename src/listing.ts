@@ -6,11 +6,11 @@ import {
   IContentsModel
 } from 'jupyter-js-services';
 
-import * as moment from 'moment';
-
 import {
   okButton, showDialog
-} from 'phosphor-dialog';
+} from 'jupyter-js-utils';
+
+import * as moment from 'moment';
 
 import {
   IDisposable
@@ -35,6 +35,10 @@ import {
 import {
   IChangedArgs
 } from 'phosphor-properties';
+
+import {
+  ISignal, Signal
+} from 'phosphor-signaling';
 
 import {
   Widget
@@ -203,6 +207,13 @@ class DirListing extends Widget {
    */
   get isDisposed(): boolean {
     return this._model === null;
+  }
+
+  /**
+   * Get the open requested signal.
+   */
+  get openRequested(): ISignal<DirListing, string> {
+    return Private.openRequestedSignal.bind(this);
   }
 
   /**
@@ -550,11 +561,16 @@ class DirListing extends Widget {
       if (node.classList.contains(ITEM_CLASS)) {
         // Open the selected item.
         let index = this._items.indexOf(node);
-        let path = this._model.items[index].name;
-        this._model.cd(path).catch(error =>
-          showErrorMessage(this, 'Open Error', error)
-        );
-        return;
+        let item = this._model.items[index];
+        if (item.type === 'directory') {
+          this._model.cd(item.name).catch(error =>
+            showErrorMessage(this, 'Change Directory Error', error)
+          );
+        } else {
+          this.openRequested.emit(item.path);
+          return;
+        }
+
       }
       node = node.parentElement;
     }
@@ -652,7 +668,7 @@ class DirListing extends Widget {
             }
           });
         }
-      }).catch(error => showErrorMessage(this, 'Move Error', error.message)
+      }).catch(error => showErrorMessage(this, 'Move Error', error)
       ));
     }
     Promise.all(promises).then(this._model.refresh);
@@ -832,7 +848,7 @@ class DirListing extends Widget {
           });
         }
       }).catch(error => {
-        showErrorMessage(this, 'Rename Error', error.message);
+        showErrorMessage(this, 'Rename Error', error);
         return original;
       }).then(() => {
         this._model.refresh();
@@ -858,6 +874,12 @@ class DirListing extends Widget {
  * The namespace for the listing private data.
  */
 namespace Private {
+  /**
+   * A signal emitted when the an open is requested.
+   */
+  export
+  const openRequestedSignal = new Signal<DirListing, string>();
+
   /**
    * Create an uninitialized DOM node for an IContentsModel.
    */

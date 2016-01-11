@@ -4,7 +4,7 @@
 
 import {
   okButton, showDialog
-} from 'phosphor-dialog';
+} from 'jupyter-js-utils';
 
 import {
   hitTest
@@ -40,8 +40,8 @@ const CONTENTS_MIME = 'application/x-jupyter-icontents';
  * An error message dialog to show in the filebrowser widget.
  */
 export
-function showErrorMessage(host: Widget, title: string, message: string) {
-  console.error(message);
+function showErrorMessage(host: Widget, title: string, error: Error) {
+  console.error(error);
   if (!host.isAttached) {
     return;
   }
@@ -53,7 +53,7 @@ function showErrorMessage(host: Widget, title: string, message: string) {
   let options = {
     title: title,
     host: node,
-    body: message,
+    body: error.message,
     buttons: [okButton]
   }
   showDialog(options);

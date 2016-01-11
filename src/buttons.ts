@@ -3,12 +3,12 @@
 'use strict';
 
 import {
-  DelegateCommand, ICommand
-} from 'phosphor-command';
+  showDialog
+} from 'jupyter-js-utils';
 
 import {
-  showDialog
-} from 'phosphor-dialog';
+  DelegateCommand, ICommand
+} from 'phosphor-command';
 
 import {
   Menu, MenuItem
@@ -116,7 +116,7 @@ class FileButtons extends Widget {
             }
           });
         }
-      }).catch(error => showErrorMessage(this, 'Upload Error', error.message)
+      }).catch(error => showErrorMessage(this, 'Upload Error', error)
       ));
     }
     Promise.all(promises).then(this._model.refresh);

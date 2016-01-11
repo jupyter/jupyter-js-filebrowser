@@ -35,6 +35,7 @@ class FileBrowserModel implements IDisposable {
   constructor(contentsManager: IContentsManager, sessionManager: INotebookSessionManager) {
     this._contentsManager = contentsManager;
     this._sessionManager = sessionManager;
+    this.cd('');
   }
 
   /**
@@ -48,7 +49,7 @@ class FileBrowserModel implements IDisposable {
    * Get the current path.
    *
    * #### Notes
-   * This is a ready-only property.
+   * This is a read-only property.
    */
   get path(): string {
     return this._model.path;
@@ -114,7 +115,9 @@ class FileBrowserModel implements IDisposable {
    */
   cd(path: string): Promise<void> {
     let normalizePath = Private.normalizePath;
-    path = normalizePath(this._model.path, path);
+    if (path != '') {
+      path = normalizePath(this._model.path, path);
+    }
     return this._contentsManager.get(path, {}).then(contents => {
       this._model = contents;
       return this._findSessions().then(() => this.refreshed.emit(void 0)

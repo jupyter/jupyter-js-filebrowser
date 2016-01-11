@@ -76,7 +76,7 @@ const REFRESH_DURATION = 30000;
  * breadcrumbs.
  */
 export
-class FileBrowser extends Widget {
+class FileBrowserWidget extends Widget {
 
   /**
    * Construct a new file browser.
@@ -91,6 +91,9 @@ class FileBrowser extends Widget {
     this._crumbs = new BreadCrumbs(model);
     this._buttons = new FileButtons(model);
     this._listing = new DirListing(model);
+    this._listing.openRequested.connect((listing, path) => {
+      this.openRequested.emit(path);
+    });
 
     this._crumbs.addClass(CRUMBS_CLASS);
     this._buttons.addClass(BUTTON_CLASS);
@@ -128,8 +131,15 @@ class FileBrowser extends Widget {
   /**
    * Get the open requested signal.
    */
-  get openRequested(): ISignal<FileBrowser, string> {
+  get openRequested(): ISignal<FileBrowserWidget, string> {
     return Private.openRequestedSignal.bind(this);
+  }
+
+  /**
+   * Change directory.
+   */
+  cd(path: string): Promise<void> {
+    return this._model.cd(path);
   }
 
   /**
@@ -265,5 +275,5 @@ namespace Private {
    * A signal emitted when the an open is requested.
    */
   export
-  const openRequestedSignal = new Signal<FileBrowser, string>();
+  const openRequestedSignal = new Signal<FileBrowserWidget, string>();
 }
