@@ -4,5 +4,6 @@
 
 export * from './model';
 export * from './browser';
+export * from './opener';
 
 import './index.css';

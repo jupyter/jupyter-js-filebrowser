@@ -34,7 +34,7 @@ import {
 } from 'phosphor-splitpanel';
 
 import {
-  FileBrowserWidget, FileBrowserModel
+  FileBrowserWidget, FileBrowserModel, FileOpener
 } from '../../lib';
 
 
@@ -46,6 +46,7 @@ function main(): void {
 
   let fbModel = new FileBrowserModel(contentsManager, sessionsManager);
   let fbWidget = new FileBrowserWidget(fbModel);
+  let opener = new FileOpener(contentsManager);
 
   let panel = new SplitPanel();
   panel.addChild(fbWidget);
@@ -54,14 +55,7 @@ function main(): void {
   dock.spacing = 8;
 
   fbWidget.openRequested.connect((fb, path) => {
-    let editorWidget = new CodeMirrorWidget();
-    contentsManager.get(path).then(contents => {
-      let editorWidget = new CodeMirrorWidget();
-      editorWidget.title.text = contents.name;
-      editorWidget.editor.getDoc().setValue(contents.content);
-      editorWidget.update();
-      dock.insertTabAfter(editorWidget);
-    });
+    opener.open(path).then(editor => dock.insertTabAfter(editor));
   });
 
   let contextMenu = new Menu([
