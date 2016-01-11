@@ -478,6 +478,11 @@ class DirListing extends Widget {
    */
   private _evtClick(event: MouseEvent) {
 
+    let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    if (index == -1) {
+      return;
+    }
+
     // Update our selection.
     this._handleFileSelect(event);
     this._updateSelected();
@@ -501,6 +506,9 @@ class DirListing extends Widget {
     }
 
     let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    if (index == -1) {
+      return;
+    }
 
     // Left mouse press for drag start.
     if (event.button === 0) {
