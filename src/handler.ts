@@ -78,7 +78,7 @@ class FileHandler {
       let widget = new Private.Editor();
       widget.title.text = contents.name;
       widget.title.closable = true;
-      widget.title.changed.connect(this._titleChanged, this);
+      widget.title.changed.connect(this.titleChanged, this);
       widget.path = path;
       this._openFiles.push(widget);
       widget.editor.getDoc().setValue(contents.content);
@@ -89,6 +89,9 @@ class FileHandler {
     });
   }
 
+  /**
+   * Close the widget and dispose of it.
+   */
   close(widget: Widget) {
     let index = this._openFiles.indexOf(widget as Private.Editor);
     if (index === -1) {
@@ -101,7 +104,7 @@ class FileHandler {
   /**
    * Handle a change to one of the widget titles.
    */
-  private _titleChanged(title: Title, args: IChangedArgs<any>) {
+  protected titleChanged(title: Title, args: IChangedArgs<any>) {
     let widget = arrays.find(this._openFiles,
       (w, index) => { return w.title === title; });
     if (widget === void 0) {
