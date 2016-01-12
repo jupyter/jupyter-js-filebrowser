@@ -355,6 +355,9 @@ class DirListing extends Widget {
     case 'mousemove':
       this._evtMousemove(event as MouseEvent);
       break;
+    case 'click':
+      this._evtClick(event as MouseEvent);
+      break
     case 'dblclick':
       this._evtDblClick(event as MouseEvent);
       break;
@@ -380,7 +383,7 @@ class DirListing extends Widget {
     super.onAfterAttach(msg);
     let node = this.node;
     node.addEventListener('mousedown', this);
-    node.addEventListener('mouseup', this);
+    node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
     node.addEventListener('p-dragenter', this);
     node.addEventListener('p-dragleave', this);
@@ -395,13 +398,14 @@ class DirListing extends Widget {
     super.onBeforeDetach(msg);
     let node = this.node;
     node.removeEventListener('mousedown', this);
-    node.removeEventListener('mouseup', this);
+    node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
-    node.removeEventListener('mousemove', this);
     node.removeEventListener('p-dragenter', this);
     node.removeEventListener('p-dragleave', this);
     node.removeEventListener('p-dragover', this);
     node.removeEventListener('p-drop', this);
+    document.removeEventListener('mousemove', this, true);
+    document.removeEventListener('mouseup', this, true);
   }
 
   /**
@@ -469,13 +473,25 @@ class DirListing extends Widget {
   }
 
   /**
-   * Handle the `'mousedown'` event for the widget.
+   * Handle the `'click'` event for the widget.
    */
-  private _evtMousedown(event: MouseEvent): void {
+  private _evtClick(event: MouseEvent) {
+
     let index = hitTestNodes(this._items, event.clientX, event.clientY);
     if (index == -1) {
       return;
     }
+
+    // Update our selection.
+    this._handleFileSelect(event);
+    this._updateSelected();
+
+  }
+
+  /**
+   * Handle the `'mousedown'` event for the widget.
+   */
+  private _evtMousedown(event: MouseEvent): void {
 
     // Blur the edit node if necessary.
     if (this._editNode.parentNode) {
@@ -488,6 +504,11 @@ class DirListing extends Widget {
       }
     }
 
+    let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    if (index == -1) {
+      return;
+    }
+
     // Left mouse press for drag start.
     if (event.button === 0) {
       this._dragData = { pressX: event.clientX, pressY: event.clientY,
@@ -495,10 +516,6 @@ class DirListing extends Widget {
       document.addEventListener('mouseup', this, true);
       document.addEventListener('mousemove', this, true);
     }
-
-    // Update our selection.
-    this._handleFileSelect(event);
-    this._updateSelected();
 
     if (event.button !== 0) {
       this._pendingSelect = false;
@@ -511,6 +528,7 @@ class DirListing extends Widget {
   private _evtMouseup(event: MouseEvent): void {
     if (event.button !== 0 || !this._drag) {
       document.removeEventListener('mousemove', this, true);
+      document.removeEventListener('mouseup', this, true);
       return;
     }
     event.preventDefault();
