@@ -70,7 +70,7 @@ class FileHandler {
    */
   open(path: string): Promise<Widget> {
     let index = arrays.findIndex(this._openFiles,
-      (widget, ind) => { return widget.path === path; });
+      (widget, ind) => { return pathProperty.get(widget) === path; });
     if (index !== -1) {
       return Promise.resolve(this._openFiles[index]);
     }
@@ -79,7 +79,7 @@ class FileHandler {
       widget.title.text = contents.name;
       widget.title.closable = true;
       widget.title.changed.connect(this.titleChanged, this);
-      widget.path = path;
+      pathProperty.set(widget, path);
       this._openFiles.push(widget);
       widget.editor.getDoc().setValue(contents.content);
       Private.loadModeByFileName(widget.editor, contents.name);
@@ -93,7 +93,7 @@ class FileHandler {
    * Close the widget and dispose of it.
    */
   close(widget: Widget) {
-    let index = this._openFiles.indexOf(widget as Private.Editor);
+    let index = this._openFiles.indexOf(widget);
     if (index === -1) {
       return;
     }
@@ -111,17 +111,27 @@ class FileHandler {
       return
     }
     if (args.name == 'text') {
-      let oldPath = widget.path;
+      let oldPath = pathProperty.get(widget);
       let newPath = oldPath.slice(0, oldPath.lastIndexOf('/') + 1);
       newPath += args.newValue;
       this._manager.rename(oldPath, newPath);
-      widget.path = newPath;
+      pathProperty.set(widget, newPath);
     }
   }
 
   private _manager: IContentsManager;
-  private _openFiles: Private.Editor[] = [];
+  private _openFiles: Widget[] = [];
 }
+
+
+/**
+ * An attached property with the widget path.
+ */
+export
+const pathProperty = new Property<Widget, string>({
+  name: 'path',
+  value: ''
+});
 
 
 /**
@@ -130,8 +140,6 @@ class FileHandler {
 namespace Private {
   export
   class Editor extends CodeMirrorWidget {
-
-    path: string;
 
     get closed(): ISignal<Editor, void> {
       return closedSignal.bind(this);
