@@ -290,11 +290,11 @@ class FileBrowserModel implements IDisposable {
           name: name,
           content: Private.getContent(reader)
         }
-        return this._contentsManager.save(path, model);
+        resolve(this._contentsManager.save(path, model));
       }
 
       reader.onerror = (event: Event) => {
-        throw Error(`Failed to upload "${file.name}":` + event);
+        reject(Error(`Failed to upload "${file.name}":` + event));
       }
     });
 

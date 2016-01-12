@@ -237,7 +237,7 @@ class BreadCrumbs extends Widget {
     var path = BREAD_CRUMB_PATHS[index];
 
     // Move all of the items.
-    let promises: Promise<void>[] = [];
+    let promises: Promise<IContentsModel>[] = [];
     for (let index of this._model.selected) {
       var original = this._model.items[index].name;
       var newPath = path + original;
@@ -248,7 +248,7 @@ class BreadCrumbs extends Widget {
             host: this.node,
             body: `"${newPath}" already exists, overwrite?`
           }
-          showDialog(options).then(button => {
+          return showDialog(options).then(button => {
             if (button.text === 'OK') {
               return this._model.delete(newPath).then(() => {
                 return this._model.rename(original, newPath);
@@ -256,11 +256,12 @@ class BreadCrumbs extends Widget {
             }
           });
         }
-      }).catch(error => {
-        showErrorMessage(this, 'Move Error', error);
       }));
     }
-    Promise.all(promises).then(() => this._model.refresh());
+    Promise.all(promises).then(
+      () => this._model.refresh(),
+      err => showErrorMessage(this, 'Move Error', err)
+    );
   }
 
   private _model: FileBrowserModel = null;

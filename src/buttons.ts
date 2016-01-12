@@ -3,6 +3,10 @@
 'use strict';
 
 import {
+  IContentsModel
+} from 'jupyter-js-services';
+
+import {
   showDialog
 } from 'jupyter-js-utils';
 
@@ -101,25 +105,27 @@ class FileButtons extends Widget {
    * Handle a file upload event.
    */
   private _handleUploadEvent(event: Event): void {
-    let promises: Promise<void>[] = [];
+    let promises: Promise<IContentsModel>[] = [];
     for (var file of (event.target as any).files) {
       promises.push(this._model.upload(file).catch(error => {
         if (error.message.indexOf('already exists') !== -1) {
           let options = {
             title: 'Overwrite file?',
-            host: this.node,
+            host: this.node.parentNode as HTMLElement,
             body: `"${file.name}" already exists, overwrite?`
           }
-          showDialog(options).then(button => {
+          return showDialog(options).then(button => {
             if (button.text === 'OK') {
               return this._model.upload(file, true);
             }
           });
         }
-      }).catch(error => showErrorMessage(this, 'Upload Error', error)
-      ));
+      }));
     }
-    Promise.all(promises).then(() => this._model.refresh());
+    Promise.all(promises).then(
+      () => this._model.refresh(),
+      err => showErrorMessage(this, 'Upload Error', err)
+    );
   }
 
   private _newMenu: Menu = null;
