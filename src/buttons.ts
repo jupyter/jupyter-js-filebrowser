@@ -70,7 +70,7 @@ class FileButtons extends Widget {
     let input = buttons[Button.Upload].getElementsByTagName('input')[0];
     input.onchange = this._handleUploadEvent.bind(this);
 
-    buttons[Button.Refresh].onclick = this._model.refresh;
+    buttons[Button.Refresh].onclick = () => this._model.refresh();
 
     buttons[Button.New].onclick = () => {
       let rect = buttons[Button.New].getBoundingClientRect();
@@ -81,7 +81,7 @@ class FileButtons extends Widget {
     let command = new DelegateCommand(args => {
       this._model.newUntitled(args as string).catch(error =>
         showErrorMessage(this, 'New File Error', error)
-       ).then(this._model.refresh);
+       ).then(() => this._model.refresh());
     });
     this._newMenu = Private.createNewItemMenu(command);
 
@@ -119,7 +119,7 @@ class FileButtons extends Widget {
       }).catch(error => showErrorMessage(this, 'Upload Error', error)
       ));
     }
-    Promise.all(promises).then(this._model.refresh);
+    Promise.all(promises).then(() => this._model.refresh());
   }
 
   private _newMenu: Menu = null;
