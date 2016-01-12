@@ -6,7 +6,7 @@ import * as CodeMirror
   from 'codemirror';
 
 import {
-  IContentsManager
+  IContentsModel, IContentsManager
 } from 'jupyter-js-services';
 
 import * as arrays
@@ -17,7 +17,8 @@ import {
 } from 'phosphor-codemirror';
 
 import {
-  Message
+  IMessageFilter, IMessageHandler, Message, installMessageFilter,
+  removeMessageFilter
 } from 'phosphor-messaging';
 
 import {
@@ -47,7 +48,7 @@ import 'codemirror/mode/gfm/gfm';
  * An implementation of a file handler.
  */
 export
-class FileHandler {
+class FileHandler implements IMessageFilter {
 
   /**
    * Construct a new source file handler.
@@ -75,36 +76,68 @@ class FileHandler {
       return Promise.resolve(this._openFiles[index]);
     }
     return this._manager.get(path).then(contents => {
-      let widget = new Private.Editor();
-      widget.title.text = contents.name;
+      let widget = this.createWidget(contents);
       widget.title.closable = true;
       widget.title.changed.connect(this.titleChanged, this);
       pathProperty.set(widget, path);
       this._openFiles.push(widget);
-      widget.editor.getDoc().setValue(contents.content);
-      Private.loadModeByFileName(widget.editor, contents.name);
-      widget.disposed.connect(this.close, this);
-      widget.closed.connect(this.close, this);
+      installMessageFilter(widget, this);
       return widget;
     });
   }
 
   /**
-   * Close the widget and dispose of it.
+   * Close the widget.
    */
-  close(widget: Widget) {
+  close(widget: Widget): boolean {
     let index = this._openFiles.indexOf(widget);
     if (index === -1) {
-      return;
+      return false;
     }
     widget.dispose();
     this._openFiles.splice(index, 1);
+    return true;
+  }
+
+  /**
+   * Filter messages on the widget.
+   */
+  filterMessage(handler: IMessageHandler, msg: Message): boolean {
+    if (msg.type == 'close-request') {
+      return this.close(handler as Widget);
+    }
+    return false;
+  }
+
+  /**
+   * Create the widget from an `IContentsModel`.
+   *
+   * #### Notes
+   * This is intended to be subclassed by other file handlers.
+   */
+  protected createWidget(contents: IContentsModel): Widget {
+    let widget = new CodeMirrorWidget();
+    widget.editor.getDoc().setValue(contents.content);
+    loadModeByFileName(widget.editor, contents.name);
+    widget.title.text = contents.name;
+    return widget;
+  }
+
+  /**
+   * Get the path from the old path widget title text.
+   *
+   * #### Notes
+   * This is intended to be subclassed by other file handlers.
+   */
+  protected getNewPath(oldPath: string, title: string): string {
+    let dirname = oldPath.slice(0, oldPath.lastIndexOf('/') + 1);
+    return dirname + title;
   }
 
   /**
    * Handle a change to one of the widget titles.
    */
-  protected titleChanged(title: Title, args: IChangedArgs<any>) {
+  protected titleChanged(title: Title, args: IChangedArgs<any>): void {
     let widget = arrays.find(this._openFiles,
       (w, index) => { return w.title === title; });
     if (widget === void 0) {
@@ -112,10 +145,9 @@ class FileHandler {
     }
     if (args.name == 'text') {
       let oldPath = pathProperty.get(widget);
-      let newPath = oldPath.slice(0, oldPath.lastIndexOf('/') + 1);
-      newPath += args.newValue;
-      this._manager.rename(oldPath, newPath);
-      pathProperty.set(widget, newPath);
+      let newPath = this.getNewPath(oldPath, args.newValue);
+      this._manager.rename(oldPath, newPath).then(() =>
+        pathProperty.set(widget, newPath));
     }
   }
 
@@ -135,45 +167,20 @@ const pathProperty = new Property<Widget, string>({
 
 
 /**
- * The namespace for the file handler private data.
+ * Load a codemirror mode by name.
  */
-namespace Private {
-  export
-  class Editor extends CodeMirrorWidget {
-
-    get closed(): ISignal<Editor, void> {
-      return closedSignal.bind(this);
-    }
-
-    protected onCloseRequest(msg: Message): void {
-      super.onCloseRequest(msg);
-      this.closed.emit(void 0);
-    }
+function loadModeByFileName(editor: CodeMirror.Editor, filename: string): void {
+  let info = CodeMirror.findModeByFileName(filename);
+  if (!info) {
+    editor.setOption('mode', 'null');
+    return;
   }
-
-  /**
-   * A signal emitted when an editor closes.
-   */
-  export
-  const closedSignal = new Signal<Editor, void>();
-
-  /**
-   * Load a codemirror mode by name.
-   */
-  export
-  function loadModeByFileName(editor: CodeMirror.Editor, filename: string): void {
-    let info = CodeMirror.findModeByFileName(filename);
-    if (!info) {
-      editor.setOption('mode', 'null');
-      return;
-    }
-    if (CodeMirror.modes.hasOwnProperty(info.mode)) {
+  if (CodeMirror.modes.hasOwnProperty(info.mode)) {
+    editor.setOption('mode', info.mime);
+  } else {
+    // Load the remaining mode bundle asynchronously.
+    require([`codemirror/mode/${info.mode}/${info.mode}.js`], () => {
       editor.setOption('mode', info.mime);
-    } else {
-      // Load the remaining mode bundle asynchronously.
-      require([`codemirror/mode/${info.mode}/${info.mode}.js`], () => {
-        editor.setOption('mode', info.mime);
-      });
-    }
+    });
   }
 }

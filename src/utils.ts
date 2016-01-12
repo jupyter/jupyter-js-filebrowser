@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-  okButton, showDialog
+  IButtonItem, okButton, showDialog
 } from 'jupyter-js-utils';
 
 import {
@@ -40,7 +40,7 @@ const CONTENTS_MIME = 'application/x-jupyter-icontents';
  * An error message dialog to show in the filebrowser widget.
  */
 export
-function showErrorMessage(host: Widget, title: string, error: Error) {
+function showErrorMessage(host: Widget, title: string, error: Error): Promise<void> {
   console.error(error);
   if (!host.isAttached) {
     return;
@@ -56,7 +56,7 @@ function showErrorMessage(host: Widget, title: string, error: Error) {
     body: error.message,
     buttons: [okButton]
   }
-  showDialog(options);
+  return showDialog(options).then(() => {});
 }
 
 

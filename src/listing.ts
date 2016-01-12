@@ -248,18 +248,14 @@ class DirListing extends Widget {
     if (!this._clipboard.length) {
       return;
     }
-    let promises: Promise<void>[] = [];
+    let promises: Promise<IContentsModel>[] = [];
     for (let path of this._clipboard) {
       if (this._isCut) {
         let parts = path.split('/');
         let name = parts[parts.length - 1];
-        promises.push(this._model.rename(path, name).catch(error =>
-          showErrorMessage(this, 'Paste Error', error)
-        ));
+        promises.push(this._model.rename(path, name));
       } else {
-        promises.push(this._model.copy(path, '.').catch(error =>
-          showErrorMessage(this, 'Paste Error', error)
-        ));
+        promises.push(this._model.copy(path, '.'));
       }
     }
     // Remove any cut modifiers.
@@ -270,7 +266,10 @@ class DirListing extends Widget {
     this._clipboard = [];
     this._isCut = false;
     this.node.classList.remove(CLIPBOARD_CLASS);
-    return Promise.all(promises).then(() => this._model.refresh());
+    return Promise.all(promises).then(
+      () => this._model.refresh(),
+      error => showErrorMessage(this, 'Paste Error', error)
+    );
   }
 
   /**
@@ -279,28 +278,29 @@ class DirListing extends Widget {
   delete(): Promise<void> {
     let promises: Promise<void>[] = [];
     for (let name of this._selectedNames) {
-      promises.push(this._model.delete(name).catch(error =>
-        showErrorMessage(this, 'Delete file', error)
-      ));
+      promises.push(this._model.delete(name));
     }
-    return Promise.all(promises).then(() => this._model.refresh());
+    return Promise.all(promises).then(
+      () => this._model.refresh(),
+      error => showErrorMessage(this, 'Delete file', error)
+    );
   }
 
   /**
    * Duplicate the currently selected item(s).
    */
   duplicate(): Promise<void> {
-    let promises: Promise<void>[] = [];
+    let promises: Promise<IContentsModel>[] = [];
     for (let index of this._model.selected) {
       let item = this._model.items[index];
       if (item.type !== 'directory') {
-        promises.push(this._model.copy(item.path, this._model.path)
-        .catch(error =>
-          showErrorMessage(this, 'Duplicate file', error)
-        ));
+        promises.push(this._model.copy(item.path, this._model.path));
       }
     }
-    return Promise.all(promises).then(() => this._model.refresh());
+    return Promise.all(promises).then(
+      () => this._model.refresh(),
+      error => showErrorMessage(this, 'Duplicate file', error)
+    );
   }
 
   /**
@@ -326,12 +326,13 @@ class DirListing extends Widget {
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
       if (this._items[index].classList.contains(SELECTED_CLASS)) {
-        promises.push(this._model.shutdown(sessionId).catch(error =>
-          showErrorMessage(this, 'Shutdown kernel', error)
-        ));
+        promises.push(this._model.shutdown(sessionId));
       }
     }
-    return Promise.all(promises).then(() => this._model.refresh());
+    return Promise.all(promises).then(
+      () => this._model.refresh(),
+      error => showErrorMessage(this, 'Shutdown kernel', error)
+    );
   }
 
   /**
@@ -573,6 +574,8 @@ class DirListing extends Widget {
 
     this._pendingSelect = false;
 
+    this._editNode.blur();
+
     // Find a valid double click target.
     let node = event.target as HTMLElement;
     while (node && node !== this.node) {
@@ -667,7 +670,7 @@ class DirListing extends Widget {
     var path = this._model.items[index].name + '/';
 
     // Move all of the items.
-    let promises: Promise<void>[] = [];
+    let promises: Promise<IContentsModel>[] = [];
     for (let index of this._model.selected) {
       var original = this._model.items[index].name;
       var newPath = path + original;
@@ -678,7 +681,7 @@ class DirListing extends Widget {
             host: this.node,
             body: `"${newPath}" already exists, overwrite?`
           }
-          showDialog(options).then(button => {
+          return showDialog(options).then(button => {
             if (button.text === 'OK') {
               return this._model.delete(newPath).then(() => {
                 return this._model.rename(original, newPath);
@@ -686,10 +689,12 @@ class DirListing extends Widget {
             }
           });
         }
-      }).catch(error => showErrorMessage(this, 'Move Error', error)
-      ));
+      }));
     }
-    Promise.all(promises).then(() => this._model.refresh());
+    Promise.all(promises).then(
+      () => this._model.refresh(),
+      error => showErrorMessage(this, 'Move Error', error)
+    );
   }
 
   /**
