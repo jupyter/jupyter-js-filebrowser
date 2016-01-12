@@ -3,7 +3,7 @@
 'use strict';
 
 import {
-  IButtonItem, okButton, showDialog
+  okButton, showDialog
 } from 'jupyter-js-utils';
 
 import {
