@@ -407,6 +407,8 @@ class DirListing extends Widget {
     node.removeEventListener('p-dragleave', this);
     node.removeEventListener('p-dragover', this);
     node.removeEventListener('p-drop', this);
+    document.removeEventListener('mousemove', this, true);
+    document.removeEventListener('mouseup', this, true);
   }
 
   /**
@@ -529,6 +531,7 @@ class DirListing extends Widget {
   private _evtMouseup(event: MouseEvent): void {
     if (event.button !== 0 || !this._drag) {
       document.removeEventListener('mousemove', this, true);
+      document.removeEventListener('mouseup', this, true);
       return;
     }
     event.preventDefault();
