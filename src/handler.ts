@@ -17,8 +17,16 @@ import {
 } from 'phosphor-codemirror';
 
 import {
+  Message
+} from 'phosphor-messaging';
+
+import {
   IChangedArgs, Property
 } from 'phosphor-properties';
+
+import {
+  ISignal, Signal
+} from 'phosphor-signaling';
 
 import {
   Widget, Title
@@ -49,28 +57,44 @@ class FileHandler {
   }
 
   /**
+   * Get the list of file regexes supported by the handler.
+   *
+   * This implementation supports any name.
+   */
+  get fileRegexes(): string[] {
+    return ['.*']
+  }
+
+  /**
    * Open a path and return a populated widget.
    */
   open(path: string): Promise<Widget> {
+    let index = arrays.findIndex(this._openFiles,
+      (widget, ind) => { return widget.path === path; });
+    if (index !== -1) {
+      return Promise.resolve(this._openFiles[index]);
+    }
     return this._manager.get(path).then(contents => {
-      let widget = new CodeMirrorWidget();
+      let widget = new Private.Editor();
       widget.title.text = contents.name;
       widget.title.closable = true;
       widget.title.changed.connect(this._titleChanged, this);
-      Private.pathProperty.set(widget, path);
+      widget.path = path;
       this._openFiles.push(widget);
       widget.editor.getDoc().setValue(contents.content);
       Private.loadModeByFileName(widget.editor, contents.name);
-      widget.disposed.connect(close, this);
+      widget.disposed.connect(this.close, this);
+      widget.closed.connect(this.close, this);
       return widget;
     });
   }
 
   close(widget: Widget) {
-    let index = this._openFiles.indexOf(widget);
+    let index = this._openFiles.indexOf(widget as Private.Editor);
     if (index === -1) {
       return;
     }
+    widget.dispose();
     this._openFiles.splice(index, 1);
   }
 
@@ -84,16 +108,16 @@ class FileHandler {
       return
     }
     if (args.name == 'text') {
-      let oldPath = Private.pathProperty.get(widget);
+      let oldPath = widget.path;
       let newPath = oldPath.slice(0, oldPath.lastIndexOf('/') + 1);
       newPath += args.newValue;
-      Private.pathProperty.set(widget, newPath);
       this._manager.rename(oldPath, newPath);
+      widget.path = newPath;
     }
   }
 
   private _manager: IContentsManager;
-  private _openFiles: Widget[] = [];
+  private _openFiles: Private.Editor[] = [];
 }
 
 
@@ -101,14 +125,26 @@ class FileHandler {
  * The namespace for the file handler private data.
  */
 namespace Private {
+  export
+  class Editor extends CodeMirrorWidget {
+
+    path: string;
+
+    get closed(): ISignal<Editor, void> {
+      return closedSignal.bind(this);
+    }
+
+    protected onCloseRequest(msg: Message): void {
+      super.onCloseRequest(msg);
+      this.closed.emit(void 0);
+    }
+  }
+
   /**
-   * A private attached property for the widget path.
+   * A signal emitted when an editor closes.
    */
   export
-  const pathProperty = new Property<Widget, string>({
-    name: 'path',
-    value: '',
-  });
+  const closedSignal = new Signal<Editor, void>();
 
   /**
    * Load a codemirror mode by name.
