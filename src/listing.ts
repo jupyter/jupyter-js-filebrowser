@@ -383,7 +383,6 @@ class DirListing extends Widget {
     super.onAfterAttach(msg);
     let node = this.node;
     node.addEventListener('mousedown', this);
-    node.addEventListener('mouseup', this);
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
     node.addEventListener('p-dragenter', this);
