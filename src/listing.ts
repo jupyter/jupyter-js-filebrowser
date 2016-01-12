@@ -399,10 +399,8 @@ class DirListing extends Widget {
     super.onBeforeDetach(msg);
     let node = this.node;
     node.removeEventListener('mousedown', this);
-    node.removeEventListener('mouseup', this);
     node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
-    node.removeEventListener('mousemove', this);
     node.removeEventListener('p-dragenter', this);
     node.removeEventListener('p-dragleave', this);
     node.removeEventListener('p-dragover', this);
