@@ -260,7 +260,7 @@ class BreadCrumbs extends Widget {
         showErrorMessage(this, 'Move Error', error);
       }));
     }
-    Promise.all(promises).then(this._model.refresh);
+    Promise.all(promises).then(() => this._model.refresh());
   }
 
   private _model: FileBrowserModel = null;

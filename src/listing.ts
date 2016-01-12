@@ -270,7 +270,7 @@ class DirListing extends Widget {
     this._clipboard = [];
     this._isCut = false;
     this.node.classList.remove(CLIPBOARD_CLASS);
-    return Promise.all(promises).then(this._model.refresh);
+    return Promise.all(promises).then(() => this._model.refresh());
   }
 
   /**
@@ -283,7 +283,7 @@ class DirListing extends Widget {
         showErrorMessage(this, 'Delete file', error)
       ));
     }
-    return Promise.all(promises).then(this._model.refresh);
+    return Promise.all(promises).then(() => this._model.refresh());
   }
 
   /**
@@ -300,7 +300,7 @@ class DirListing extends Widget {
         ));
       }
     }
-    return Promise.all(promises).then(this._model.refresh);
+    return Promise.all(promises).then(() => this._model.refresh());
   }
 
   /**
@@ -331,7 +331,7 @@ class DirListing extends Widget {
         ));
       }
     }
-    return Promise.all(promises).then(this._model.refresh);
+    return Promise.all(promises).then(() => this._model.refresh());
   }
 
   /**
@@ -689,7 +689,7 @@ class DirListing extends Widget {
       }).catch(error => showErrorMessage(this, 'Move Error', error)
       ));
     }
-    Promise.all(promises).then(this._model.refresh);
+    Promise.all(promises).then(() => this._model.refresh());
   }
 
   /**
