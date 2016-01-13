@@ -58,10 +58,10 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   /**
-   * Get the list of file extensions supported by the handler.
+   * Get the list of file extensions explicitly supported by the handler.
    */
   get fileExtensions(): string[] {
-    return ['.txt']
+    return []
   }
 
   /**
