@@ -179,17 +179,6 @@ class FileHandler extends AbstractFileHandler {
     widget.title.text = contents.name;
     return widget;
   }
-
-  /**
-   * Get the path from the old path widget title text.
-   *
-   * #### Notes
-   * This is intended to be subclassed by other file handlers.
-   */
-  protected getNewPath(oldPath: string, title: string): string {
-    let dirname = oldPath.slice(0, oldPath.lastIndexOf('/') + 1);
-    return dirname + title;
-  }
 }
 
 
