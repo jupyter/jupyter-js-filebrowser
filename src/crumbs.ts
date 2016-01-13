@@ -245,7 +245,7 @@ class BreadCrumbs extends Widget {
         if (error.message.indexOf('409') !== -1) {
           let options = {
             title: 'Overwrite file?',
-            host: this.node,
+            host: this.node.parentNode as HTMLElement,
             body: `"${newPath}" already exists, overwrite?`
           }
           return showDialog(options).then(button => {
