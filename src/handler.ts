@@ -58,12 +58,10 @@ class FileHandler implements IMessageFilter {
   }
 
   /**
-   * Get the list of file regexes supported by the handler.
-   *
-   * This implementation supports any name.
+   * Get the list of file extensions supported by the handler.
    */
-  get fileRegexes(): string[] {
-    return ['.*']
+  get fileExtensions(): string[] {
+    return ['.txt']
   }
 
   /**
