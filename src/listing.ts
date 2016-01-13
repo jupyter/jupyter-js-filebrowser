@@ -678,7 +678,7 @@ class DirListing extends Widget {
         if (error.message.indexOf('409') !== -1) {
           let options = {
             title: 'Overwrite file?',
-            host: this.node,
+            host: this.parent.node,
             body: `"${newPath}" already exists, overwrite?`
           }
           return showDialog(options).then(button => {
@@ -857,7 +857,7 @@ class DirListing extends Widget {
             error.message.indexOf('already exists') !== -1) {
           let options = {
             title: 'Overwrite file?',
-            host: this.node.parentNode as HTMLElement,
+            host: this.parent.node,
             body: `"${newPath}" already exists, overwrite?`
           }
           showDialog(options).then(button => {
