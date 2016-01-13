@@ -153,7 +153,6 @@ abstract class AbstractFileHandler implements IMessageFilter {
 }
 
 
-
 /**
  * An implementation of a file handler.
  */
