@@ -58,14 +58,44 @@
 }
 
 
-.jp-DirListing-container {
-  overflow-y: auto;
-  overflow-x: auto;
-  flex: 1 1 auto;
+.jp-DirListing-header {
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 300px;
+  overflow: hidden;
+}
+
+
+.jp-DirListing-headerFile {
+  flex: 1 0 auto;
+}
+
+
+.jp-DirListing-headerModified {
+  flex: 0 0 95px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: right;
+  padding-right: 5px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 
 .jp-DirListing {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.jp-DirListing-container {
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+
+.jp-DirListing-list {
   display: table;
   width: 100%;
   margin: 0;
