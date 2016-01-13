@@ -48,7 +48,7 @@ import 'codemirror/mode/gfm/gfm';
  * An implementation of a file handler.
  */
 export
-class FileHandler implements IMessageFilter {
+abstract class AbstractFileHandler implements IMessageFilter {
 
   /**
    * Construct a new source file handler.
@@ -73,7 +73,7 @@ class FileHandler implements IMessageFilter {
     if (index !== -1) {
       return Promise.resolve(this._openFiles[index]);
     }
-    return this._manager.get(path).then(contents => {
+    return this.getContents(this._manager, path).then(contents => {
       let widget = this.createWidget(contents);
       widget.title.closable = true;
       widget.title.changed.connect(this.titleChanged, this);
@@ -108,18 +108,17 @@ class FileHandler implements IMessageFilter {
   }
 
   /**
+   * Get file contents given a path.
+   */
+  protected abstract getContents(manager: IContentsManager, path: string): Promise<IContentsModel>;
+
+  /**
    * Create the widget from an `IContentsModel`.
    *
    * #### Notes
    * This is intended to be subclassed by other file handlers.
    */
-  protected createWidget(contents: IContentsModel): Widget {
-    let widget = new CodeMirrorWidget();
-    widget.editor.getDoc().setValue(contents.content);
-    loadModeByFileName(widget.editor, contents.name);
-    widget.title.text = contents.name;
-    return widget;
-  }
+  protected abstract createWidget(contents: IContentsModel): Widget;
 
   /**
    * Get the path from the old path widget title text.
@@ -151,6 +150,35 @@ class FileHandler implements IMessageFilter {
 
   private _manager: IContentsManager;
   private _openFiles: Widget[] = [];
+}
+
+
+/**
+ * An implementation of a file handler.
+ */
+export
+class FileHandler extends AbstractFileHandler {
+
+  /**
+   * Get file contents given a path.
+   */
+  protected getContents(manager: IContentsManager, path: string): Promise<IContentsModel> {
+    return manager.get(path, { type: 'file' });
+  }
+
+  /**
+   * Create the widget from an `IContentsModel`.
+   *
+   * #### Notes
+   * This is intended to be subclassed by other file handlers.
+   */
+  protected createWidget(contents: IContentsModel): Widget {
+    let widget = new CodeMirrorWidget();
+    widget.editor.getDoc().setValue(contents.content);
+    loadModeByFileName(widget.editor, contents.name);
+    widget.title.text = contents.name;
+    return widget;
+  }
 }
 
 
