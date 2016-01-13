@@ -111,7 +111,7 @@ class FileButtons extends Widget {
         if (error.message.indexOf('already exists') !== -1) {
           let options = {
             title: 'Overwrite file?',
-            host: this.node.parentNode as HTMLElement,
+            host: this.parent.node,
             body: `"${file.name}" already exists, overwrite?`
           }
           return showDialog(options).then(button => {
