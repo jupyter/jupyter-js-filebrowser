@@ -77,6 +77,14 @@ const REFRESH_DURATION = 30000;
  */
 export
 class FileBrowserWidget extends Widget {
+  /**
+   * The widget factory for the File Browser.
+   *
+   * This should be overridden to provide a factory.
+   */
+  static widgetFactory(): Widget {
+    return new Widget();
+  }
 
   /**
    * Construct a new file browser.
