@@ -166,7 +166,7 @@ const RENAME_DURATION = 500;
 const DRAG_THRESHOLD = 5;
 
 /**
- * The factory MIME type supported by the dock panel.
+ * The factory MIME type supported by phosphor dock panels.
  */
 const FACTORY_MIME = 'application/x-phosphor-widget-factory';
 
