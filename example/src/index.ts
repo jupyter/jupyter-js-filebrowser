@@ -52,6 +52,11 @@ function main(): void {
   let fbWidget = new FileBrowserWidget(fbModel);
   let handler = new FileHandler(contentsManager);
 
+  FileBrowserWidget.widgetFactory = () => {
+    let item = fbModel.items[fbModel.selected[0]];
+    return handler.open(item.path);
+  };
+
   let panel = new SplitPanel();
   panel.addChild(fbWidget);
   let dock = new DockPanel();

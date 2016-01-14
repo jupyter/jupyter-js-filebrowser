@@ -45,8 +45,8 @@ import {
 } from 'phosphor-widget';
 
 import {
-  FileBrowserModel
-} from './model';
+  FileBrowserModel, FileBrowserWidget
+} from './index';
 
 import {
   CONTENTS_MIME, DROP_TARGET_CLASS, hitTestNodes, showErrorMessage
@@ -164,6 +164,11 @@ const RENAME_DURATION = 500;
  * The threshold in pixels to start a drag event.
  */
 const DRAG_THRESHOLD = 5;
+
+/**
+ * The factory MIME type supported by phosphor dock panels.
+ */
+const FACTORY_MIME = 'application/x-phosphor-widget-factory';
 
 
 /**
@@ -759,6 +764,13 @@ class DirListing extends Widget {
       proposedAction: DropAction.Move
     });
     this._drag.mimeData.setData(CONTENTS_MIME, null);
+    if (this._model.selected.length == 1) {
+      let item = this._model.items[this._model.selected[0]];
+      if (item.type !== 'directory') {
+        this._drag.mimeData.setData(FACTORY_MIME,
+          FileBrowserWidget.widgetFactory);
+      }
+    }
 
     // Start the drag and remove the mousemove listener.
     this._drag.start(clientX, clientY).then(action => {
