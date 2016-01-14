@@ -115,7 +115,10 @@ class FileBrowserModel implements IDisposable {
    */
   cd(path: string): Promise<void> {
     let normalizePath = Private.normalizePath;
-    if (path != '') {
+    if (path === '.' && this._model === null) {
+      path = '';
+    }
+    if (path !== '') {
       path = normalizePath(this._model.path, path);
     }
     return this._contentsManager.get(path, {}).then(contents => {
