@@ -59,7 +59,8 @@ function main(): void {
   dock.spacing = 8;
 
   fbWidget.openRequested.connect((fb, path) => {
-    handler.open(path).then(editor => dock.insertTabAfter(editor));
+    let editor = handler.open(path);
+    dock.insertTabAfter(editor);
   });
 
   let contextMenu = new Menu([
