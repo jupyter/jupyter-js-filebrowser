@@ -217,7 +217,7 @@ class FileHandler extends AbstractFileHandler {
       let uri = `data:image/${ext};base64,${model.content}`;
       var img = new Image();
       var canvas = widget.node.firstChild as HTMLCanvasElement;
-      img.addEventListener("load", () => {
+      img.addEventListener('load', () => {
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
         let context = canvas.getContext('2d')
