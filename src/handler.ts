@@ -177,13 +177,6 @@ abstract class AbstractFileHandler implements IMessageFilter {
 export
 class FileHandler extends AbstractFileHandler {
   /**
-   * Get the list of file extensions explicitly supported by the handler.
-   */
-  get fileExtensions(): string[] {
-    return ['.png', '.gif', '.jpeg', '.jpg']
-  }
-
-  /**
    * Get file contents given a path.
    */
   protected getContents(path: string): Promise<IContentsModel> {
@@ -194,16 +187,7 @@ class FileHandler extends AbstractFileHandler {
    * Create the widget from an `IContentsModel`.
    */
   protected createWidget(path: string): Widget {
-    let ext = path.split('.').pop();
-    if (ext === 'png' || ext === 'gif' || ext === 'jpeg' || ext === 'jpg') {
-      var widget = new Widget();
-      let canvas = document.createElement('canvas');
-      widget.node.appendChild(canvas);
-      widget.node.style.overflowX = 'auto';
-      widget.node.style.overflowY = 'auto';
-    } else {
-      var widget = new CodeMirrorWidget() as Widget;
-    }
+    let widget = new CodeMirrorWidget() as Widget;
     widget.title.text = path.split('/').pop();
     return widget;
   }
@@ -212,23 +196,9 @@ class FileHandler extends AbstractFileHandler {
    * Populate a widget from `IContentsModel`.
    */
   protected populateWidget(widget: Widget, model: IContentsModel): Promise<void> {
-    let ext = model.path.split('.').pop();
-    if (ext === 'png' || ext === 'gif' || ext === 'jpeg' || ext === 'jpg') {
-      let uri = `data:image/${ext};base64,${model.content}`;
-      var img = new Image();
-      var canvas = widget.node.firstChild as HTMLCanvasElement;
-      img.addEventListener('load', () => {
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        let context = canvas.getContext('2d')
-        context.drawImage(img, 0, 0);
-      });
-      img.src = uri;
-    } else {
-      let mirror = widget as CodeMirrorWidget;
-      mirror.editor.getDoc().setValue(model.content);
-      loadModeByFileName(mirror.editor, model.name);
-    }
+    let mirror = widget as CodeMirrorWidget;
+    mirror.editor.getDoc().setValue(model.content);
+    loadModeByFileName(mirror.editor, model.name);
     return Promise.resolve(void 0);
   }
 }
