@@ -54,7 +54,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Construct a new source file handler.
    */
   constructor(manager: IContentsManager) {
-    this._manager = manager;
+    this.manager = manager;
   }
 
   /**
@@ -65,35 +65,48 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   /**
-   * Open a path and return a populated widget.
+   * A signal emitted when the file handler has finished loading the
+   * contents of the widget.
    */
-  open(path: string): Promise<Widget> {
-    let index = arrays.findIndex(this._openFiles,
+  get finished(): ISignal<AbstractFileHandler, string> {
+    return finishedSignal.bind(this);
+  }
+
+  /**
+   * Open a path and return a widget.
+   */
+  open(path: string): Widget {
+    let index = arrays.findIndex(this.openFiles,
       (widget, ind) => { return pathProperty.get(widget) === path; });
     if (index !== -1) {
-      return Promise.resolve(this._openFiles[index]);
+      return this.openFiles[index];
     }
-    return this.getContents(this._manager, path).then(contents => {
-      let widget = this.createWidget(contents);
-      widget.title.closable = true;
-      widget.title.changed.connect(this.titleChanged, this);
-      pathProperty.set(widget, path);
-      this._openFiles.push(widget);
-      installMessageFilter(widget, this);
-      return widget;
+    var widget = this.createWidget(path);
+    widget.title.closable = true;
+    widget.title.changed.connect(this.titleChanged, this);
+    pathProperty.set(widget, path);
+    this.openFiles.push(widget);
+    installMessageFilter(widget, this);
+
+    this.getContents(path).then(contents => {
+      this.populateWidget(widget, contents).then(
+        () => this.finished.emit(path)
+      );
     });
+
+    return widget;
   }
 
   /**
    * Close the widget.
    */
   close(widget: Widget): boolean {
-    let index = this._openFiles.indexOf(widget);
+    let index = this.openFiles.indexOf(widget);
     if (index === -1) {
       return false;
     }
     widget.dispose();
-    this._openFiles.splice(index, 1);
+    this.openFiles.splice(index, 1);
     return true;
   }
 
@@ -110,15 +123,17 @@ abstract class AbstractFileHandler implements IMessageFilter {
   /**
    * Get file contents given a path.
    */
-  protected abstract getContents(manager: IContentsManager, path: string): Promise<IContentsModel>;
+  protected abstract getContents(path: string): Promise<IContentsModel>;
 
   /**
-   * Create the widget from an `IContentsModel`.
-   *
-   * #### Notes
-   * This is intended to be subclassed by other file handlers.
+   * Create the widget from a path.
    */
-  protected abstract createWidget(contents: IContentsModel): Widget;
+  protected abstract createWidget(path: string): Widget;
+
+  /**
+   * Populate a widget from `IContentsModel`.
+   */
+  protected abstract populateWidget(widget: Widget, model: IContentsModel): Promise<void>;
 
   /**
    * Get the path from the old path widget title text.
@@ -135,7 +150,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Handle a change to one of the widget titles.
    */
   protected titleChanged(title: Title, args: IChangedArgs<any>): void {
-    let widget = arrays.find(this._openFiles,
+    let widget = arrays.find(this.openFiles,
       (w, index) => { return w.title === title; });
     if (widget === void 0) {
       return
@@ -143,13 +158,13 @@ abstract class AbstractFileHandler implements IMessageFilter {
     if (args.name == 'text') {
       let oldPath = pathProperty.get(widget);
       let newPath = this.getNewPath(oldPath, args.newValue);
-      this._manager.rename(oldPath, newPath).then(() =>
+      this.manager.rename(oldPath, newPath).then(() =>
         pathProperty.set(widget, newPath));
     }
   }
 
-  private _manager: IContentsManager;
-  private _openFiles: Widget[] = [];
+  protected manager: IContentsManager;
+  protected openFiles: Widget[] = [];
 }
 
 
@@ -158,26 +173,60 @@ abstract class AbstractFileHandler implements IMessageFilter {
  */
 export
 class FileHandler extends AbstractFileHandler {
+  /**
+   * Get the list of file extensions explicitly supported by the handler.
+   */
+  get fileExtensions(): string[] {
+    return ['.png', '.gif', '.jpeg', '.jpg']
+  }
 
   /**
    * Get file contents given a path.
    */
-  protected getContents(manager: IContentsManager, path: string): Promise<IContentsModel> {
-    return manager.get(path, { type: 'file' });
+  protected getContents(path: string): Promise<IContentsModel> {
+    return this.manager.get(path, { type: 'file' });
   }
 
   /**
    * Create the widget from an `IContentsModel`.
-   *
-   * #### Notes
-   * This is intended to be subclassed by other file handlers.
    */
-  protected createWidget(contents: IContentsModel): Widget {
-    let widget = new CodeMirrorWidget();
-    widget.editor.getDoc().setValue(contents.content);
-    loadModeByFileName(widget.editor, contents.name);
-    widget.title.text = contents.name;
+  protected createWidget(path: string): Widget {
+    let ext = path.split('.').pop();
+    if (ext === 'png' || ext === 'gif' || ext === 'jpeg' || ext === 'jpg') {
+      var widget = new Widget();
+      let canvas = document.createElement('canvas');
+      widget.node.appendChild(canvas);
+      widget.node.style.overflowX = 'auto';
+      widget.node.style.overflowY = 'auto';
+    } else {
+      var widget = new CodeMirrorWidget() as Widget;
+    }
+    widget.title.text = path.split('/').pop();
     return widget;
+  }
+
+  /**
+   * Populate a widget from `IContentsModel`.
+   */
+  protected populateWidget(widget: Widget, model: IContentsModel): Promise<void> {
+    let ext = model.path.split('.').pop();
+    if (ext === 'png' || ext === 'gif' || ext === 'jpeg' || ext === 'jpg') {
+      let uri = `data:image/${ext};base64,${model.content}`;
+      var img = new Image();
+      var canvas = widget.node.firstChild as HTMLCanvasElement;
+      img.addEventListener("load", () => {
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        let context = canvas.getContext('2d')
+        context.drawImage(img, 0, 0);
+      });
+      img.src = uri;
+    } else {
+      let mirror = widget as CodeMirrorWidget;
+      mirror.editor.getDoc().setValue(model.content);
+      loadModeByFileName(mirror.editor, model.name);
+    }
+    return Promise.resolve(void 0);
   }
 }
 
@@ -190,6 +239,14 @@ const pathProperty = new Property<Widget, string>({
   name: 'path',
   value: ''
 });
+
+
+/**
+ * A signal finished when a file handler has finished populating a
+ * widget.
+ */
+const
+finishedSignal = new Signal<AbstractFileHandler, string>();
 
 
 /**
