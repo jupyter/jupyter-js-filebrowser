@@ -78,10 +78,7 @@ const REFRESH_DURATION = 30000;
 export
 class FileBrowserWidget extends Widget {
   /**
-   * The widget factory for the File Browser for dragging a file to
-   * another widget.
-   *
-   * This should be overridden to provide a factory.
+   * The widget factory for dragging a file into a dock panel.
    */
   static widgetFactory(): Widget {
     return void 0;
