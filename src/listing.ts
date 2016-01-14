@@ -53,6 +53,27 @@ import {
 } from './utils';
 
 
+
+/**
+ * The class name added to FileBrowser list area.
+ */
+const DIRLISTING_CLASS = 'jp-DirListing';
+
+/**
+ * The class name added to FileBrowser list header area.
+ */
+const LIST_HEADER_CLASS = 'jp-DirListing-header';
+
+/**
+ * The class name added to FileBrowser list header file item.
+ */
+const HEADER_FILE_CLASS = 'jp-DirListing-headerFile';
+
+/**
+ * The class name added to FileBrowser list header modified item.
+ */
+const HEADER_TIME_CLASS = 'jp-DirListing-headerModified';
+
 /**
  * The class name added to the Filebrowser list area container.
  */
@@ -61,7 +82,7 @@ const LIST_CONTAINER_CLASS = 'jp-DirListing-container';
 /**
  * The class name added to FileBrowser list area.
  */
-const LIST_AREA_CLASS = 'jp-DirListing';
+const LIST_AREA_CLASS = 'jp-DirListing-list';
 
 /**
  * The class name added to FileBrowser items.
@@ -156,9 +177,23 @@ class DirListing extends Widget {
    */
   static createNode(): HTMLElement {
     let node = document.createElement('div');
-    let content = document.createElement('ul') as HTMLElement;
-    content.className = LIST_AREA_CLASS;
-    node.appendChild(content);
+    let header = document.createElement('div');
+    let body = document.createElement('div');
+    let contents = document.createElement('ul');
+    header.className = LIST_HEADER_CLASS;
+    body.className = LIST_CONTAINER_CLASS;
+    contents.className = LIST_AREA_CLASS;
+    node.appendChild(header);
+    node.appendChild(body);
+    body.appendChild(contents);
+    let files = document.createElement('span');
+    let modified = document.createElement('span');
+    files.textContent = 'Files';
+    files.className = HEADER_FILE_CLASS;
+    modified.textContent = 'Last Modified';
+    modified.className = HEADER_TIME_CLASS;
+    header.appendChild(files);
+    header.appendChild(modified);
     return node;
   }
 
@@ -183,7 +218,7 @@ class DirListing extends Widget {
    */
   constructor(model: FileBrowserModel) {
     super();
-    this.addClass(LIST_CONTAINER_CLASS);
+    this.addClass(DIRLISTING_CLASS);
     this._model = model;
     this._model.refreshed.connect(this.update, this);
     this._editNode = document.createElement('input');
@@ -416,7 +451,7 @@ class DirListing extends Widget {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
-    let content = this.node.firstChild as HTMLElement;
+    let content = this.node.getElementsByClassName(LIST_AREA_CLASS)[0] as HTMLElement;
     let subtype = this.constructor as typeof DirListing;
 
     // Remove any excess item nodes.
