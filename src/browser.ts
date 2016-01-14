@@ -84,7 +84,7 @@ class FileBrowserWidget extends Widget {
    * This should be overridden to provide a factory.
    */
   static widgetFactory(): Widget {
-    return new Widget();
+    return void 0;
   }
 
   /**
