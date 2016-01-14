@@ -69,7 +69,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * contents of the widget.
    */
   get finished(): ISignal<AbstractFileHandler, string> {
-    return finishedSignal.bind(this);
+    return AbstractFileHandler.finishedSignal.bind(this);
   }
 
   /**
@@ -77,14 +77,17 @@ abstract class AbstractFileHandler implements IMessageFilter {
    */
   open(path: string): Widget {
     let index = arrays.findIndex(this.openFiles,
-      (widget, ind) => { return pathProperty.get(widget) === path; });
+      (widget, ind) => {
+        return AbstractFileHandler.pathProperty.get(widget) === path;
+      }
+    );
     if (index !== -1) {
       return this.openFiles[index];
     }
     var widget = this.createWidget(path);
     widget.title.closable = true;
     widget.title.changed.connect(this.titleChanged, this);
-    pathProperty.set(widget, path);
+    AbstractFileHandler.pathProperty.set(widget, path);
     this.openFiles.push(widget);
     installMessageFilter(widget, this);
 
@@ -156,10 +159,10 @@ abstract class AbstractFileHandler implements IMessageFilter {
       return
     }
     if (args.name == 'text') {
-      let oldPath = pathProperty.get(widget);
+      let oldPath = AbstractFileHandler.pathProperty.get(widget);
       let newPath = this.getNewPath(oldPath, args.newValue);
       this.manager.rename(oldPath, newPath).then(() =>
-        pathProperty.set(widget, newPath));
+        AbstractFileHandler.pathProperty.set(widget, newPath));
     }
   }
 
@@ -232,21 +235,27 @@ class FileHandler extends AbstractFileHandler {
 
 
 /**
- * An attached property with the widget path.
+ * A namespace for AbstractFileHandler statics.
  */
 export
-const pathProperty = new Property<Widget, string>({
-  name: 'path',
-  value: ''
-});
+namespace AbstractFileHandler {
+  /**
+   * An attached property with the widget path.
+   */
+  export
+  const pathProperty = new Property<Widget, string>({
+    name: 'path',
+    value: ''
+  });
 
 
-/**
- * A signal finished when a file handler has finished populating a
- * widget.
- */
-const
-finishedSignal = new Signal<AbstractFileHandler, string>();
+  /**
+   * A signal finished when a file handler has finished populating a
+   * widget.
+   */
+  export
+  const finishedSignal = new Signal<AbstractFileHandler, string>();
+}
 
 
 /**
