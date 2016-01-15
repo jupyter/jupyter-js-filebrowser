@@ -608,7 +608,7 @@ class DirListing extends Widget {
    * Handle the `'keydown'` event for the widget.
    */
   private _evtKeyDown(event: KeyboardEvent): void {
-    if (event.keyCode == 13) {
+    if (event.keyCode == 13 && this._selectedNames.length === 1) {
       event.stopPropagation();
       event.preventDefault();
       this._doRename();
