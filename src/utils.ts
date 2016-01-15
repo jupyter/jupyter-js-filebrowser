@@ -4,7 +4,7 @@
 
 import {
   okButton, showDialog
-} from 'jupyter-js-utils';
+} from 'jupyter-js-domutils';
 
 import {
   hitTest
