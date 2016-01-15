@@ -8,7 +8,7 @@ import {
 
 import {
   showDialog
-} from 'jupyter-js-utils';
+} from 'jupyter-js-domutils';
 
 import {
   DropAction, IDragEvent
