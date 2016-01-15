@@ -741,19 +741,19 @@ class DirListing extends Widget {
    * Start a drag event.
    */
   private _startDrag(index: number, clientX: number, clientY: number): void {
-    // Make sure the source node is selected.
+    // If the source node is not selected, use just that node.
+    let selected = this._model.selected;
     let source = this._items[index];
     if (!source.classList.contains(SELECTED_CLASS)) {
-      source.classList.add(SELECTED_CLASS);
-      this._updateSelected();
+      selected = [index];
     }
 
     // Create the drag image.
     var dragImage = source.cloneNode(true) as HTMLElement;
     dragImage.removeChild(dragImage.lastChild);
-    if (this._model.selected.length > 1) {
+    if (selected.length > 1) {
       let text = dragImage.getElementsByClassName(ITEM_TEXT_CLASS)[0];
-      text.textContent = '(' + this._model.selected.length + ')'
+      text.textContent = '(' + selected.length + ')'
     }
 
     // Set up the drag event.
@@ -764,8 +764,8 @@ class DirListing extends Widget {
       proposedAction: DropAction.Move
     });
     this._drag.mimeData.setData(CONTENTS_MIME, null);
-    if (this._model.selected.length == 1) {
-      let item = this._model.items[this._model.selected[0]];
+    if (selected.length == 1) {
+      let item = this._model.items[selected[0]];
       if (item.type !== 'directory') {
         this._drag.mimeData.setData(FACTORY_MIME,
           FileBrowserWidget.widgetFactory);
