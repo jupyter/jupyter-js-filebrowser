@@ -6,8 +6,9 @@
   "typings": "lib/index.d.ts",
   "dependencies": {
     "codemirror": "^5.10.0",
-    "jupyter-js-domutils": "^0.1.0",
+    "jupyter-js-domutils": "^0.1.1",
     "jupyter-js-services": "^0.4.0",
+    "jupyter-js-utils": "^0.2.7",
     "moment": "^2.10.6",
     "phosphor-command": "^0.5.0",
     "phosphor-disposable": "^1.0.5",
