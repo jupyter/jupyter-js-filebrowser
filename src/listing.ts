@@ -199,6 +199,7 @@ class DirListing extends Widget {
     modified.className = HEADER_TIME_CLASS;
     header.appendChild(files);
     header.appendChild(modified);
+    node.tabIndex = 1;
     return node;
   }
 
@@ -396,6 +397,8 @@ class DirListing extends Widget {
     case 'mousemove':
       this._evtMousemove(event as MouseEvent);
       break;
+    case 'keydown':
+      this._evtKeyDown(event as KeyboardEvent);
     case 'click':
       this._evtClick(event as MouseEvent);
       break
@@ -424,6 +427,7 @@ class DirListing extends Widget {
     super.onAfterAttach(msg);
     let node = this.node;
     node.addEventListener('mousedown', this);
+    node.addEventListener('keydown', this);
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
     node.addEventListener('p-dragenter', this);
@@ -439,6 +443,7 @@ class DirListing extends Widget {
     super.onBeforeDetach(msg);
     let node = this.node;
     node.removeEventListener('mousedown', this);
+    node.removeEventListener('keydown', this);
     node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
     node.removeEventListener('p-dragenter', this);
@@ -597,6 +602,17 @@ class DirListing extends Widget {
     }
 
     this._startDrag(data.index, event.clientX, event.clientY);
+  }
+
+  /**
+   * Handle the `'keydown'` event for the widget.
+   */
+  private _evtKeyDown(event: KeyboardEvent): void {
+    if (event.keyCode == 13 && this._selectedNames.length === 1) {
+      event.stopPropagation();
+      event.preventDefault();
+      this._doRename();
+    }
   }
 
   /**
