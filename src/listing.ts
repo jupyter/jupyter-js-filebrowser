@@ -975,7 +975,6 @@ namespace Private {
   /**
    * Create the icon node class name for an IContentsModel.
    */
-  export
   function createIconClass(item: IContentsModel): string {
     if (item.type === 'directory') {
       return ITEM_ICON_CLASS + ' ' + FOLDER_ICON_CLASS;
@@ -989,21 +988,22 @@ namespace Private {
   /**
    * Create the text node content for an IContentsModel.
    */
-  export
-  function createTextContent(item: IContentsModel): string {
-    return item.name;
+  function populateText(item: IContentsModel, node: HTMLElement): void {
+    node.textContent = item.name;
   }
 
   /**
    * Create the last modified node content for an IContentsModel.
    */
-  export
-  function createModifiedContent(item: IContentsModel): string {
+  function populateModified(item: IContentsModel, node: HTMLElement): void {
     if (item.last_modified) {
       let text = moment(item.last_modified).fromNow();
-      return text === 'a few seconds ago' ? 'seconds ago' : text;
+      text === 'a few seconds ago' ? 'seconds ago' : text;
+      node.textContent = text;
+      node.title = moment(item.last_modified).format("YYYY-MM-DD HH:mm")
     } else {
-      return '';
+      node.textContent = '';
+      node.title = '';
     }
   }
 
@@ -1016,8 +1016,8 @@ namespace Private {
     let text = (node.firstChild as HTMLElement).children[1] as HTMLElement;
     let modified = node.lastChild as HTMLElement;
     icon.className = createIconClass(item);
-    text.textContent = createTextContent(item);
-    modified.textContent = createModifiedContent(item);
+    populateText(item, text);
+    populateModified(item, modified);
     node.classList.remove(SELECTED_CLASS);
     node.classList.remove(CUT_CLASS);
   }
