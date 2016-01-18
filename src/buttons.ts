@@ -11,10 +11,6 @@ import {
 } from 'jupyter-js-domutils';
 
 import {
-  DelegateCommand, ICommand
-} from 'phosphor-command';
-
-import {
   Menu, MenuItem
 } from 'phosphor-menus';
 
@@ -82,12 +78,14 @@ class FileButtons extends Widget {
     }
 
     // Create the "new" menu.
-    let command = new DelegateCommand(args => {
-      this._model.newUntitled(args as string).catch(error =>
+    let handler = (item: MenuItem) => {
+      let type = item.text.toLowerCase();
+      if (type === 'text file') type = 'file';
+      this._model.newUntitled(type).catch(error =>
         showErrorMessage(this, 'New File Error', error)
        ).then(() => this._model.refresh());
-    });
-    this._newMenu = Private.createNewItemMenu(command);
+    };
+    this._newMenu = Private.createNewItemMenu(handler);
 
   }
 
@@ -187,22 +185,19 @@ namespace Private {
    * Create the "new" menu.
    */
   export
-  function createNewItemMenu(command: ICommand): Menu {
+  function createNewItemMenu(handler: (item: MenuItem) => void): Menu {
     return new Menu([
       new MenuItem({
         text: 'Notebook',
-        command: command,
-        commandArgs: 'notebook'
+        handler: handler,
       }),
       new MenuItem({
         text: 'Text File',
-        command: command,
-        commandArgs: 'file'
+        handler: handler,
       }),
       new MenuItem({
         text: 'Directory',
-        command: command,
-        commandArgs: 'directory'
+        handler: handler,
       })
     ]);
   }

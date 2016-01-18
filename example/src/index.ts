@@ -18,10 +18,6 @@ import {
 } from 'jupyter-js-services';
 
 import {
-  DelegateCommand
-} from 'phosphor-command';
-
-import {
   DockPanel
 } from 'phosphor-dockpanel';
 
@@ -73,70 +69,52 @@ function main(): void {
       text: '&Open',
       icon: 'fa fa-folder-open-o',
       shortcut: 'Ctrl+O',
-      command: new DelegateCommand(args => {
-        fbWidget.open();
-      })
+      handler: () => { fbWidget.open(); }
     }),
     new MenuItem({
       text: '&Rename',
       icon: 'fa fa-edit',
       shortcut: 'Ctrl+R',
-      command: new DelegateCommand(args => {
-        fbWidget.rename();
-      })
+      handler: () => { fbWidget.rename(); }
     }),
     new MenuItem({
       text: '&Delete',
       icon: 'fa fa-remove',
       shortcut: 'Ctrl+D',
-      command: new DelegateCommand(args => {
-        fbWidget.delete();
-      })
+      handler: () => { fbWidget.delete(); }
     }),
     new MenuItem({
       text: 'Duplicate',
       icon: 'fa fa-copy',
-      command: new DelegateCommand(args => {
-        fbWidget.duplicate();
-      })
+      handler: () => { fbWidget.duplicate(); }
     }),
     new MenuItem({
       text: 'Cut',
       icon: 'fa fa-cut',
       shortcut: 'Ctrl+X',
-      command: new DelegateCommand(args => {
-        fbWidget.cut();
-      })
+      handler: () => { fbWidget.cut(); }
     }),
     new MenuItem({
       text: '&Copy',
       icon: 'fa fa-copy',
       shortcut: 'Ctrl+C',
-      command: new DelegateCommand(args => {
-        fbWidget.copy();
-      })
+      handler: () => { fbWidget.copy(); }
     }),
     new MenuItem({
       text: '&Paste',
       icon: 'fa fa-paste',
       shortcut: 'Ctrl+V',
-      command: new DelegateCommand(args => {
-        fbWidget.paste();
-      })
+      handler: () => { fbWidget.paste(); }
     }),
     new MenuItem({
       text: 'Download',
       icon: 'fa fa-download',
-      command: new DelegateCommand(args => {
-        fbWidget.download();
-      })
+      handler: () => { fbWidget.download(); }
     }),
     new MenuItem({
       text: 'Shutdown Kernel',
       icon: 'fa fa-stop-circle-o',
-      command: new DelegateCommand(args => {
-        fbWidget.shutdownKernels();
-      })
+      handler: () => { fbWidget.shutdownKernels(); }
     }),
   ])
 
