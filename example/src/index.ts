@@ -45,9 +45,10 @@ function main(): void {
   let sessionsManager = new NotebookSessionManager({ baseUrl: baseUrl });
 
   let fbModel = new FileBrowserModel(contentsManager, sessionsManager);
-  let fbWidget = new FileBrowserWidget(fbModel, path => {
+  let fbWidget = new FileBrowserWidget(fbModel)
+  fbWidget.widgetFactory = path => {
     return handler.open(path);
-  });
+  };
   let handler = new FileHandler(contentsManager);
 
   let panel = new SplitPanel();
