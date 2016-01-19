@@ -391,6 +391,56 @@ class DirListing extends Widget {
   }
 
   /**
+   * Select next item.
+   */
+  selectNext(): void {
+    let index = -1;
+    if (this._selectedNames.length === 1) {
+      // Select the next item.
+      index = this._model.selected[this._model.selected.length -1 ] + 1;
+      if (index === this._items.length) index = 0;
+    } else if (this._selectedNames.length === 0) {
+      // Select the first item.
+      index = 0;
+    } else {
+      // Select the last selected item.
+      index = this._model.selected[this._model.selected.length - 1];
+    }
+    if (index !== -1) {
+      if (index === 0) {
+        this._selectItem(index, true);
+      } else {
+        this._selectItem(index, false);
+      }
+    }
+  }
+
+  /**
+   * Select previous item.
+   */
+  selectPrevious(): void {
+    let index = -1;
+    if (this._selectedNames.length === 1) {
+      // Select the previous item.
+      index = this._model.selected[0] - 1;
+      if (index === -1) index = this._items.length - 1;
+    } else if (this._selectedNames.length === 0) {
+      // Select the last item.
+      index = this._items.length - 1;
+    } else {
+      // Select the first selected item.
+      index = this._model.selected[0];
+    }
+    if (index !== -1) {
+      if (index === this._items.length - 1) {
+        this._selectItem(index, false);
+      } else {
+        this._selectItem(index, true);
+      }
+    }
+  }
+
+  /**
    * Handle the DOM events for the directory listing.
    *
    * @param event - The DOM event sent to the widget.
@@ -411,8 +461,6 @@ class DirListing extends Widget {
     case 'mousemove':
       this._evtMousemove(event as MouseEvent);
       break;
-    case 'keydown':
-      this._evtKeyDown(event as KeyboardEvent);
     case 'click':
       this._evtClick(event as MouseEvent);
       break
@@ -441,7 +489,6 @@ class DirListing extends Widget {
     super.onAfterAttach(msg);
     let node = this.node;
     node.addEventListener('mousedown', this);
-    node.addEventListener('keydown', this);
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
     node.addEventListener('p-dragenter', this);
@@ -457,7 +504,6 @@ class DirListing extends Widget {
     super.onBeforeDetach(msg);
     let node = this.node;
     node.removeEventListener('mousedown', this);
-    node.removeEventListener('keydown', this);
     node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
     node.removeEventListener('p-dragenter', this);
@@ -616,17 +662,6 @@ class DirListing extends Widget {
     }
 
     this._startDrag(data.index, event.clientX, event.clientY);
-  }
-
-  /**
-   * Handle the `'keydown'` event for the widget.
-   */
-  private _evtKeyDown(event: KeyboardEvent): void {
-    if (event.keyCode == 13 && this._selectedNames.length === 1) {
-      event.stopPropagation();
-      event.preventDefault();
-      this._doRename();
-    }
   }
 
   /**
@@ -958,6 +993,24 @@ class DirListing extends Widget {
     });
   }
 
+  /**
+   * Select a given item.
+   */
+  private _selectItem(index: number, top: boolean) {
+    // Add the selected class to current row, and remove from all others.
+    for (let node of this._items) {
+      node.classList.remove(SELECTED_CLASS);
+    }
+    this._items[index].classList.add(SELECTED_CLASS);
+    this._updateSelected();
+    if (index === 0) {
+      this.node.scrollTop = 0;
+    }
+    if (!Private.isScrolledIntoView(this._items[index], this.node)) {
+      this._items[index].scrollIntoView(top);
+    }
+  }
+
   private _model: FileBrowserModel = null;
   private _editNode: HTMLInputElement = null;
   private _items: HTMLElement[] = [];
@@ -1133,5 +1186,21 @@ namespace Private {
         nodes[i].classList.add(SELECTED_CLASS);
       }
     }
+  }
+
+  /**
+   * Check whether an element is scolled into view.
+   */
+  export
+  function isScrolledIntoView(elem: HTMLElement, scrollElem: HTMLElement): boolean {
+    // http://stackoverflow.com/a/488073
+    let rect = scrollElem.getBoundingClientRect();
+    let docViewTop = rect.top;
+    let docViewBottom = docViewTop + rect.height;
+
+    rect = elem.getBoundingClientRect();
+    let elemTop = rect.top;
+    let elemBottom = elemTop + rect.height;
+    return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
   }
 }

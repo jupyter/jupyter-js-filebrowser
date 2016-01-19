@@ -37,6 +37,7 @@
     "mocha": "^2.2.5",
     "phosphor-codemirror": "0.0.1",
     "phosphor-dockpanel": "^0.9.6",
+    "phosphor-keymap": "^0.4.0",
     "phosphor-splitpanel": "^1.0.0-rc.0",
     "rimraf": "^2.4.2",
     "style-loader": "^0.13.0",

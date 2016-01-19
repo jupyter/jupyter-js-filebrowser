@@ -249,6 +249,20 @@ class FileBrowserWidget extends Widget {
   }
 
   /**
+   * Select next item.
+   */
+  selectNext(): void {
+    this._listing.selectNext();
+  }
+
+  /**
+   * Select previous item.
+   */
+  selectPrevious(): void {
+    this._listing.selectPrevious();
+  }
+
+  /**
    * A message handler invoked on an `'after-attach'` message.
    */
   protected onAfterAttach(msg: Message): void {
