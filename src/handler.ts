@@ -187,7 +187,7 @@ class FileHandler extends AbstractFileHandler {
    * Create the widget from an `IContentsModel`.
    */
   protected createWidget(path: string): Widget {
-    let widget = new CodeMirrorWidget() as Widget;
+    let widget = new FocusedCodeMirrorWidget() as Widget;
     widget.title.text = path.split('/').pop();
     return widget;
   }
@@ -225,6 +225,29 @@ namespace AbstractFileHandler {
    */
   export
   const finishedSignal = new Signal<AbstractFileHandler, string>();
+}
+
+
+/**
+ * A code mirror widget that takes focus.
+ */
+class FocusedCodeMirrorWidget extends CodeMirrorWidget {
+
+  /**
+   * A message handler invoked on an `'after-attach'` message.
+   */
+  protected onAfterAttach(msg: Message): void {
+    super.onAfterAttach(msg);
+    this.editor.focus();
+  }
+
+  /**
+   * A message handler invoked on an `'after-show'` message.
+   */
+  protected onAfterShow(msg: Message): void {
+    super.onAfterShow(msg);
+    this.editor.focus();
+  }
 }
 
 
