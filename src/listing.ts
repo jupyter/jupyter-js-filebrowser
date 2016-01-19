@@ -783,8 +783,9 @@ class DirListing extends Widget {
     if (selected.length == 1) {
       let item = this._model.items[selected[0]];
       if (item.type !== 'directory') {
-        this._drag.mimeData.setData(FACTORY_MIME,
-          FileBrowserWidget.widgetFactory);
+        this._drag.mimeData.setData(FACTORY_MIME, () => {
+          return FileBrowserWidget.widgetFactory(item.path);
+        });
       }
     }
 

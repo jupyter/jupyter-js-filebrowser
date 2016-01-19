@@ -80,7 +80,7 @@ class FileBrowserWidget extends Widget {
   /**
    * The widget factory for dragging a file into a dock panel.
    */
-  static widgetFactory(): Widget {
+  static widgetFactory(path: string): Widget {
     return void 0;
   }
 
