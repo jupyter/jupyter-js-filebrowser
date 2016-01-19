@@ -1192,15 +1192,15 @@ namespace Private {
    * Check whether an element is scolled into view.
    */
   export
-  function isScrolledIntoView(elem: HTMLElement, scrollElem: HTMLElement): boolean {
+  function isScrolledIntoView(elem: HTMLElement, container: HTMLElement): boolean {
     // http://stackoverflow.com/a/488073
-    let rect = scrollElem.getBoundingClientRect();
-    let scrollViewTop = rect.top;
-    let scrollViewBottom = docViewTop + rect.height;
+    let rect = container.getBoundingClientRect();
+    let containerTop = rect.top;
+    let containerBottom = containerTop + rect.height;
 
     rect = elem.getBoundingClientRect();
     let elemTop = rect.top;
     let elemBottom = elemTop + rect.height;
-    return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
+    return ((elemBottom <= containerBottom) && (elemTop >= containerTop));
   }
 }
