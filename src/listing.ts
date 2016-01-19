@@ -1195,8 +1195,8 @@ namespace Private {
   function isScrolledIntoView(elem: HTMLElement, scrollElem: HTMLElement): boolean {
     // http://stackoverflow.com/a/488073
     let rect = scrollElem.getBoundingClientRect();
-    let docViewTop = rect.top;
-    let docViewBottom = docViewTop + rect.height;
+    let scrollViewTop = rect.top;
+    let scrollViewBottom = docViewTop + rect.height;
 
     rect = elem.getBoundingClientRect();
     let elemTop = rect.top;
