@@ -222,12 +222,11 @@ class DirListing extends Widget {
    *
    * @param model - The file browser view model.
    */
-  constructor(model: FileBrowserModel, widgetFactory?: (path: string) => Widget) {
+  constructor(model: FileBrowserModel) {
     super();
     this.addClass(DIRLISTING_CLASS);
     this._model = model;
     this._model.refreshed.connect(this.update, this);
-    if (widgetFactory) this._widgetFactory = widgetFactory;
     this._editNode = document.createElement('input');
     this._editNode.className = ITEM_EDIT_CLASS;
   }
@@ -256,6 +255,20 @@ class DirListing extends Widget {
    */
   get openRequested(): ISignal<DirListing, string> {
     return Private.openRequestedSignal.bind(this);
+  }
+
+  /**
+   * Get the widget factory for the widget.
+   */
+  get widgetFactory(): (path: string) => Widget {
+    return this._widgetFactory;
+  }
+
+  /**
+   * Set the widget factory for the widget.
+   */
+  set widgetFactory(factory: (path: string) => Widget) {
+    this._widgetFactory = factory;
   }
 
   /**

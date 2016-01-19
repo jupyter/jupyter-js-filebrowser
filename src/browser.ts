@@ -82,14 +82,14 @@ class FileBrowserWidget extends Widget {
    *
    * @param model - The file browser view model.
    */
-  constructor(model: FileBrowserModel, widgetFactory?: (path: string) => Widget) {
+  constructor(model: FileBrowserModel) {
     super();
     this.addClass(FILE_BROWSER_CLASS);
     this._model = model;
     this._model.refreshed.connect(this._handleRefresh, this)
     this._crumbs = new BreadCrumbs(model);
     this._buttons = new FileButtons(model);
-    this._listing = new DirListing(model, widgetFactory);
+    this._listing = new DirListing(model);
     this._listing.openRequested.connect((listing, path) => {
       this.openRequested.emit(path);
     });
@@ -132,6 +132,20 @@ class FileBrowserWidget extends Widget {
    */
   get openRequested(): ISignal<FileBrowserWidget, string> {
     return Private.openRequestedSignal.bind(this);
+  }
+
+  /**
+   * Get the widget factory for the widget.
+   */
+  get widgetFactory(): (path: string) => Widget {
+    return this._listing.widgetFactory;
+  }
+
+  /**
+   * Set the widget factory for the widget.
+   */
+  set widgetFactory(factory: (path: string) => Widget) {
+    this._listing.widgetFactory = factory;
   }
 
   /**
