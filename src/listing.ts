@@ -222,11 +222,12 @@ class DirListing extends Widget {
    *
    * @param model - The file browser view model.
    */
-  constructor(model: FileBrowserModel) {
+  constructor(model: FileBrowserModel, widgetFactory?: (path: string) => Widget) {
     super();
     this.addClass(DIRLISTING_CLASS);
     this._model = model;
     this._model.refreshed.connect(this.update, this);
+    if (widgetFactory) this._widgetFactory = widgetFactory;
     this._editNode = document.createElement('input');
     this._editNode.className = ITEM_EDIT_CLASS;
   }
@@ -780,11 +781,12 @@ class DirListing extends Widget {
       proposedAction: DropAction.Move
     });
     this._drag.mimeData.setData(CONTENTS_MIME, null);
-    if (selected.length == 1) {
+    if (this._widgetFactory && selected.length == 1) {
       let item = this._model.items[selected[0]];
       if (item.type !== 'directory') {
-        this._drag.mimeData.setData(FACTORY_MIME,
-          FileBrowserWidget.widgetFactory);
+        this._drag.mimeData.setData(FACTORY_MIME, () => {
+          return this._widgetFactory(item.path);
+        });
       }
     }
 
@@ -953,6 +955,7 @@ class DirListing extends Widget {
   private _selectedNames: string[] = [];
   private _isCut = false;
   private _clipboard: string[] = [];
+  private _widgetFactory: (path: string) => Widget = null;
 }
 
 

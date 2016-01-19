@@ -78,25 +78,18 @@ const REFRESH_DURATION = 30000;
 export
 class FileBrowserWidget extends Widget {
   /**
-   * The widget factory for dragging a file into a dock panel.
-   */
-  static widgetFactory(): Widget {
-    return void 0;
-  }
-
-  /**
    * Construct a new file browser.
    *
    * @param model - The file browser view model.
    */
-  constructor(model: FileBrowserModel) {
+  constructor(model: FileBrowserModel, widgetFactory?: (path: string) => Widget) {
     super();
     this.addClass(FILE_BROWSER_CLASS);
     this._model = model;
     this._model.refreshed.connect(this._handleRefresh, this)
     this._crumbs = new BreadCrumbs(model);
     this._buttons = new FileButtons(model);
-    this._listing = new DirListing(model);
+    this._listing = new DirListing(model, widgetFactory);
     this._listing.openRequested.connect((listing, path) => {
       this.openRequested.emit(path);
     });
