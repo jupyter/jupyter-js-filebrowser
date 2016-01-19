@@ -397,7 +397,7 @@ class DirListing extends Widget {
     let index = -1;
     if (this._selectedNames.length === 1) {
       // Select the next item.
-      index = this._model.selected[this._model.selected.length -1 ] + 1;
+      index = this._model.selected[this._model.selected.length - 1] + 1;
       if (index === this._items.length) index = 0;
     } else if (this._selectedNames.length === 0) {
       // Select the first item.
