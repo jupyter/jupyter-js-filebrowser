@@ -114,7 +114,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   /**
-   * Save the focused widget contents.
+   * Save the focused widget's contents.
    */
   save(): Promise<IContentsModel> {
     let widget = arrays.find(this._widgets,
@@ -129,7 +129,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   /**
-   * Revert the widget contents.
+   * Revert the focused widget's contents.
    */
   revert(): Promise<void> {
     let widget = arrays.find(this._widgets,
