@@ -54,7 +54,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Construct a new source file handler.
    */
   constructor(manager: IContentsManager) {
-    this.manager = manager;
+    this._manager = manager;
   }
 
   /**
@@ -69,6 +69,13 @@ abstract class AbstractFileHandler implements IMessageFilter {
    */
   get widgets(): Widget[] {
     return this._widgets.slice();
+  }
+
+  /**
+   * Get the contents manager used by the handler.
+   */
+  get manager(): IContentsManager {
+    return this._manager;
   }
 
   /**
@@ -118,7 +125,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
     }
     let path = AbstractFileHandler.pathProperty.get(widget);
     return this.getContentsModel(widget).then(model => {
-      return this.manager.save(model.path, model);
+      return this._manager.save(model.path, model);
     });
   }
 
@@ -203,13 +210,13 @@ abstract class AbstractFileHandler implements IMessageFilter {
     if (args.name == 'text') {
       let oldPath = AbstractFileHandler.pathProperty.get(widget);
       let newPath = this.getNewPath(oldPath, args.newValue);
-      this.manager.rename(oldPath, newPath).then(() =>
+      this._manager.rename(oldPath, newPath).then(() =>
         AbstractFileHandler.pathProperty.set(widget, newPath));
     }
   }
 
-  protected manager: IContentsManager;
-  protected _widgets: Widget[] = [];
+  private _manager: IContentsManager;
+  private _widgets: Widget[] = [];
 }
 
 
@@ -222,7 +229,7 @@ class FileHandler extends AbstractFileHandler {
    * Get file contents given a path.
    */
   protected getContents(path: string): Promise<IContentsModel> {
-    return this.manager.get(path, { type: 'file' });
+    return this._manager.get(path, { type: 'file' });
   }
 
   /**
