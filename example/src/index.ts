@@ -92,15 +92,31 @@ function main(): void {
     sequence: ['Accel S'],
     selector: '.jp-CodeMirrorWidget',
     handler: () => {
-      handler.save();
-      return true;
+      let widget = handler.currentWidget;
+      if (widget) {
+        handler.save(widget);
+        return true;
+      }
     }
   }, {
     sequence: ['Accel R'],
     selector: '.jp-CodeMirrorWidget',
     handler: () => {
-      handler.revert();
-      return true;
+      let widget = handler.currentWidget;
+      if (widget) {
+        handler.revert(widget);
+        return true;
+      }
+    }
+  }, {
+    sequence: ['Ctrl W'],
+    selector: '.jp-CodeMirrorWidget',
+    handler: () => {
+      let widget = handler.currentWidget;
+      if (widget) {
+        handler.close(widget);
+        return true;
+      }
     }
   }]);
 

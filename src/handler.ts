@@ -63,6 +63,10 @@ abstract class AbstractFileHandler implements IMessageFilter {
     this.manager = manager;
   }
 
+  get currentWidget(): Widget {
+    return arrays.find(this.widgets,
+      w => w.node.contains(document.activeElement as HTMLElement));
+  }
   /**
    * Get the list of file extensions explicitly supported by the handler.
    */
@@ -114,12 +118,10 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   /**
-   * Save the focused widget's contents.
+   * Save the widget contents.
    */
-  save(): Promise<IContentsModel> {
-    let widget = arrays.find(this._widgets,
-      w => w.node.contains(document.activeElement as HTMLElement));
-    if (!widget) {
+  save(widget: Widget): Promise<IContentsModel> {
+    if (this._widgets.indexOf(widget) === -1) {
       return;
     }
     let path = AbstractFileHandler.pathProperty.get(widget);
@@ -129,12 +131,10 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   /**
-   * Revert the focused widget's contents.
+   * Revert the widget contents.
    */
-  revert(): Promise<void> {
-    let widget = arrays.find(this._widgets,
-      w => w.node.contains(document.activeElement as HTMLElement));
-    if (!widget) {
+  revert(widget: Widget): Promise<void> {
+    if (this._widgets.indexOf(widget) === -1) {
       return;
     }
     let path = AbstractFileHandler.pathProperty.get(widget);
