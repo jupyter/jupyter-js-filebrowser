@@ -67,21 +67,15 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Get the currently focused widget, or `null`.
    */
   get currentWidget(): Widget {
-    return arrays.find(this.widgets,
+    return arrays.find(this._widgets,
       w => w.node.contains(document.activeElement as HTMLElement));
   }
+
   /**
    * Get the list of file extensions explicitly supported by the handler.
    */
   get fileExtensions(): string[] {
     return []
-  }
-
-  /**
-   * Get the list of widgets managed by the handler.
-   */
-  get widgets(): Widget[] {
-    return this._widgets.slice();
   }
 
   /**
