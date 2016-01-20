@@ -966,6 +966,9 @@ class DirListing extends Widget {
       }
       let newPath = text.textContent;
       return this._model.rename(original, newPath).catch(error => {
+        if (error.xhr) {
+          error.message = `${error.xhr.status}: error.statusText`;
+        }
         if (error.message.indexOf('409') !== -1 ||
             error.message.indexOf('already exists') !== -1) {
           let options = {
@@ -973,11 +976,13 @@ class DirListing extends Widget {
             host: this.parent.node,
             body: `"${newPath}" already exists, overwrite?`
           }
-          showDialog(options).then(button => {
+          return showDialog(options).then(button => {
             if (button.text === 'OK') {
-              return this._model.delete(newPath).then(() =>
-                this._model.rename(original, newPath)
-              );
+              return this._model.delete(newPath).then(() => {
+                return this._model.rename(original, newPath).then(() => {
+                  this._model.refresh();
+                });
+              });
             } else {
               text.textContent = original;
             }
