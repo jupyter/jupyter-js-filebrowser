@@ -237,11 +237,14 @@ class BreadCrumbs extends Widget {
     var path = BREAD_CRUMB_PATHS[index];
 
     // Move all of the items.
-    let promises: Promise<IContentsModel>[] = [];
+    let promises: Promise<void>[] = [];
     for (let index of this._model.selected) {
       var original = this._model.items[index].name;
       var newPath = path + original;
       promises.push(this._model.rename(original, newPath).catch(error => {
+        if (error.xhr) {
+          error.message = `${error.xhr.status}: error.statusText`;
+        }
         if (error.message.indexOf('409') !== -1) {
           let options = {
             title: 'Overwrite file?',
@@ -251,7 +254,9 @@ class BreadCrumbs extends Widget {
           return showDialog(options).then(button => {
             if (button.text === 'OK') {
               return this._model.delete(newPath).then(() => {
-                return this._model.rename(original, newPath);
+                return this._model.rename(original, newPath).then(() => {
+                  return this._model.refresh();
+                });
               });
             }
           });
