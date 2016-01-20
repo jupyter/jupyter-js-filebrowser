@@ -67,7 +67,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Get the currently focused widget, or `null`.
    */
   get currentWidget(): Widget {
-    return arrays.find(this._widgets,
+    return arrays.find(this.widgets,
       w => w.node.contains(document.activeElement as HTMLElement));
   }
 
@@ -90,19 +90,19 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Open a path and return a widget.
    */
   open(path: string): Widget {
-    let index = arrays.findIndex(this._widgets,
+    let index = arrays.findIndex(this.widgets,
       (widget, ind) => {
         return AbstractFileHandler.pathProperty.get(widget) === path;
       }
     );
     if (index !== -1) {
-      return this._widgets[index];
+      return this.widgets[index];
     }
     var widget = this.createWidget(path);
     widget.title.closable = true;
     widget.title.changed.connect(this.titleChanged, this);
     AbstractFileHandler.pathProperty.set(widget, path);
-    this._widgets.push(widget);
+    this.widgets.push(widget);
     installMessageFilter(widget, this);
 
     this.getContents(path).then(contents => {
@@ -118,7 +118,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Save the widget contents.
    */
   save(widget: Widget): Promise<IContentsModel> {
-    if (this._widgets.indexOf(widget) === -1) {
+    if (this.widgets.indexOf(widget) === -1) {
       return;
     }
     let path = AbstractFileHandler.pathProperty.get(widget);
@@ -131,7 +131,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Revert the widget contents.
    */
   revert(widget: Widget): Promise<void> {
-    if (this._widgets.indexOf(widget) === -1) {
+    if (this.widgets.indexOf(widget) === -1) {
       return;
     }
     let path = AbstractFileHandler.pathProperty.get(widget);
@@ -144,12 +144,12 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Close the widget.
    */
   close(widget: Widget): boolean {
-    let index = this._widgets.indexOf(widget);
+    let index = this.widgets.indexOf(widget);
     if (index === -1) {
       return false;
     }
     widget.dispose();
-    this._widgets.splice(index, 1);
+    this.widgets.splice(index, 1);
     return true;
   }
 
@@ -198,7 +198,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Handle a change to one of the widget titles.
    */
   protected titleChanged(title: Title, args: IChangedArgs<any>): void {
-    let widget = arrays.find(this._widgets,
+    let widget = arrays.find(this.widgets,
       (w, index) => { return w.title === title; });
     if (widget === void 0) {
       return
@@ -212,7 +212,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   protected manager: IContentsManager;
-  private _widgets: Widget[] = [];
+  protected widgets: Widget[] = [];
 }
 
 
