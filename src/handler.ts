@@ -45,6 +45,12 @@ import 'codemirror/mode/gfm/gfm';
 
 
 /**
+ * The class name added to a jupyter code mirror widget.
+ */
+const EDITOR_CLASS = 'jp-CodeMirrorWidget';
+
+
+/**
  * An implementation of a file handler.
  */
 export
@@ -284,9 +290,16 @@ namespace AbstractFileHandler {
 
 
 /**
- * A code mirror widget that takes focus.
+ * A Jupyter specific code mirror widget.
  */
-class FocusedCodeMirrorWidget extends CodeMirrorWidget {
+class JupyterCodeMirrorWidget extends CodeMirrorWidget {
+  /**
+   * Construct a new jupyter code mirror widget.
+   */
+  constructor() {
+    super();
+    this.addClass(EDITOR_CLASS);
+  }
 
   /**
    * A message handler invoked on an `'after-attach'` message.

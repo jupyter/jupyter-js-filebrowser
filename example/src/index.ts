@@ -90,14 +90,14 @@ function main(): void {
     }
   }, {
     sequence: ['Accel S'],
-    selector: '.p-CodeMirrorWidget',
+    selector: '.jp-CodeMirrorWidget',
     handler: () => {
       handler.save();
       return true;
     }
   }, {
     sequence: ['Accel R'],
-    selector: '.p-CodeMirrorWidget',
+    selector: '.jp-CodeMirrorWidget',
     handler: () => {
       handler.revert();
       return true;
