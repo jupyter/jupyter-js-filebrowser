@@ -22,6 +22,10 @@ import {
 } from 'phosphor-dockpanel';
 
 import {
+  KeymapManager
+} from 'phosphor-keymap';
+
+import {
   Menu, MenuBar, MenuItem
 } from 'phosphor-menus';
 
@@ -60,6 +64,34 @@ function main(): void {
   fbWidget.openRequested.connect((fb, path) => {
     let editor = handler.open(path);
     dock.insertTabAfter(editor);
+  });
+
+  let keymapManager = new KeymapManager();
+  keymapManager.add([{
+    sequence: ['Enter'],
+    selector: '.jp-DirListing',
+    handler: () => {
+      fbWidget.rename();
+      return true;
+    }
+  }, {
+    sequence: ['ArrowDown'],
+    selector: '.jp-DirListing',
+    handler: () => {
+      fbWidget.selectNext();
+      return true;
+    }
+  }, {
+    sequence: ['ArrowUp'],
+    selector: '.jp-DirListing',
+    handler: () => {
+      fbWidget.selectPrevious();
+      return true;
+    }
+  }]);
+
+  window.addEventListener('keydown', (event) => {
+    keymapManager.processKeydownEvent(event);
   });
 
   let contextMenu = new Menu([
