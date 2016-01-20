@@ -235,7 +235,7 @@ class FileHandler extends AbstractFileHandler {
    * Create the widget from an `IContentsModel`.
    */
   protected createWidget(path: string): Widget {
-    let widget = new FocusedCodeMirrorWidget() as Widget;
+    let widget = new JupyterCodeMirrorWidget() as Widget;
     widget.title.text = path.split('/').pop();
     return widget;
   }
@@ -290,7 +290,7 @@ namespace AbstractFileHandler {
 
 
 /**
- * A Jupyter specific code mirror widget.
+ * A Jupyter-specific code mirror widget.
  */
 class JupyterCodeMirrorWidget extends CodeMirrorWidget {
   /**
