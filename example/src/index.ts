@@ -88,6 +88,20 @@ function main(): void {
       fbWidget.selectPrevious();
       return true;
     }
+  }, {
+    sequence: ['Accel S'],
+    selector: '.p-CodeMirrorWidget',
+    handler: () => {
+      handler.save();
+      return true;
+    }
+  }, {
+    sequence: ['Accel R'],
+    selector: '.p-CodeMirrorWidget',
+    handler: () => {
+      handler.revert();
+      return true;
+    }
   }]);
 
   window.addEventListener('keydown', (event) => {

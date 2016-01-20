@@ -101,6 +101,36 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   /**
+   * Save the focused widget contents.
+   */
+  save(): Promise<IContentsModel> {
+    let widget = arrays.find(this.openFiles,
+      w => w.node.contains(document.activeElement as HTMLElement));
+    if (!widget) {
+      return;
+    }
+    let path = AbstractFileHandler.pathProperty.get(widget);
+    return this.getContentsModel(widget).then(model => {
+      return this.manager.save(model.path, model);
+    });
+  }
+
+  /**
+   * Revert the widget contents.
+   */
+  revert(): Promise<void> {
+    let widget = arrays.find(this.openFiles,
+      w => w.node.contains(document.activeElement as HTMLElement));
+    if (!widget) {
+      return;
+    }
+    let path = AbstractFileHandler.pathProperty.get(widget);
+    return this.getContents(path).then(contents => {
+      return this.populateWidget(widget, contents);
+    });
+  }
+
+  /**
    * Close the widget.
    */
   close(widget: Widget): boolean {
@@ -137,6 +167,11 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Populate a widget from `IContentsModel`.
    */
   protected abstract populateWidget(widget: Widget, model: IContentsModel): Promise<void>;
+
+  /**
+   * Get the contents model for a widget.
+   */
+  protected abstract getContentsModel(widget: Widget): Promise<IContentsModel>;
 
   /**
    * Get the path from the old path widget title text.
@@ -201,6 +236,19 @@ class FileHandler extends AbstractFileHandler {
     loadModeByFileName(mirror.editor, model.name);
     return Promise.resolve(void 0);
   }
+
+  /**
+   * Get the contents model for a widget.
+   */
+  protected getContentsModel(widget: Widget): Promise<IContentsModel> {
+    let path = AbstractFileHandler.pathProperty.get(widget);
+    let name = path.split('/').pop();
+    name = name.split('.')[0];
+    let content = (widget as CodeMirrorWidget).editor.getDoc().getValue();
+    return Promise.resolve({ path, content, name,
+                             type: 'file', format: 'text'});
+  }
+
 }
 
 
