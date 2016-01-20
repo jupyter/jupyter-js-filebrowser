@@ -1194,7 +1194,7 @@ namespace Private {
   }
 
   /**
-   * Check whether an element is scolled into view.
+   * Check whether an element is scrolled into view.
    */
   export
   function isScrolledIntoView(elem: HTMLElement, container: HTMLElement): boolean {
