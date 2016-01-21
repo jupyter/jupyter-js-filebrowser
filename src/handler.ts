@@ -105,7 +105,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
     this.widgets.push(widget);
     installMessageFilter(widget, this);
 
-    this.getContents(path).then(contents => {
+    this.getSourceContents(path).then(contents => {
       this.populateWidget(widget, contents).then(
         () => this.finished.emit(path)
       );
@@ -122,7 +122,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
       return;
     }
     let path = AbstractFileHandler.pathProperty.get(widget);
-    return this.getContentsModel(widget).then(model => {
+    return this.getWidgetContents(widget).then(model => {
       return this.manager.save(model.path, model);
     });
   }
@@ -135,7 +135,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
       return;
     }
     let path = AbstractFileHandler.pathProperty.get(widget);
-    return this.getContents(path).then(contents => {
+    return this.getSourceContents(path).then(contents => {
       return this.populateWidget(widget, contents);
     });
   }
@@ -166,7 +166,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
   /**
    * Get file contents given a path.
    */
-  protected abstract getContents(path: string): Promise<IContentsModel>;
+  protected abstract getSourceContents(path: string): Promise<IContentsModel>;
 
   /**
    * Create the widget from a path.
@@ -179,9 +179,9 @@ abstract class AbstractFileHandler implements IMessageFilter {
   protected abstract populateWidget(widget: Widget, model: IContentsModel): Promise<void>;
 
   /**
-   * Get the contents model for a widget.
+   * Get the contents moedl for a widget.
    */
-  protected abstract getContentsModel(widget: Widget): Promise<IContentsModel>;
+  protected abstract getWidgetContents(widget: Widget): Promise<IContentsModel>;
 
   /**
    * Get the path from the old path widget title text.
@@ -224,7 +224,7 @@ class FileHandler extends AbstractFileHandler {
   /**
    * Get file contents given a path.
    */
-  protected getContents(path: string): Promise<IContentsModel> {
+  protected getSourceContents(path: string): Promise<IContentsModel> {
     return this.manager.get(path, { type: 'file' });
   }
 
@@ -250,7 +250,7 @@ class FileHandler extends AbstractFileHandler {
   /**
    * Get the contents model for a widget.
    */
-  protected getContentsModel(widget: Widget): Promise<IContentsModel> {
+  protected getWidgetContents(widget: Widget): Promise<IContentsModel> {
     let path = AbstractFileHandler.pathProperty.get(widget);
     let name = path.split('/').pop();
     name = name.split('.')[0];
