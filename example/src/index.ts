@@ -88,6 +88,36 @@ function main(): void {
       fbWidget.selectPrevious();
       return true;
     }
+  }, {
+    sequence: ['Accel S'],
+    selector: '.jp-CodeMirrorWidget',
+    handler: () => {
+      let widget = handler.currentWidget;
+      if (widget) {
+        handler.save(widget);
+        return true;
+      }
+    }
+  }, {
+    sequence: ['Accel R'],
+    selector: '.jp-CodeMirrorWidget',
+    handler: () => {
+      let widget = handler.currentWidget;
+      if (widget) {
+        handler.revert(widget);
+        return true;
+      }
+    }
+  }, {
+    sequence: ['Ctrl W'],
+    selector: '.jp-CodeMirrorWidget',
+    handler: () => {
+      let widget = handler.currentWidget;
+      if (widget) {
+        handler.close(widget);
+        return true;
+      }
+    }
   }]);
 
   window.addEventListener('keydown', (event) => {

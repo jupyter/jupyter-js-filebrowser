@@ -45,6 +45,12 @@ import 'codemirror/mode/gfm/gfm';
 
 
 /**
+ * The class name added to a jupyter code mirror widget.
+ */
+const EDITOR_CLASS = 'jp-CodeMirrorWidget';
+
+
+/**
  * An implementation of a file handler.
  */
 export
@@ -55,6 +61,14 @@ abstract class AbstractFileHandler implements IMessageFilter {
    */
   constructor(manager: IContentsManager) {
     this.manager = manager;
+  }
+
+  /**
+   * Get the currently focused widget, or `null`.
+   */
+  get currentWidget(): Widget {
+    return arrays.find(this.widgets,
+      w => w.node.contains(document.activeElement as HTMLElement));
   }
 
   /**
@@ -76,23 +90,23 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Open a path and return a widget.
    */
   open(path: string): Widget {
-    let index = arrays.findIndex(this.openFiles,
+    let index = arrays.findIndex(this.widgets,
       (widget, ind) => {
         return AbstractFileHandler.pathProperty.get(widget) === path;
       }
     );
     if (index !== -1) {
-      return this.openFiles[index];
+      return this.widgets[index];
     }
     var widget = this.createWidget(path);
     widget.title.closable = true;
     widget.title.changed.connect(this.titleChanged, this);
     AbstractFileHandler.pathProperty.set(widget, path);
-    this.openFiles.push(widget);
+    this.widgets.push(widget);
     installMessageFilter(widget, this);
 
     this.getContents(path).then(contents => {
-      this.populateWidget(widget, contents).then(
+      this.setState(widget, contents).then(
         () => this.finished.emit(path)
       );
     });
@@ -101,15 +115,41 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   /**
+   * Save the widget contents.
+   */
+  save(widget: Widget): Promise<IContentsModel> {
+    if (this.widgets.indexOf(widget) === -1) {
+      return;
+    }
+    let path = AbstractFileHandler.pathProperty.get(widget);
+    return this.getState(widget).then(model => {
+      return this.manager.save(model.path, model);
+    });
+  }
+
+  /**
+   * Revert the widget contents.
+   */
+  revert(widget: Widget): Promise<void> {
+    if (this.widgets.indexOf(widget) === -1) {
+      return;
+    }
+    let path = AbstractFileHandler.pathProperty.get(widget);
+    return this.getContents(path).then(contents => {
+      return this.setState(widget, contents);
+    });
+  }
+
+  /**
    * Close the widget.
    */
   close(widget: Widget): boolean {
-    let index = this.openFiles.indexOf(widget);
+    let index = this.widgets.indexOf(widget);
     if (index === -1) {
       return false;
     }
     widget.dispose();
-    this.openFiles.splice(index, 1);
+    this.widgets.splice(index, 1);
     return true;
   }
 
@@ -136,7 +176,12 @@ abstract class AbstractFileHandler implements IMessageFilter {
   /**
    * Populate a widget from `IContentsModel`.
    */
-  protected abstract populateWidget(widget: Widget, model: IContentsModel): Promise<void>;
+  protected abstract setState(widget: Widget, model: IContentsModel): Promise<void>;
+
+  /**
+   * Get the contents model for a widget.
+   */
+  protected abstract getState(widget: Widget): Promise<IContentsModel>;
 
   /**
    * Get the path from the old path widget title text.
@@ -153,7 +198,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Handle a change to one of the widget titles.
    */
   protected titleChanged(title: Title, args: IChangedArgs<any>): void {
-    let widget = arrays.find(this.openFiles,
+    let widget = arrays.find(this.widgets,
       (w, index) => { return w.title === title; });
     if (widget === void 0) {
       return
@@ -167,7 +212,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   protected manager: IContentsManager;
-  protected openFiles: Widget[] = [];
+  protected widgets: Widget[] = [];
 }
 
 
@@ -187,7 +232,7 @@ class FileHandler extends AbstractFileHandler {
    * Create the widget from an `IContentsModel`.
    */
   protected createWidget(path: string): Widget {
-    let widget = new FocusedCodeMirrorWidget() as Widget;
+    let widget = new JupyterCodeMirrorWidget() as Widget;
     widget.title.text = path.split('/').pop();
     return widget;
   }
@@ -195,12 +240,25 @@ class FileHandler extends AbstractFileHandler {
   /**
    * Populate a widget from `IContentsModel`.
    */
-  protected populateWidget(widget: Widget, model: IContentsModel): Promise<void> {
+  protected setState(widget: Widget, model: IContentsModel): Promise<void> {
     let mirror = widget as CodeMirrorWidget;
     mirror.editor.getDoc().setValue(model.content);
     loadModeByFileName(mirror.editor, model.name);
     return Promise.resolve(void 0);
   }
+
+  /**
+   * Get the contents model for a widget.
+   */
+  protected getState(widget: Widget): Promise<IContentsModel> {
+    let path = AbstractFileHandler.pathProperty.get(widget);
+    let name = path.split('/').pop();
+    name = name.split('.')[0];
+    let content = (widget as CodeMirrorWidget).editor.getDoc().getValue();
+    return Promise.resolve({ path, content, name,
+                             type: 'file', format: 'text'});
+  }
+
 }
 
 
@@ -229,9 +287,16 @@ namespace AbstractFileHandler {
 
 
 /**
- * A code mirror widget that takes focus.
+ * A Jupyter-specific code mirror widget.
  */
-class FocusedCodeMirrorWidget extends CodeMirrorWidget {
+class JupyterCodeMirrorWidget extends CodeMirrorWidget {
+  /**
+   * Construct a new jupyter code mirror widget.
+   */
+  constructor() {
+    super();
+    this.addClass(EDITOR_CLASS);
+  }
 
   /**
    * A message handler invoked on an `'after-attach'` message.

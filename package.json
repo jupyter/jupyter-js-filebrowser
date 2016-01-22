@@ -22,7 +22,6 @@
     "phosphor-widget": "^1.0.0-rc.0"
   },
   "devDependencies": {
-    "codemirror": "^5.10.0",
     "css-loader": "^0.23.1",
     "expect.js": "^0.3.1",
     "fs-extra": "^0.26.3",
