@@ -747,7 +747,6 @@ class DirListing extends Widget {
    * Handle the `'keydown'` event for the widget.
    */
   private _evtKeydown(event: KeyboardEvent): void {
-    console.log(event);
     switch (event.keyCode) {
     case 38: // Up arrow
       this.selectPrevious(event.shiftKey);
