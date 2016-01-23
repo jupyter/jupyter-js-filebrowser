@@ -1100,7 +1100,7 @@ class DirListing extends Widget {
    * Select a given item.
    */
   private _selectItem(index: number, top: boolean, keepExisting: boolean) {
-    // Add the selected class to current row, and remove from all others.
+    // Add the selected class to selected row(s), and remove from all others.
     if (!keepExisting) {
       for (let node of this._items) {
         node.classList.remove(SELECTED_CLASS);
