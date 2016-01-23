@@ -406,9 +406,9 @@ class DirListing extends Widget {
   /**
    * Select next item.
    */
-  selectNext(): void {
+  selectNext(keepExisting = false): void {
     let index = -1;
-    if (this._model.selected.length === 1) {
+    if (this._model.selected.length === 1 || keepExisting) {
       // Select the next item.
       index = this._model.selected[this._model.selected.length - 1] + 1;
       if (index === this._items.length) index = 0;
@@ -421,9 +421,9 @@ class DirListing extends Widget {
     }
     if (index !== -1) {
       if (index === 0) {
-        this._selectItem(index, true);
+        this._selectItem(index, true, keepExisting);
       } else {
-        this._selectItem(index, false);
+        this._selectItem(index, false, keepExisting);
       }
     }
   }
@@ -431,9 +431,9 @@ class DirListing extends Widget {
   /**
    * Select previous item.
    */
-  selectPrevious(): void {
+  selectPrevious(keepExisting = false): void {
     let index = -1;
-    if (this._model.selected.length === 1) {
+    if (this._model.selected.length === 1 || keepExisting) {
       // Select the previous item.
       index = this._model.selected[0] - 1;
       if (index === -1) index = this._items.length - 1;
@@ -446,9 +446,9 @@ class DirListing extends Widget {
     }
     if (index !== -1) {
       if (index === this._items.length - 1) {
-        this._selectItem(index, false);
+        this._selectItem(index, false, keepExisting);
       } else {
-        this._selectItem(index, true);
+        this._selectItem(index, true, keepExisting);
       }
     }
   }
@@ -473,6 +473,9 @@ class DirListing extends Widget {
       break;
     case 'mousemove':
       this._evtMousemove(event as MouseEvent);
+      break;
+    case 'keydown':
+      this._evtKeydown(event as KeyboardEvent);
       break;
     case 'click':
       this._evtClick(event as MouseEvent);
@@ -506,6 +509,7 @@ class DirListing extends Widget {
     let node = this.node;
     let list = utils.findElement(this.node, LIST_CONTAINER_CLASS);
     node.addEventListener('mousedown', this);
+    node.addEventListener('keydown', this);
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
     list.addEventListener('scroll', this);
@@ -523,6 +527,7 @@ class DirListing extends Widget {
     let node = this.node;
     let list = utils.findElement(this.node, LIST_CONTAINER_CLASS);
     node.removeEventListener('mousedown', this);
+    node.removeEventListener('keydown', this);
     node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
     list.removeEventListener('scroll', this);
@@ -736,6 +741,25 @@ class DirListing extends Widget {
     }
 
     this._startDrag(data.index, event.clientX, event.clientY);
+  }
+
+  /**
+   * Handle the `'keydown'` event for the widget.
+   */
+  private _evtKeydown(event: KeyboardEvent): void {
+    console.log(event);
+    switch (event.keyCode) {
+    case 38: // Up arrow
+      this.selectPrevious(event.shiftKey);
+      event.stopPropagation();
+      event.preventDefault();
+      break;
+    case 40: // Down arrow
+      this.selectNext(event.shiftKey);
+      event.stopPropagation();
+      event.preventDefault();
+      break;
+    }
   }
 
   /**
@@ -1076,10 +1100,12 @@ class DirListing extends Widget {
   /**
    * Select a given item.
    */
-  private _selectItem(index: number, top: boolean) {
+  private _selectItem(index: number, top: boolean, keepExisting: boolean) {
     // Add the selected class to current row, and remove from all others.
-    for (let node of this._items) {
-      node.classList.remove(SELECTED_CLASS);
+    if (!keepExisting) {
+      for (let node of this._items) {
+        node.classList.remove(SELECTED_CLASS);
+      }
     }
     this._items[index].classList.add(SELECTED_CLASS);
     this._updateSelected();

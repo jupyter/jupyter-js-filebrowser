@@ -71,18 +71,18 @@ function main(): void {
     sequence: ['Enter'],
     selector: '.jp-DirListing',
     handler: () => {
-      fbWidget.rename();
+      fbWidget.open();
       return true;
     }
   }, {
-    sequence: ['ArrowDown'],
+    sequence: ['Ctrl N'],
     selector: '.jp-DirListing',
     handler: () => {
       fbWidget.selectNext();
       return true;
     }
   }, {
-    sequence: ['ArrowUp'],
+    sequence: ['Ctrl P'],
     selector: '.jp-DirListing',
     handler: () => {
       fbWidget.selectPrevious();
