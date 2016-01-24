@@ -70,3 +70,13 @@ function hitTestNodes(nodes: HTMLElement[], x: number, y: number): number {
   }
   return -1;
 }
+
+
+/**
+ * Find the first element matching a class name.
+ */
+export
+function findElement(parent: HTMLElement, className: string): HTMLElement {
+  let elements = parent.getElementsByClassName(className);
+  if (elements.length) return elements[0] as HTMLElement;
+}

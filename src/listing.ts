@@ -10,7 +10,11 @@ import {
   okButton, showDialog
 } from 'jupyter-js-domutils';
 
-import * as moment from 'moment';
+import * as moment
+  from 'moment';
+
+import * as arrays
+  from 'phosphor-arrays';
 
 import {
   IDisposable
@@ -48,10 +52,8 @@ import {
   FileBrowserModel, FileBrowserWidget
 } from './index';
 
-import {
-  CONTENTS_MIME, DROP_TARGET_CLASS, hitTestNodes, showErrorMessage
-} from './utils';
-
+import * as utils
+  from './utils';
 
 
 /**
@@ -323,7 +325,7 @@ class DirListing extends Widget {
     this.node.classList.remove(CLIPBOARD_CLASS);
     return Promise.all(promises).then(
       () => this._model.refresh(),
-      error => showErrorMessage(this, 'Paste Error', error)
+      error => utils.showErrorMessage(this, 'Paste Error', error)
     );
   }
 
@@ -332,12 +334,13 @@ class DirListing extends Widget {
    */
   delete(): Promise<void> {
     let promises: Promise<void>[] = [];
-    for (let name of this._selectedNames) {
-      promises.push(this._model.delete(name));
+    for (let index of this._model.selected) {
+      let item = this._model.items[index];
+      promises.push(this._model.delete(item.name));
     }
     return Promise.all(promises).then(
       () => this._model.refresh(),
-      error => showErrorMessage(this, 'Delete file', error)
+      error => utils.showErrorMessage(this, 'Delete file', error)
     );
   }
 
@@ -354,7 +357,7 @@ class DirListing extends Widget {
     }
     return Promise.all(promises).then(
       () => this._model.refresh(),
-      error => showErrorMessage(this, 'Duplicate file', error)
+      error => utils.showErrorMessage(this, 'Duplicate file', error)
     );
   }
 
@@ -366,7 +369,7 @@ class DirListing extends Widget {
       let item = this._model.items[index];
       if (item.type !== 'directory') {
         return this._model.download(item.path).catch(error =>
-          showErrorMessage(this, 'Download file', error)
+          utils.showErrorMessage(this, 'Download file', error)
         );
       }
     }
@@ -386,7 +389,7 @@ class DirListing extends Widget {
     }
     return Promise.all(promises).then(
       () => this._model.refresh(),
-      error => showErrorMessage(this, 'Shutdown kernel', error)
+      error => utils.showErrorMessage(this, 'Shutdown kernel', error)
     );
   }
 
@@ -395,11 +398,11 @@ class DirListing extends Widget {
    */
   selectNext(): void {
     let index = -1;
-    if (this._selectedNames.length === 1) {
+    if (this._model.selected.length === 1) {
       // Select the next item.
       index = this._model.selected[this._model.selected.length - 1] + 1;
       if (index === this._items.length) index = 0;
-    } else if (this._selectedNames.length === 0) {
+    } else if (this._model.selected.length === 0) {
       // Select the first item.
       index = 0;
     } else {
@@ -420,11 +423,11 @@ class DirListing extends Widget {
    */
   selectPrevious(): void {
     let index = -1;
-    if (this._selectedNames.length === 1) {
+    if (this._model.selected.length === 1) {
       // Select the previous item.
       index = this._model.selected[0] - 1;
       if (index === -1) index = this._items.length - 1;
-    } else if (this._selectedNames.length === 0) {
+    } else if (this._model.selected.length === 0) {
       // Select the last item.
       index = this._items.length - 1;
     } else {
@@ -521,7 +524,7 @@ class DirListing extends Widget {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
-    let content = this.node.getElementsByClassName(LIST_AREA_CLASS)[0] as HTMLElement;
+    let content = utils.findElement(this.node, LIST_AREA_CLASS);
     let subtype = this.constructor as typeof DirListing;
 
     // Remove any excess item nodes.
@@ -537,6 +540,30 @@ class DirListing extends Widget {
       content.appendChild(node);
     }
 
+    // Get the previously selected names.
+    let prevSelected = this._items.map(item => {
+      let el = utils.findElement(item, ITEM_TEXT_CLASS);
+      if (item.classList.contains(SELECTED_CLASS)) {
+        return el.textContent;
+      }
+    });
+
+    if (this._sortColumn === Private.Columns.Name) {
+      items.sort((a, b) => {
+        return a.name.localeCompare(b.name);
+      });
+    } else {
+      items.sort((a, b) => {
+        let valA = new Date(a.last_modified).getTime();
+        let valB = new Date(b.last_modified).getTime();
+        return valA - valB;
+      });
+    }
+
+    if (this._sortOrder === -1) {
+      items.reverse();
+    }
+
     // Update the node state to match the model contents.
     for (let i = 0, n = items.length; i < n; ++i) {
       subtype.updateItem(items[i], nodes[i]);
@@ -545,10 +572,10 @@ class DirListing extends Widget {
     // If the path has not changed, select any previously selected names that
     // have not changed.  Also handle cut modifiers.
     if (this._model.path == this._prevPath) {
-      let newNames = this._model.items.map(item => item.name);
-      for (let name of this._selectedNames) {
-        let index = newNames.indexOf(name);
-        if (index !== 1) {
+      for (let row of this._items) {
+        let text = utils.findElement(row, ITEM_TEXT_CLASS);
+        let index = prevSelected.indexOf(text.textContent);
+        if (index !== -1) {
           this._items[index].classList.add(SELECTED_CLASS);
           let path = '/' + this._model.items[index].path;
           if (this._isCut && (this._clipboard.indexOf(path) !== -1)) {
@@ -565,7 +592,7 @@ class DirListing extends Widget {
     let paths = this._model.items.map(item => item.path);
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
-      let node = this._items[index].getElementsByClassName(NOTEBOOK_ICON_CLASS)[0];
+      let node = utils.findElement(this._items[index], NOTEBOOK_ICON_CLASS);
       node.classList.add(RUNNING_CLASS);
       (node as HTMLElement).title = sessionId.kernel.name;
     }
@@ -583,7 +610,7 @@ class DirListing extends Widget {
    */
   private _evtClick(event: MouseEvent) {
 
-    let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    let index = utils.hitTestNodes(this._items, event.clientX, event.clientY);
     if (index == -1) {
       return;
     }
@@ -610,7 +637,7 @@ class DirListing extends Widget {
       }
     }
 
-    let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    let index = utils.hitTestNodes(this._items, event.clientX, event.clientY);
     if (index == -1) {
       return;
     }
@@ -690,7 +717,7 @@ class DirListing extends Widget {
         let item = this._model.items[index];
         if (item.type === 'directory') {
           this._model.cd(item.name).catch(error =>
-            showErrorMessage(this, 'Change Directory Error', error)
+            utils.showErrorMessage(this, 'Change Directory Error', error)
           );
         } else {
           this.openRequested.emit(item.path);
@@ -706,12 +733,12 @@ class DirListing extends Widget {
    * Handle the `'p-dragenter'` event for the widget.
    */
   private _evtDragEnter(event: IDragEvent): void {
-    if (event.mimeData.hasData(CONTENTS_MIME)) {
-      let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    if (event.mimeData.hasData(utils.CONTENTS_MIME)) {
+      let index = utils.hitTestNodes(this._items, event.clientX, event.clientY);
       let target = this._items[index];
-      if (target.getElementsByClassName(FOLDER_ICON_CLASS).length &&
+      if (utils.findElement(target, FOLDER_ICON_CLASS) &&
           !target.classList.contains(SELECTED_CLASS)) {
-        target.classList.add(DROP_TARGET_CLASS);
+        target.classList.add(utils.DROP_TARGET_CLASS);
         event.preventDefault();
         event.stopPropagation();
         return;
@@ -725,10 +752,8 @@ class DirListing extends Widget {
   private _evtDragLeave(event: IDragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    let dropTargets = this.node.getElementsByClassName(DROP_TARGET_CLASS);
-    if (dropTargets.length) {
-      dropTargets[0].classList.remove(DROP_TARGET_CLASS);
-    }
+    let dropTarget = utils.findElement(this.node, utils.DROP_TARGET_CLASS);
+    if (dropTarget) dropTarget.classList.remove(utils.DROP_TARGET_CLASS);
   }
 
   /**
@@ -738,12 +763,10 @@ class DirListing extends Widget {
     event.preventDefault();
     event.stopPropagation();
     event.dropAction = event.proposedAction;
-    let dropTargets = this.node.getElementsByClassName(DROP_TARGET_CLASS);
-    if (dropTargets.length) {
-      dropTargets[0].classList.remove(DROP_TARGET_CLASS);
-    }
-    let index = hitTestNodes(this._items, event.clientX, event.clientY);
-    this._items[index].classList.add(DROP_TARGET_CLASS);
+    let dropTarget = utils.findElement(this.node, utils.DROP_TARGET_CLASS);
+    if (dropTarget) dropTarget.classList.remove(utils.DROP_TARGET_CLASS);
+    let index = utils.hitTestNodes(this._items, event.clientX, event.clientY);
+    this._items[index].classList.add(utils.DROP_TARGET_CLASS);
   }
 
   /**
@@ -756,15 +779,15 @@ class DirListing extends Widget {
       event.dropAction = DropAction.None;
       return;
     }
-    if (!event.mimeData.hasData(CONTENTS_MIME)) {
+    if (!event.mimeData.hasData(utils.CONTENTS_MIME)) {
       return;
     }
     event.dropAction = event.proposedAction;
 
     let target = event.target as HTMLElement;
     while (target && target.parentElement) {
-      if (target.classList.contains(DROP_TARGET_CLASS)) {
-        target.classList.remove(DROP_TARGET_CLASS);
+      if (target.classList.contains(utils.DROP_TARGET_CLASS)) {
+        target.classList.remove(utils.DROP_TARGET_CLASS);
         break;
       }
       target = target.parentElement;
@@ -798,7 +821,7 @@ class DirListing extends Widget {
     }
     Promise.all(promises).then(
       () => this._model.refresh(),
-      error => showErrorMessage(this, 'Move Error', error)
+      error => utils.showErrorMessage(this, 'Move Error', error)
     );
   }
 
@@ -817,7 +840,7 @@ class DirListing extends Widget {
     var dragImage = source.cloneNode(true) as HTMLElement;
     dragImage.removeChild(dragImage.lastChild);
     if (selected.length > 1) {
-      let text = dragImage.getElementsByClassName(ITEM_TEXT_CLASS)[0];
+      let text = utils.findElement(dragImage, ITEM_TEXT_CLASS);
       text.textContent = '(' + selected.length + ')'
     }
 
@@ -828,7 +851,7 @@ class DirListing extends Widget {
       supportedActions: DropActions.Move,
       proposedAction: DropAction.Move
     });
-    this._drag.mimeData.setData(CONTENTS_MIME, null);
+    this._drag.mimeData.setData(utils.CONTENTS_MIME, null);
     if (this._widgetFactory && selected.length == 1) {
       let item = this._model.items[selected[0]];
       if (item.type !== 'directory') {
@@ -853,7 +876,7 @@ class DirListing extends Widget {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
-    let index = hitTestNodes(this._items, event.clientX, event.clientY);
+    let index = utils.hitTestNodes(this._items, event.clientX, event.clientY);
     let target = this._items[index];
 
     for (let node of nodes) {
@@ -905,12 +928,14 @@ class DirListing extends Widget {
   private _updateSelected(): void {
     // Set the selected items on the model.
     let selected: number[] = [];
-    this._selectedNames = [];
     let items = this._model.items;
     for (let i = 0; i < this._items.length; i++) {
       if (this._items[i].classList.contains(SELECTED_CLASS)) {
-        selected.push(i);
-        this._selectedNames.push(items[i].name);
+        var name = items[i].name;
+        let index = arrays.findIndex(this._model.items, item => {
+          return item.name === name;
+        });
+        selected.push(index);
       }
     }
     this._model.selected = selected;
@@ -935,8 +960,11 @@ class DirListing extends Widget {
     this._clipboard = []
     this._isCut = isCut;
     for (let index of this._model.selected) {
-      let item = this._model.items[index];
-      let row = this._items[index];
+      var item = this._model.items[index];
+      let row = arrays.find(this._items, row => {
+        let text = utils.findElement(row, ITEM_TEXT_CLASS);
+        return text.textContent === item.name;
+      });
       if (item.type !== 'directory') {
         if (isCut) row.classList.add(CUT_CLASS);
         // Store the absolute path of the item.
@@ -955,9 +983,9 @@ class DirListing extends Widget {
    * Allow the user to rename item on a given row.
    */
   private _doRename(): Promise<string> {
-    let row = this.node.getElementsByClassName(SELECTED_CLASS)[0];
-    let fileCell = row.getElementsByClassName(ITEM_FILE_CLASS)[0];
-    let text = row.getElementsByClassName(ITEM_TEXT_CLASS)[0] as HTMLElement;
+    let row = utils.findElement(this.node, SELECTED_CLASS);
+    let fileCell = utils.findElement(row, ITEM_FILE_CLASS);
+    let text = utils.findElement(row, ITEM_TEXT_CLASS);
     let original = text.textContent;
 
     return Private.doRename(fileCell as HTMLElement, text, this._editNode).then(changed => {
@@ -989,7 +1017,7 @@ class DirListing extends Widget {
           });
         }
       }).catch(error => {
-        showErrorMessage(this, 'Rename Error', error);
+        utils.showErrorMessage(this, 'Rename Error', error);
         return original;
       }).then(() => {
         this._model.refresh();
@@ -1023,10 +1051,11 @@ class DirListing extends Widget {
   private _dragData: { pressX: number, pressY: number, index: number } = null;
   private _pendingSelect = false;
   private _prevPath = '';
-  private _selectedNames: string[] = [];
   private _isCut = false;
   private _clipboard: string[] = [];
   private _widgetFactory: (path: string) => Widget = null;
+  private _sortColumn = Private.Columns.Name;
+  private _sortOrder = 1;
 }
 
 
@@ -1207,5 +1236,14 @@ namespace Private {
     let elemTop = rect.top;
     let elemBottom = elemTop + rect.height;
     return ((elemBottom <= containerBottom) && (elemTop >= containerTop));
+  }
+
+  /**
+   * Sort column enum.
+   */
+  export
+  enum Columns {
+    Name,
+    Time
   }
 }
