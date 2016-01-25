@@ -75,14 +75,14 @@ function main(): void {
       return true;
     }
   }, {
-    sequence: ['Ctrl N'],
+    sequence: ['Ctrl N'], // Add emacs keybinding for select next.
     selector: '.jp-DirListing',
     handler: () => {
       fbWidget.selectNext();
       return true;
     }
   }, {
-    sequence: ['Ctrl P'],
+    sequence: ['Ctrl P'], // Add emacs keybinding for select previous.
     selector: '.jp-DirListing',
     handler: () => {
       fbWidget.selectPrevious();
