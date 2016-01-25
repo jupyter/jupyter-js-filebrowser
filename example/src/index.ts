@@ -71,18 +71,18 @@ function main(): void {
     sequence: ['Enter'],
     selector: '.jp-DirListing',
     handler: () => {
-      fbWidget.rename();
+      fbWidget.open();
       return true;
     }
   }, {
-    sequence: ['ArrowDown'],
+    sequence: ['Ctrl N'], // Add emacs keybinding for select next.
     selector: '.jp-DirListing',
     handler: () => {
       fbWidget.selectNext();
       return true;
     }
   }, {
-    sequence: ['ArrowUp'],
+    sequence: ['Ctrl P'], // Add emacs keybinding for select previous.
     selector: '.jp-DirListing',
     handler: () => {
       fbWidget.selectPrevious();
