@@ -22,9 +22,8 @@ import {
   FileBrowserModel
 } from './model';
 
-import {
-  showErrorMessage
-} from './utils';
+import * as utils
+  from './utils';
 
 
 /**
@@ -82,7 +81,7 @@ class FileButtons extends Widget {
       let type = item.text.toLowerCase();
       if (type === 'text file') type = 'file';
       this._model.newUntitled(type).catch(error =>
-        showErrorMessage(this, 'New File Error', error)
+        utils.showErrorMessage(this, 'New File Error', error)
        ).then(() => this._model.refresh());
     };
     this._newMenu = Private.createNewItemMenu(handler);
@@ -122,7 +121,7 @@ class FileButtons extends Widget {
     }
     Promise.all(promises).then(
       () => this._model.refresh(),
-      err => showErrorMessage(this, 'Upload Error', err)
+      err => utils.showErrorMessage(this, 'Upload Error', err)
     );
   }
 

@@ -7,4 +7,6 @@ test/build
 test/coverage
 lib/
 example/build
+example/Untitled*.ipynb
+example/untitled*.txt
 docs

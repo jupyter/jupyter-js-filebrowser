@@ -52,33 +52,9 @@
 }
 
 
-.jp-FileButton-icon {
+.jp-FileButtons-icon {
   margin-left: auto;
   margin-right: auto;
-}
-
-
-.jp-DirListing-header {
-  display: flex;
-  flex: 0 0 auto;
-  min-width: 300px;
-  overflow: hidden;
-}
-
-
-.jp-DirListing-headerFile {
-  flex: 1 0 auto;
-}
-
-
-.jp-DirListing-headerModified {
-  flex: 0 0 95px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: right;
-  padding-right: 5px;
-  padding-top: 4px;
-  padding-bottom: 4px;
 }
 
 
@@ -89,10 +65,46 @@
 }
 
 
+.jp-DirListing-header {
+  display: flex;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+
+.jp-DirListing-headerItem {
+  display: flex;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+
+.jp-DirListing-headerText {
+  margin-right: auto;
+}
+
+
+.jp-DirListing-headerIcon {
+  margin-left: -0.5em;
+}
+
+
+.jp-DirListing-headerFile {
+  flex-grow: 1;
+  flex-shrink: 0;
+}
+
+
+.jp-DirListing-headerTime {
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+
 .jp-DirListing-container {
   flex: 1 1 auto;
-  overflow-x: hidden;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 

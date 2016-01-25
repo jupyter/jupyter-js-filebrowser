@@ -30,10 +30,8 @@ import {
   FileBrowserModel
 } from './model';
 
-import {
-  CONTENTS_MIME, DROP_TARGET_CLASS, FILE_BROWSER_CLASS, hitTestNodes,
-  showErrorMessage
-} from './utils';
+import * as utils
+  from './utils';
 
 
 /**
@@ -152,7 +150,7 @@ class BreadCrumbs extends Widget {
       if (node.classList.contains(BREADCRUMB_ITEM_CLASS)) {
         let index = this._crumbs.indexOf(node);
         this._model.cd(BREAD_CRUMB_PATHS[index]).catch(error =>
-          showErrorMessage(this, 'Open Error', error)
+          utils.showErrorMessage(this, 'Open Error', error)
         );
 
         // Stop the event propagation.
@@ -168,11 +166,11 @@ class BreadCrumbs extends Widget {
    * Handle the `'p-dragenter'` event for the widget.
    */
   private _evtDragEnter(event: IDragEvent): void {
-    if (event.mimeData.hasData(CONTENTS_MIME)) {
-      let index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
+    if (event.mimeData.hasData(utils.CONTENTS_MIME)) {
+      let index = utils.hitTestNodes(this._crumbs, event.clientX, event.clientY);
       if (index !== -1) {
         if (index !== Private.Crumb.Current) {
-          this._crumbs[index].classList.add(DROP_TARGET_CLASS);
+          this._crumbs[index].classList.add(utils.DROP_TARGET_CLASS);
           event.preventDefault();
           event.stopPropagation();
         }
@@ -186,10 +184,8 @@ class BreadCrumbs extends Widget {
   private _evtDragLeave(event: IDragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    let dropTargets = this.node.getElementsByClassName(DROP_TARGET_CLASS);
-    if (dropTargets.length) {
-      dropTargets[0].classList.remove(DROP_TARGET_CLASS);
-    }
+    let dropTarget = utils.findElement(this.node, utils.DROP_TARGET_CLASS);
+    if (dropTarget) dropTarget.classList.remove(utils.DROP_TARGET_CLASS);
   }
 
   /**
@@ -199,12 +195,10 @@ class BreadCrumbs extends Widget {
     event.preventDefault();
     event.stopPropagation();
     event.dropAction = event.proposedAction;
-    let dropTargets = this.node.getElementsByClassName(DROP_TARGET_CLASS);
-    if (dropTargets.length) {
-      dropTargets[0].classList.remove(DROP_TARGET_CLASS);
-    }
-    let index = hitTestNodes(this._crumbs, event.clientX, event.clientY);
-    if (index !== -1) this._crumbs[index].classList.add(DROP_TARGET_CLASS);
+    let dropTarget = utils.findElement(this.node, utils.DROP_TARGET_CLASS);
+    if (dropTarget) dropTarget.classList.remove(utils.DROP_TARGET_CLASS);
+    let index = utils.hitTestNodes(this._crumbs, event.clientX, event.clientY);
+    if (index !== -1) this._crumbs[index].classList.add(utils.DROP_TARGET_CLASS);
   }
 
   /**
@@ -217,15 +211,15 @@ class BreadCrumbs extends Widget {
       event.dropAction = DropAction.None;
       return;
     }
-    if (!event.mimeData.hasData(CONTENTS_MIME)) {
+    if (!event.mimeData.hasData(utils.CONTENTS_MIME)) {
       return;
     }
     event.dropAction = event.proposedAction;
 
     let target = event.target as HTMLElement;
     while (target && target.parentElement) {
-      if (target.classList.contains(DROP_TARGET_CLASS)) {
-        target.classList.remove(DROP_TARGET_CLASS);
+      if (target.classList.contains(utils.DROP_TARGET_CLASS)) {
+        target.classList.remove(utils.DROP_TARGET_CLASS);
         break;
       }
       target = target.parentElement;
@@ -265,7 +259,7 @@ class BreadCrumbs extends Widget {
     }
     Promise.all(promises).then(
       () => this._model.refresh(),
-      err => showErrorMessage(this, 'Move Error', err)
+      err => utils.showErrorMessage(this, 'Move Error', err)
     );
   }
 
