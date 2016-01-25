@@ -405,6 +405,8 @@ class DirListing extends Widget {
 
   /**
    * Select next item.
+   *
+   * @param keepExisting - Whether to keep the current selection and add to it.
    */
   selectNext(keepExisting = false): void {
     let index = -1;
@@ -430,6 +432,8 @@ class DirListing extends Widget {
 
   /**
    * Select previous item.
+   *
+   * @param keepExisting - Whether to keep the current selection and add to it.
    */
   selectPrevious(keepExisting = false): void {
     let index = -1;
