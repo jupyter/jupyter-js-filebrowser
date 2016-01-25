@@ -64,9 +64,9 @@ function showErrorMessage(host: Widget, title: string, error: Error): Promise<vo
  * Get the index of the node at a client position, or `-1`.
  */
 export
-function hitTestNodes(nodes: HTMLElement[], x: number, y: number): number {
+function hitTestNodes(nodes: HTMLElement[] | NodeList, x: number, y: number): number {
   for (let i = 0, n = nodes.length; i < n; ++i) {
-    if (hitTest(nodes[i], x, y)) return i;
+    if (hitTest(nodes[i] as HTMLElement, x, y)) return i;
   }
   return -1;
 }

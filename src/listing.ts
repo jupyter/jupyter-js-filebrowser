@@ -69,12 +69,27 @@ const LIST_HEADER_CLASS = 'jp-DirListing-header';
 /**
  * The class name added to FileBrowser list header file item.
  */
+const HEADER_TEXT_CLASS = 'jp-DirListing-headerText';
+
+/**
+ * The class name added to FileBrowser list header items.
+ */
+const HEADER_ITEM_CLASS = 'jp-DirListing-headerItem';
+
+/**
+ * The class name added to FileBrowser list header modified item.
+ */
+const HEADER_ICON_CLASS = 'jp-DirListing-headerIcon';
+
+/**
+ * The class name added to FileBrowser list header file item.
+ */
 const HEADER_FILE_CLASS = 'jp-DirListing-headerFile';
 
 /**
  * The class name added to FileBrowser list header modified item.
  */
-const HEADER_TIME_CLASS = 'jp-DirListing-headerModified';
+const HEADER_TIME_CLASS = 'jp-DirListing-headerTime';
 
 /**
  * The class name added to the Filebrowser list area container.
@@ -156,6 +171,10 @@ const RUNNING_CLASS = 'jp-mod-running';
  */
 const SELECTED_CLASS = 'jp-mod-selected';
 
+/**
+ * The class name added for a decending sort.
+ */
+const DESCENDING_CLASS = 'jp-mod-descending';
 
 /**
  * The minimum duration for a rename select in ms.
@@ -184,23 +203,14 @@ class DirListing extends Widget {
    */
   static createNode(): HTMLElement {
     let node = document.createElement('div');
-    let header = document.createElement('div');
+    let header = Private.createHeader();
     let body = document.createElement('div');
     let contents = document.createElement('ul');
-    header.className = LIST_HEADER_CLASS;
     body.className = LIST_CONTAINER_CLASS;
     contents.className = LIST_AREA_CLASS;
     node.appendChild(header);
     node.appendChild(body);
     body.appendChild(contents);
-    let files = document.createElement('span');
-    let modified = document.createElement('span');
-    files.textContent = 'Files';
-    files.className = HEADER_FILE_CLASS;
-    modified.textContent = 'Last Modified';
-    modified.className = HEADER_TIME_CLASS;
-    header.appendChild(files);
-    header.appendChild(modified);
     node.tabIndex = 1;
     return node;
   }
@@ -470,6 +480,9 @@ class DirListing extends Widget {
     case 'dblclick':
       this._evtDblClick(event as MouseEvent);
       break;
+    case 'scroll':
+      this._evtScroll(event as MouseEvent);
+      break;
     case 'p-dragenter':
       this._evtDragEnter(event as IDragEvent);
       break;
@@ -491,9 +504,11 @@ class DirListing extends Widget {
   protected onAfterAttach(msg: Message): void {
     super.onAfterAttach(msg);
     let node = this.node;
+    let list = utils.findElement(this.node, LIST_CONTAINER_CLASS);
     node.addEventListener('mousedown', this);
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
+    list.addEventListener('scroll', this);
     node.addEventListener('p-dragenter', this);
     node.addEventListener('p-dragleave', this);
     node.addEventListener('p-dragover', this);
@@ -506,9 +521,11 @@ class DirListing extends Widget {
   protected onBeforeDetach(msg: Message): void {
     super.onBeforeDetach(msg);
     let node = this.node;
+    let list = utils.findElement(this.node, LIST_CONTAINER_CLASS);
     node.removeEventListener('mousedown', this);
     node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
+    list.removeEventListener('scroll', this);
     node.removeEventListener('p-dragenter', this);
     node.removeEventListener('p-dragleave', this);
     node.removeEventListener('p-dragover', this);
@@ -548,19 +565,19 @@ class DirListing extends Widget {
       }
     });
 
-    if (this._sortColumn === Private.Columns.Name) {
-      items.sort((a, b) => {
-        return a.name.localeCompare(b.name);
-      });
+    let sorter = utils.findElement(this.node, HEADER_FILE_CLASS);
+    if (sorter.classList.contains(SELECTED_CLASS)) {
+      // Keep the order from the contents manager.
     } else {
+      sorter = utils.findElement(this.node, HEADER_TIME_CLASS);
       items.sort((a, b) => {
         let valA = new Date(a.last_modified).getTime();
         let valB = new Date(b.last_modified).getTime();
-        return valA - valB;
+        return valB - valA;
       });
     }
 
-    if (this._sortOrder === -1) {
+    if (sorter.classList.contains(DESCENDING_CLASS)) {
       items.reverse();
     }
 
@@ -589,7 +606,7 @@ class DirListing extends Widget {
     this._updateSelected();
 
     // Handle notebook session statuses.
-    let paths = this._model.items.map(item => item.path);
+    let paths = items.map(item => item.path);
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
       let node = utils.findElement(this._items[index], NOTEBOOK_ICON_CLASS);
@@ -612,6 +629,27 @@ class DirListing extends Widget {
 
     let index = utils.hitTestNodes(this._items, event.clientX, event.clientY);
     if (index == -1) {
+      let header = utils.findElement(this.node, LIST_HEADER_CLASS);
+      index = utils.hitTestNodes(header.childNodes, event.clientX,
+        event.clientY);
+      if (index !== -1) {
+        for (let i = 0; i < header.childNodes.length; i++) {
+          let node = header.childNodes[i] as HTMLElement;
+          if (i === index) {
+            if (node.classList.contains(SELECTED_CLASS)) {
+              if (node.classList.contains(DESCENDING_CLASS)) {
+                node.classList.remove(DESCENDING_CLASS);
+              } else {
+                node.classList.add(DESCENDING_CLASS);
+              }
+            }
+            node.classList.add(SELECTED_CLASS);
+          } else {
+            node.classList.remove(SELECTED_CLASS);
+          }
+        }
+        this.update();
+      }
       return;
     }
 
@@ -619,6 +657,15 @@ class DirListing extends Widget {
     this._handleFileSelect(event);
     this._updateSelected();
 
+  }
+
+  /**
+   * Handle the `'scroll'` event for the widget.
+   */
+  private _evtScroll(event: MouseEvent): void {
+    let list = utils.findElement(this.node, LIST_CONTAINER_CLASS);
+    let header = utils.findElement(this.node, LIST_HEADER_CLASS);
+    header.scrollLeft = list.scrollLeft;
   }
 
   /**
@@ -1054,8 +1101,6 @@ class DirListing extends Widget {
   private _isCut = false;
   private _clipboard: string[] = [];
   private _widgetFactory: (path: string) => Widget = null;
-  private _sortColumn = Private.Columns.Name;
-  private _sortOrder = 1;
 }
 
 
@@ -1239,11 +1284,37 @@ namespace Private {
   }
 
   /**
-   * Sort column enum.
+   * Create the header node.
    */
   export
-  enum Columns {
-    Name,
-    Time
+  function createHeader(): HTMLElement {
+    let files = document.createElement('div');
+    files.className = HEADER_FILE_CLASS;
+    files.classList.add(HEADER_ITEM_CLASS);
+    files.classList.add(SELECTED_CLASS);
+    let fileText = document.createElement('span');
+    fileText.className = HEADER_TEXT_CLASS;
+    fileText.textContent = 'Name';
+    let fileIcon = document.createElement('span');
+    fileIcon.className = `fa ${HEADER_ICON_CLASS}`;
+    files.appendChild(fileText);
+    files.appendChild(fileIcon);
+
+    let modified = document.createElement('div');
+    modified.className = HEADER_TIME_CLASS;
+    modified.classList.add(HEADER_ITEM_CLASS);
+    let modText = document.createElement('span');
+    modText.className = HEADER_TEXT_CLASS;
+    modText.textContent = 'Last Modified';
+    let modIcon = document.createElement('span');
+    modIcon.className = `fa ${HEADER_ICON_CLASS}`;
+    modified.appendChild(modText);
+    modified.appendChild(modIcon);
+
+    let header = document.createElement('div');
+    header.className = LIST_HEADER_CLASS;
+    header.appendChild(files);
+    header.appendChild(modified);
+    return header;
   }
 }

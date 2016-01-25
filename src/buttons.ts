@@ -66,7 +66,7 @@ class FileButtons extends Widget {
     let Button = Private.Button;
 
     // Set up events on the buttons.
-    let input = utils.findElement(buttons[Button.Upload], 'input');
+    let input = buttons[Button.Upload].getElementsByTagName('input')[0];
     input.onchange = this._handleUploadEvent.bind(this);
 
     buttons[Button.Refresh].onclick = () => this._model.refresh();
