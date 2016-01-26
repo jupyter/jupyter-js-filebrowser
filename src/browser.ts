@@ -89,6 +89,9 @@ class FileBrowserWidget extends Widget {
     this._model.refreshed.connect(this._handleRefresh, this)
     this._crumbs = new BreadCrumbs(model);
     this._buttons = new FileButtons(model);
+    this._buttons.openRequested.connect((buttons, path) => {
+      this.openRequested.emit(path);
+    });
     this._listing = new DirListing(model);
     this._listing.openRequested.connect((listing, path) => {
       this.openRequested.emit(path);
