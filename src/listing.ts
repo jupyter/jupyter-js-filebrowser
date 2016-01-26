@@ -1192,7 +1192,7 @@ namespace Private {
   function populateModified(item: IContentsModel, node: HTMLElement): void {
     if (item.last_modified) {
       let text = moment(item.last_modified).fromNow();
-      node.textContent = 'a few seconds ago' ? 'seconds ago' : text;
+      node.textContent = text === 'a few seconds ago' ? 'seconds ago' : text;
       node.title = moment(item.last_modified).format("YYYY-MM-DD HH:mm")
     } else {
       node.textContent = '';
@@ -1213,6 +1213,7 @@ namespace Private {
     populateModified(item, modified);
     node.classList.remove(SELECTED_CLASS);
     node.classList.remove(CUT_CLASS);
+    node.classList.remove(RUNNING_CLASS);
   }
 
   /**
