@@ -46,6 +46,11 @@ const BUTTON_ICON_CLASS = 'jp-FileButtons-icon';
  */
 const UPLOAD_CLASS = 'jp-FileButtons-upload';
 
+/**
+ * The class name added to the drop icon node.
+ */
+const DROP_ICON_CLASS = 'jp-FileButtons-drop';
+
 
 /**
  * A widget which host the file browser buttons.
@@ -158,7 +163,6 @@ namespace Private {
       button.title = titles[i];
       let icon = document.createElement('span');
       icon.className = BUTTON_ICON_CLASS + ' fa ' + icons[i];
-      icon.style.color = "rgb(117,117,117)";
       button.appendChild(icon);
       buttonBar.appendChild(button);
       buttons.push(button);
@@ -166,9 +170,7 @@ namespace Private {
 
     // Add the dropdown node to the "new file" button.
     var dropIcon = document.createElement('span');
-    dropIcon.className = 'fa fa-caret-down';
-    dropIcon.style.marginLeft = '-0.5em';
-    dropIcon.style.color = "rgb(117,117,117)";
+    dropIcon.className = DROP_ICON_CLASS + ' fa fa-caret-down';
     buttons[Button.New].appendChild(dropIcon);
 
     // Create the hidden upload input field.
