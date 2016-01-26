@@ -307,7 +307,7 @@ namespace Private {
       let type = item.text.toLowerCase();
       if (type === 'text file') type = 'file';
       if (type === 'terminal') {
-        signal.emit('/terminal');
+        signal.emit('new.terminal');
         return;
       }
       model.newUntitled(type).then(contents => signal.emit(contents.path),
