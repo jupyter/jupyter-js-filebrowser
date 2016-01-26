@@ -361,6 +361,9 @@ class FileBrowserModel implements IDisposable {
           for (let key in specs.kernelspecs) {
             this._kernelSpecs.push(specs.kernelspecs[key]);
           }
+          this._kernelSpecs.sort((a, b) => {
+            return a.spec.display_name.localeCompare(b.spec.display_name);
+          });
         }));
       }
       return Promise.all(promises).then(() => {});
