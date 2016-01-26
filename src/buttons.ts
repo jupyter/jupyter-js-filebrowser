@@ -157,8 +157,7 @@ class FileButtons extends Widget {
     } else if (index === Private.Button.New) {
       let rect = this._buttons[index].getBoundingClientRect();
       if (!this._newMenu) {
-        this._newMenu = Private.createNewItemMenu(this._model,
-          this.openRequested);
+        this._newMenu = Private.createNewItemMenu(this);
       }
       this._newMenu.popup(rect.left, rect.bottom, false, true);
     }
@@ -199,6 +198,16 @@ class FileButtons extends Widget {
     for (let button of this._buttons) {
       button.classList.remove(utils.SELECTED_CLASS);
     }
+  }
+
+  /**
+   * Get the model used by the widget.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get model(): FileBrowserModel {
+    return this._model;
   }
 
   /**
@@ -301,18 +310,20 @@ namespace Private {
    * Create the "new" menu.
    */
   export
-  function createNewItemMenu(model: FileBrowserModel, signal: ISignal<FileButtons, string>): Menu {
+  function createNewItemMenu(widget: FileButtons): Menu {
     // Create the "new" menu.
     let handler = (item: MenuItem) => {
       let type = item.text.toLowerCase();
       if (type === 'text file') type = 'file';
       if (type === 'terminal') {
-        signal.emit('new.terminal');
+        widget.openRequested.emit('new.terminal');
         return;
       }
-      model.newUntitled(type).then(contents => signal.emit(contents.path),
+      widget.model.newUntitled(type).then(contents => {
+        widget.openRequested.emit(contents.path);
+      },
       error =>
-        utils.showErrorMessage(this, 'New File Error', error)
+        utils.showErrorMessage(widget, 'New File Error', error)
       );
     };
     let items: MenuItem[] = [
@@ -336,13 +347,13 @@ namespace Private {
         disabled: true
       }),
     ]
-    for (var spec of model.kernelSpecs) {
+    for (var spec of widget.model.kernelSpecs) {
       items.push(new MenuItem({
         text: spec.spec.display_name,
         handler: () => {
-          model.newUntitled('notebook').then(contents => {
-            model.startSession(contents.path, spec.name).then(() => {
-              signal.emit(contents.path);
+          widget.model.newUntitled('notebook').then(contents => {
+            widget.model.startSession(contents.path, spec.name).then(() => {
+              widget.openRequested.emit(contents.path);
             });
           });
         }
