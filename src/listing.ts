@@ -1192,8 +1192,7 @@ namespace Private {
   function populateModified(item: IContentsModel, node: HTMLElement): void {
     if (item.last_modified) {
       let text = moment(item.last_modified).fromNow();
-      text === 'a few seconds ago' ? 'seconds ago' : text;
-      node.textContent = text;
+      node.textContent = 'a few seconds ago' ? 'seconds ago' : text;
       node.title = moment(item.last_modified).format("YYYY-MM-DD HH:mm")
     } else {
       node.textContent = '';

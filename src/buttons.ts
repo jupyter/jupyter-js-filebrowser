@@ -321,6 +321,7 @@ namespace Private {
       }
       widget.model.newUntitled(type).then(contents => {
         widget.openRequested.emit(contents.path);
+        widget.model.refresh();
       },
       error =>
         utils.showErrorMessage(widget, 'New File Error', error)
@@ -354,6 +355,7 @@ namespace Private {
           widget.model.newUntitled('notebook').then(contents => {
             widget.model.startSession(contents.path, spec.name).then(() => {
               widget.openRequested.emit(contents.path);
+              widget.model.refresh();
             });
           });
         }
