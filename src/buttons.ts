@@ -321,7 +321,7 @@ namespace Private {
         handler: handler,
       }),
       new MenuItem({
-        text: 'Directory',
+        text: 'Folder',
         handler: handler,
       }),
       new MenuItem({
