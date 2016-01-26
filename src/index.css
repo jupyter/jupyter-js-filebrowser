@@ -55,6 +55,12 @@
 .jp-FileButtons-icon {
   margin-left: auto;
   margin-right: auto;
+  color: #757575;
+}
+
+.jp-FileButtons-drop {
+  margin-left: -0.5em;
+  color: #757575;
 }
 
 
