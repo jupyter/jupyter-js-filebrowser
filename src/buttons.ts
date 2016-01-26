@@ -306,6 +306,10 @@ namespace Private {
     let handler = (item: MenuItem) => {
       let type = item.text.toLowerCase();
       if (type === 'text file') type = 'file';
+      if (type === 'terminal') {
+        signal.emit('/terminal');
+        return;
+      }
       model.newUntitled(type).then(contents => signal.emit(contents.path),
       error =>
         utils.showErrorMessage(this, 'New File Error', error)
