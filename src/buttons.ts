@@ -158,7 +158,7 @@ namespace Private {
       button.title = titles[i];
       let icon = document.createElement('span');
       icon.className = BUTTON_ICON_CLASS + ' fa ' + icons[i];
-      icon.style.color = "rgb(98,98,98)";
+      icon.style.color = "rgb(117,117,117)";
       button.appendChild(icon);
       buttonBar.appendChild(button);
       buttons.push(button);
@@ -168,7 +168,7 @@ namespace Private {
     var dropIcon = document.createElement('span');
     dropIcon.className = 'fa fa-caret-down';
     dropIcon.style.marginLeft = '-0.5em';
-    dropIcon.style.color = "rgb(98,98,98)";
+    dropIcon.style.color = "rgb(117,117,117)";
     buttons[Button.New].appendChild(dropIcon);
 
     // Create the hidden upload input field.
