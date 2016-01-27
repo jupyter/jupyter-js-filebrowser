@@ -57,12 +57,16 @@ class FileBrowserModel implements IDisposable {
 
   /**
    * Get the current items.
-   *
-   * #### Notes
-   * This is a read-only property.
    */
   get items(): IContentsModel[] {
     return this._model.content.slice();
+  }
+
+  /**
+   * Set the current items.
+   */
+  set items(value: IContentsModel[]) {
+    this._model.content = value;
   }
 
   /**
