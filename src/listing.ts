@@ -690,7 +690,7 @@ class DirListing extends Widget {
       if (this._editNode !== event.target as HTMLElement) {
         this._editNode.focus();
         this._editNode.blur();
-        this._pendingSelect = false;
+        clearTimeout(this._selectTimer);
       } else {
         return;
       }
@@ -710,7 +710,7 @@ class DirListing extends Widget {
     }
 
     if (event.button !== 0) {
-      this._pendingSelect = false;
+      clearTimeout(this._selectTimer);
     }
   }
 
@@ -781,7 +781,10 @@ class DirListing extends Widget {
     event.preventDefault();
     event.stopPropagation();
 
-    this._pendingSelect = false;
+    clearTimeout(this._selectTimer);
+    this._noSelectTimer = setTimeout(() => {
+      this._noSelectTimer = -1;
+    }, RENAME_DURATION);
 
     this._editNode.blur();
 
@@ -956,6 +959,8 @@ class DirListing extends Widget {
     let index = utils.hitTestNodes(this._items, event.clientX, event.clientY);
     let target = this._items[index];
 
+    clearTimeout(this._selectTimer);
+
     for (let node of nodes) {
       node.classList.remove(CUT_CLASS);
     }
@@ -977,18 +982,11 @@ class DirListing extends Widget {
       // Handle a rename.
       if (this._model.selected.length === 1 &&
           target.classList.contains(SELECTED_CLASS)) {
-        if (this._pendingSelect) {
-          setTimeout(() => {
-            if (this._pendingSelect) {
-              this._doRename();
-            } else {
-              this._pendingSelect = true;
-            }
-          }, RENAME_DURATION);
-          return;
-        }
-      } else {
-        this._pendingSelect = true;
+        this._selectTimer = setTimeout(() => {
+          if (this._noSelectTimer === -1) {
+            this._doRename();
+          }
+        });
       }
 
       // Add the selected class to current row, and remove from all others.
@@ -1128,7 +1126,8 @@ class DirListing extends Widget {
   private _items: HTMLElement[] = [];
   private _drag: Drag = null;
   private _dragData: { pressX: number, pressY: number, index: number } = null;
-  private _pendingSelect = false;
+  private _selectTimer = -1;
+  private _noSelectTimer = -1;
   private _prevPath = '';
   private _isCut = false;
   private _clipboard: string[] = [];
