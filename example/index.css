@@ -11,9 +11,12 @@
 
 
 .jp-BreadCrumbs-item {
-  margin-right: 5px;
-  padding-bottom: 8px;
+  margin-left: 4px;
+  margin-right: 4px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   border: 1px solid transparent;
+  cursor: pointer;
 }
 
 
@@ -55,14 +58,31 @@
   background-color: #FAFAFA;
   border-top: 1px solid #757575;
   border-bottom: 1px solid #757575;
-  padding-top: 4px;
-  padding-bottom: 4px;
 }
 
 
 .jp-DirListing-headerText {
   padding-left: 4px;
   padding-right: 4px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+
+.jp-DirListing-headerIcon {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+
+.jp-DirListing-headerItem:hover {
+  background-color: #EEEEEE;
+  cursor: pointer;
+}
+
+
+.jp-DirListing-headerItem.jp-mod-selected {
+  font-weight: bold;
 }
 
 
@@ -98,6 +118,17 @@
 .jp-DirListing-item {
   padding: 4px 8px;
   border: 1px solid transparent;
+}
+
+
+.jp-DirListing-item:hover {
+  background-color: #EEEEEE;
+  cursor: pointer;
+}
+
+
+.jp-DirListing-item.jp-mod-selected:hover {
+  background-color: #2196F3;
 }
 
 

@@ -172,15 +172,16 @@ namespace Private {
     var dropIcon = document.createElement('span');
     dropIcon.className = DROP_ICON_CLASS + ' fa fa-caret-down';
     buttons[Button.New].appendChild(dropIcon);
+    buttons[Button.New].style.cursor = 'pointer';
 
     // Create the hidden upload input field.
-    let file = document.createElement('input');
-    file.style.height = "100%";
-    file.style.zIndex = "10000";
-    file.setAttribute("type", "file");
-    file.setAttribute("multiple", "multiple");
+    let upload = document.createElement('input');
+    upload.style.height = "100%";
+    upload.style.zIndex = "10000";
+    upload.setAttribute("type", "file");
+    upload.setAttribute("multiple", "multiple");
     buttons[Button.Upload].classList.add(UPLOAD_CLASS);
-    buttons[Button.Upload].appendChild(file);
+    buttons[Button.Upload].appendChild(upload);
     return buttons;
   }
 

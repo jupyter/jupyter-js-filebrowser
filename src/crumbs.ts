@@ -344,7 +344,7 @@ namespace Private {
     let items: HTMLElement[] = [];
     for (let i = 0; i < 3; i++) {
       let item = document.createElement('i');
-      item.className = 'fa fa-angle-right ' + BREADCRUMB_ITEM_CLASS;
+      item.className = 'fa fa-angle-right';
       items.push(item);
     }
     return items;

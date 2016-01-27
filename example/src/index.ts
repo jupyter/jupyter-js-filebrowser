@@ -192,6 +192,7 @@ function main(): void {
     contextMenu.popup(x, y);
   });
 
+
   window.onresize = () => panel.update();
 }
 
