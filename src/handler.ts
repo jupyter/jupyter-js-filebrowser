@@ -79,6 +79,13 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   /**
+   * Get the list of mime types explicitly supported by the handler.
+   */
+  get mimeTypes(): string[] {
+    return []
+  }
+
+  /**
    * A signal emitted when the file handler has finished loading the
    * contents of the widget.
    */
