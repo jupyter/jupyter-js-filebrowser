@@ -185,14 +185,14 @@ function main(): void {
     });
   });
 
-  /*
-  fbWidget.node.addEventListener('contextmenu', (event: MouseEvent) => {
+  // Add a context menu to the dir listing.
+  let node = fbWidget.node.getElementsByClassName('jp-DirListing-list')[0];
+  node.addEventListener('contextmenu', (event: MouseEvent) => {
     event.preventDefault();
     let x = event.clientX;
     let y = event.clientY;
     contextMenu.popup(x, y);
   });
-  */
 
   window.onresize = () => panel.update();
 }
