@@ -71,11 +71,11 @@ class FileButtons extends Widget {
     super();
     this.addClass(BUTTON_CLASS);
     this._model = model;
-    var buttons = Private.createButtons(this.node);
-    let Button = Private.Button;
+    this._buttons = Private.createButtons(this.node);
 
     // Set up the upload button action.
-    let upload = buttons[Button.Upload].getElementsByTagName('input')[0];
+    let upload = this._buttons[Private.Button.Upload];
+    let input = upload.getElementsByTagName('input')[0];
     upload.onchange = this._handleUploadEvent.bind(this);
 
     // Create the "new" menu.
@@ -95,6 +95,7 @@ class FileButtons extends Widget {
    */
   dispose(): void {
     this._model = null;
+    this._buttons = [];
     this._newMenu.dispose();
     this._newMenu = null;
     super.dispose();
@@ -157,13 +158,11 @@ class FileButtons extends Widget {
     }
 
     // Find a valid click target.
-    let index = utils.hitTestNodes(this.node.childNodes, event.clientX,
-      event.clientY);
+    let index = utils.hitTestNodes(this._buttons, event.clientX, event.clientY);
     if (index === Private.Button.Refresh) {
       this._model.refresh();
     } else if (index === Private.Button.New) {
-      let node = this.node.childNodes[index] as HTMLElement;
-      let rect = node.getBoundingClientRect();
+      let rect = this._buttons[index].getBoundingClientRect();
       this._newMenu.popup(rect.left, rect.bottom, false, true);
     }
   }
@@ -177,19 +176,16 @@ class FileButtons extends Widget {
       return;
     }
 
+    // Remove any existing selection.
+    for (let button of this._buttons) {
+      button.classList.remove(utils.SELECTED_CLASS);
+    }
+
     // Find a valid target.
     let index = utils.hitTestNodes(this.node.childNodes, event.clientX,
       event.clientY);
     if (index !== -1) {
-      // Select the target and deselect all others.
-      for (let i = 0; i < this.node.childNodes.length; i++) {
-        let node = this.node.childNodes[i] as HTMLElement;
-        if (i === index) {
-          node.classList.add(utils.SELECTED_CLASS);
-        } else {
-          node.classList.remove(utils.SELECTED_CLASS);
-        }
-      }
+      this._buttons[index].classList.add(utils.SELECTED_CLASS);
     }
   }
 
@@ -203,9 +199,8 @@ class FileButtons extends Widget {
     }
 
     // Remove any existing selection.
-    for (let i = 0; i < this.node.childNodes.length; i++) {
-      let node = this.node.childNodes[i] as HTMLElement;
-      node.classList.remove(utils.SELECTED_CLASS);
+    for (let button of this._buttons) {
+      button.classList.remove(utils.SELECTED_CLASS);
     }
   }
 
@@ -238,6 +233,7 @@ class FileButtons extends Widget {
 
   private _newMenu: Menu = null;
   private _model: FileBrowserModel = null;
+  private _buttons: HTMLElement[] = [];
 }
 
 
