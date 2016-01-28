@@ -213,7 +213,7 @@ class FileButtons extends Widget {
   /**
    * Get the open requested signal.
    */
-  get openRequested(): ISignal<FileButtons, string> {
+  get openRequested(): ISignal<FileButtons, IContentsModel> {
     return Private.openRequestedSignal.bind(this);
   }
 
@@ -258,7 +258,7 @@ namespace Private {
    * A signal emitted when the an open is requested.
    */
   export
-  const openRequestedSignal = new Signal<FileButtons, string>();
+  const openRequestedSignal = new Signal<FileButtons, IContentsModel>();
 
   /**
    * Button item list enum.
@@ -316,11 +316,15 @@ namespace Private {
       let type = item.text.toLowerCase();
       if (type === 'text file') type = 'file';
       if (type === 'terminal') {
-        widget.openRequested.emit('new.terminal');
+        widget.openRequested.emit({
+          name: 'new',
+          path: 'new.terminal',
+          type: 'terminal',
+        });
         return;
       }
       widget.model.newUntitled(type).then(contents => {
-        widget.openRequested.emit(contents.path);
+        widget.openRequested.emit(contents);
         widget.model.refresh();
       },
       error =>
@@ -354,7 +358,7 @@ namespace Private {
         handler: () => {
           widget.model.newUntitled('notebook').then(contents => {
             widget.model.startSession(contents.path, spec.name).then(() => {
-              widget.openRequested.emit(contents.path);
+              widget.openRequested.emit(contents);
               widget.model.refresh();
             });
           });
