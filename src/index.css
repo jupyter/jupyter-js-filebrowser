@@ -27,8 +27,8 @@
   right: 0;
   margin: 0;
   padding: 0;
-  width: 100%;
-  height: 100%;
+  font-size: 20px;
+  cursor: pointer;
   opacity: 0;
   filter: alpha(opacity=0);
 }
@@ -55,14 +55,7 @@
 .jp-FileButtons-icon {
   margin-left: auto;
   margin-right: auto;
-  color: #757575;
 }
-
-.jp-FileButtons-drop {
-  margin-left: -0.5em;
-  color: #757575;
-}
-
 
 .jp-DirListing {
   flex: 1 1 auto;
@@ -85,14 +78,7 @@
 }
 
 
-.jp-DirListing-headerText {
-  margin-right: auto;
-}
 
-
-.jp-DirListing-headerIcon {
-  margin-left: -0.5em;
-}
 
 
 .jp-DirListing-headerFile {

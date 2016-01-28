@@ -15,6 +15,10 @@ import {
 } from 'phosphor-menus';
 
 import {
+  Message
+} from 'phosphor-messaging';
+
+import {
   Widget
 } from 'phosphor-widget';
 
@@ -70,16 +74,9 @@ class FileButtons extends Widget {
     var buttons = Private.createButtons(this.node);
     let Button = Private.Button;
 
-    // Set up events on the buttons.
-    let input = buttons[Button.Upload].getElementsByTagName('input')[0];
-    input.onchange = this._handleUploadEvent.bind(this);
-
-    buttons[Button.Refresh].onclick = () => this._model.refresh();
-
-    buttons[Button.New].onclick = () => {
-      let rect = buttons[Button.New].getBoundingClientRect();
-      this._newMenu.popup(rect.left, rect.bottom, false, true);
-    }
+    // Set up the upload button action.
+    let upload = buttons[Button.Upload].getElementsByTagName('input')[0];
+    upload.onchange = this._handleUploadEvent.bind(this);
 
     // Create the "new" menu.
     let handler = (item: MenuItem) => {
@@ -101,6 +98,115 @@ class FileButtons extends Widget {
     this._newMenu.dispose();
     this._newMenu = null;
     super.dispose();
+  }
+
+
+  /**
+   * Handle the DOM events for the bread crumbs.
+   *
+   * @param event - The DOM event sent to the widget.
+   *
+   * #### Notes
+   * This method implements the DOM `EventListener` interface and is
+   * called in response to events on the panel's DOM node. It should
+   * not be called directly by user code.
+   */
+  handleEvent(event: Event): void {
+    switch (event.type) {
+    case 'click':
+      this._evtClick(event as MouseEvent);
+      break;
+    case 'mousedown':
+      this._evtMouseDown(event as MouseEvent);
+      break;
+    case 'mouseup':
+      this._evtMouseUp(event as MouseEvent);
+      break;
+    }
+  }
+
+  /**
+   * A message handler invoked on an `'after-attach'` message.
+   */
+  protected onAfterAttach(msg: Message): void {
+    super.onAfterAttach(msg);
+    let node = this.node;
+    node.addEventListener('click', this);
+    node.addEventListener('mousedown', this);
+    node.addEventListener('mouseup', this);
+  }
+
+  /**
+   * A message handler invoked on a `'before-detach'` message.
+   */
+  protected onBeforeDetach(msg: Message): void {
+    super.onBeforeDetach(msg);
+    let node = this.node;
+    node.removeEventListener('click', this);
+    node.removeEventListener('mousedown', this);
+    node.removeEventListener('mouseup', this);
+  }
+
+  /**
+   * Handle the `'click'` event for the widget.
+   */
+  private _evtClick(event: MouseEvent) {
+    // Do nothing if it's not a left mouse press.
+    if (event.button !== 0) {
+      return;
+    }
+
+    // Find a valid click target.
+    let index = utils.hitTestNodes(this.node.childNodes, event.clientX,
+      event.clientY);
+    if (index === Private.Button.Refresh) {
+      this._model.refresh();
+    } else if (index === Private.Button.New) {
+      let node = this.node.childNodes[index] as HTMLElement;
+      let rect = node.getBoundingClientRect();
+      this._newMenu.popup(rect.left, rect.bottom, false, true);
+    }
+  }
+
+  /**
+   * Handle the `'mousedown'` event for the widget.
+   */
+  private _evtMouseDown(event: MouseEvent) {
+    // Do nothing if it's not a left mouse press.
+    if (event.button !== 0) {
+      return;
+    }
+
+    // Find a valid target.
+    let index = utils.hitTestNodes(this.node.childNodes, event.clientX,
+      event.clientY);
+    if (index !== -1) {
+      // Select the target and deselect all others.
+      for (let i = 0; i < this.node.childNodes.length; i++) {
+        let node = this.node.childNodes[i] as HTMLElement;
+        if (i === index) {
+          node.classList.add(utils.SELECTED_CLASS);
+        } else {
+          node.classList.remove(utils.SELECTED_CLASS);
+        }
+      }
+    }
+  }
+
+  /**
+   * Handle the `'mouseup'` event for the widget.
+   */
+  private _evtMouseUp(event: MouseEvent) {
+    // Do nothing if it's not a left mouse press.
+    if (event.button !== 0) {
+      return;
+    }
+
+    // Remove any existing selection.
+    for (let i = 0; i < this.node.childNodes.length; i++) {
+      let node = this.node.childNodes[i] as HTMLElement;
+      node.classList.remove(utils.SELECTED_CLASS);
+    }
   }
 
   /**
