@@ -55,6 +55,10 @@ import {
 import * as utils
   from './utils';
 
+import {
+  SELECTED_CLASS
+} from './utils';
+
 
 /**
  * The class name added to FileBrowser list area.
@@ -165,11 +169,6 @@ const MULTI_SELECTED_CLASS = 'jp-mod-multiSelected';
  * The class name added to indicate running notebook.
  */
 const RUNNING_CLASS = 'jp-mod-running';
-
-/**
- * The class name added to selected rows.
- */
-const SELECTED_CLASS = 'jp-mod-selected';
 
 /**
  * The class name added for a decending sort.
