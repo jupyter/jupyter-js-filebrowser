@@ -231,6 +231,10 @@ export
 class FileHandler extends AbstractFileHandler {
   /**
    * Get file contents given a path.
+   *
+   * #### Notes
+   * Subclasses are free to use any or none of the information in
+   * the model.
    */
   protected getContents(model: IContentsModel): Promise<IContentsModel> {
     return this.manager.get(model.path, { type: model.type });
@@ -247,6 +251,10 @@ class FileHandler extends AbstractFileHandler {
 
   /**
    * Populate a widget from `IContentsModel`.
+   *
+   * #### Notes
+   * Subclasses are free to use any or none of the information in
+   * the model.
    */
   protected setState(widget: Widget, model: IContentsModel): Promise<void> {
     let mirror = widget as CodeMirrorWidget;
@@ -264,7 +272,7 @@ class FileHandler extends AbstractFileHandler {
     name = name.split('.')[0];
     let content = (widget as CodeMirrorWidget).editor.getDoc().getValue();
     return Promise.resolve({ path: model.path, content, name,
-                             type: model.type, format: model.format});
+                             type: 'file', format: 'text' });
   }
 
 }
