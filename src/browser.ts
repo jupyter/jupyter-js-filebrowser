@@ -89,12 +89,12 @@ class FileBrowserWidget extends Widget {
     this._model.refreshed.connect(this._handleRefresh, this)
     this._crumbs = new BreadCrumbs(model);
     this._buttons = new FileButtons(model);
-    this._buttons.openRequested.connect((buttons, path) => {
-      this.openRequested.emit(path);
+    this._buttons.openRequested.connect((buttons, contents) => {
+      this.openRequested.emit(contents);
     });
     this._listing = new DirListing(model);
-    this._listing.openRequested.connect((listing, path) => {
-      this.openRequested.emit(path);
+    this._listing.openRequested.connect((listing, contents) => {
+      this.openRequested.emit(contents);
     });
 
     this._crumbs.addClass(CRUMBS_CLASS);
@@ -133,21 +133,21 @@ class FileBrowserWidget extends Widget {
   /**
    * Get the open requested signal.
    */
-  get openRequested(): ISignal<FileBrowserWidget, string> {
+  get openRequested(): ISignal<FileBrowserWidget, IContentsModel> {
     return Private.openRequestedSignal.bind(this);
   }
 
   /**
    * Get the widget factory for the widget.
    */
-  get widgetFactory(): (path: string) => Widget {
+  get widgetFactory(): (model: IContentsModel) => Widget {
     return this._listing.widgetFactory;
   }
 
   /**
    * Set the widget factory for the widget.
    */
-  set widgetFactory(factory: (path: string) => Widget) {
+  set widgetFactory(factory: (model: IContentsModel) => Widget) {
     this._listing.widgetFactory = factory;
   }
 
@@ -174,7 +174,7 @@ class FileBrowserWidget extends Widget {
           showErrorMessage(this, 'Open directory', error)
         );
       } else {
-        this.openRequested.emit(item.path);
+        this.openRequested.emit(item);
       }
     }
   }
@@ -305,5 +305,5 @@ namespace Private {
    * A signal emitted when the an open is requested.
    */
   export
-  const openRequestedSignal = new Signal<FileBrowserWidget, string>();
+  const openRequestedSignal = new Signal<FileBrowserWidget, IContentsModel>();
 }

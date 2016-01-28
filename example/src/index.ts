@@ -50,8 +50,8 @@ function main(): void {
 
   let fbModel = new FileBrowserModel(contentsManager, sessionsManager);
   let fbWidget = new FileBrowserWidget(fbModel)
-  fbWidget.widgetFactory = path => {
-    return handler.open(path);
+  fbWidget.widgetFactory = model => {
+    return handler.open(model);
   };
   let handler = new FileHandler(contentsManager);
 
@@ -61,8 +61,8 @@ function main(): void {
   panel.addChild(dock);
   dock.spacing = 8;
 
-  fbWidget.openRequested.connect((fb, path) => {
-    let editor = handler.open(path);
+  fbWidget.openRequested.connect((fb, model) => {
+    let editor = handler.open(model);
     dock.insertTabAfter(editor);
   });
 

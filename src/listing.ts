@@ -264,21 +264,21 @@ class DirListing extends Widget {
   /**
    * Get the open requested signal.
    */
-  get openRequested(): ISignal<DirListing, string> {
+  get openRequested(): ISignal<DirListing, IContentsModel> {
     return Private.openRequestedSignal.bind(this);
   }
 
   /**
    * Get the widget factory for the widget.
    */
-  get widgetFactory(): (path: string) => Widget {
+  get widgetFactory(): (model: IContentsModel) => Widget {
     return this._widgetFactory;
   }
 
   /**
    * Set the widget factory for the widget.
    */
-  set widgetFactory(factory: (path: string) => Widget) {
+  set widgetFactory(factory: (model: IContentsModel) => Widget) {
     this._widgetFactory = factory;
   }
 
@@ -799,7 +799,7 @@ class DirListing extends Widget {
             utils.showErrorMessage(this, 'Change Directory Error', error)
           );
         } else {
-          this.openRequested.emit(item.path);
+          this.openRequested.emit(item);
           return;
         }
 
@@ -935,7 +935,7 @@ class DirListing extends Widget {
       let item = this._model.items[selected[0]];
       if (item.type !== 'directory') {
         this._drag.mimeData.setData(FACTORY_MIME, () => {
-          return this._widgetFactory(item.path);
+          return this._widgetFactory(item);
         });
       }
     }
@@ -1130,7 +1130,7 @@ class DirListing extends Widget {
   private _prevPath = '';
   private _isCut = false;
   private _clipboard: string[] = [];
-  private _widgetFactory: (path: string) => Widget = null;
+  private _widgetFactory: (model: IContentsModel) => Widget = null;
 }
 
 
@@ -1142,7 +1142,7 @@ namespace Private {
    * A signal emitted when the an open is requested.
    */
   export
-  const openRequestedSignal = new Signal<DirListing, string>();
+  const openRequestedSignal = new Signal<DirListing, IContentsModel>();
 
   /**
    * Create an uninitialized DOM node for an IContentsModel.

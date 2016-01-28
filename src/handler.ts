@@ -79,35 +79,43 @@ abstract class AbstractFileHandler implements IMessageFilter {
   }
 
   /**
+   * Get the list of mime types explicitly supported by the handler.
+   */
+  get mimeTypes(): string[] {
+    return []
+  }
+
+  /**
    * A signal emitted when the file handler has finished loading the
    * contents of the widget.
    */
-  get finished(): ISignal<AbstractFileHandler, string> {
+  get finished(): ISignal<AbstractFileHandler, IContentsModel> {
     return AbstractFileHandler.finishedSignal.bind(this);
   }
 
   /**
    * Open a path and return a widget.
    */
-  open(path: string): Widget {
+  open(model: IContentsModel): Widget {
+    let path = model.path;
     let index = arrays.findIndex(this.widgets,
       (widget, ind) => {
-        return AbstractFileHandler.pathProperty.get(widget) === path;
+        return AbstractFileHandler.modelProperty.get(widget).path === path;
       }
     );
     if (index !== -1) {
       return this.widgets[index];
     }
-    var widget = this.createWidget(path);
+    var widget = this.createWidget(model);
     widget.title.closable = true;
     widget.title.changed.connect(this.titleChanged, this);
-    AbstractFileHandler.pathProperty.set(widget, path);
+    AbstractFileHandler.modelProperty.set(widget, model);
     this.widgets.push(widget);
     installMessageFilter(widget, this);
 
-    this.getContents(path).then(contents => {
+    this.getContents(model).then(contents => {
       this.setState(widget, contents).then(
-        () => this.finished.emit(path)
+        () => this.finished.emit(model)
       );
     });
 
@@ -121,9 +129,9 @@ abstract class AbstractFileHandler implements IMessageFilter {
     if (this.widgets.indexOf(widget) === -1) {
       return;
     }
-    let path = AbstractFileHandler.pathProperty.get(widget);
-    return this.getState(widget).then(model => {
-      return this.manager.save(model.path, model);
+    let model = AbstractFileHandler.modelProperty.get(widget);
+    return this.getState(widget).then(contents => {
+      return this.manager.save(model.path, contents);
     });
   }
 
@@ -134,8 +142,8 @@ abstract class AbstractFileHandler implements IMessageFilter {
     if (this.widgets.indexOf(widget) === -1) {
       return;
     }
-    let path = AbstractFileHandler.pathProperty.get(widget);
-    return this.getContents(path).then(contents => {
+    let model = AbstractFileHandler.modelProperty.get(widget);
+    return this.getContents(model).then(contents => {
       return this.setState(widget, contents);
     });
   }
@@ -165,16 +173,24 @@ abstract class AbstractFileHandler implements IMessageFilter {
 
   /**
    * Get file contents given a path.
+   *
+   * #### Notes
+   * Subclasses are free to use any or none of the information in
+   * the model.
    */
-  protected abstract getContents(path: string): Promise<IContentsModel>;
+  protected abstract getContents(model: IContentsModel): Promise<IContentsModel>;
 
   /**
    * Create the widget from a path.
    */
-  protected abstract createWidget(path: string): Widget;
+  protected abstract createWidget(model: IContentsModel): Widget;
 
   /**
    * Populate a widget from `IContentsModel`.
+   *
+   * #### Notes
+   * Subclasses are free to use any or none of the information in
+   * the model.
    */
   protected abstract setState(widget: Widget, model: IContentsModel): Promise<void>;
 
@@ -204,10 +220,10 @@ abstract class AbstractFileHandler implements IMessageFilter {
       return
     }
     if (args.name == 'text') {
-      let oldPath = AbstractFileHandler.pathProperty.get(widget);
-      let newPath = this.getNewPath(oldPath, args.newValue);
-      this.manager.rename(oldPath, newPath).then(() =>
-        AbstractFileHandler.pathProperty.set(widget, newPath));
+      let model = AbstractFileHandler.modelProperty.get(widget);
+      let newPath = this.getNewPath(model.path, args.newValue);
+      this.manager.rename(model.path, newPath).then(contents =>
+        AbstractFileHandler.modelProperty.set(widget, contents));
     }
   }
 
@@ -223,22 +239,30 @@ export
 class FileHandler extends AbstractFileHandler {
   /**
    * Get file contents given a path.
+   *
+   * #### Notes
+   * Subclasses are free to use any or none of the information in
+   * the model.
    */
-  protected getContents(path: string): Promise<IContentsModel> {
-    return this.manager.get(path, { type: 'file' });
+  protected getContents(model: IContentsModel): Promise<IContentsModel> {
+    return this.manager.get(model.path, { type: 'file', format: 'text' });
   }
 
   /**
    * Create the widget from an `IContentsModel`.
    */
-  protected createWidget(path: string): Widget {
+  protected createWidget(model: IContentsModel): Widget {
     let widget = new JupyterCodeMirrorWidget() as Widget;
-    widget.title.text = path.split('/').pop();
+    widget.title.text = model.path.split('/').pop();
     return widget;
   }
 
   /**
    * Populate a widget from `IContentsModel`.
+   *
+   * #### Notes
+   * Subclasses are free to use any or none of the information in
+   * the model.
    */
   protected setState(widget: Widget, model: IContentsModel): Promise<void> {
     let mirror = widget as CodeMirrorWidget;
@@ -251,12 +275,12 @@ class FileHandler extends AbstractFileHandler {
    * Get the contents model for a widget.
    */
   protected getState(widget: Widget): Promise<IContentsModel> {
-    let path = AbstractFileHandler.pathProperty.get(widget);
-    let name = path.split('/').pop();
+    let model = AbstractFileHandler.modelProperty.get(widget);
+    let name = model.path.split('/').pop();
     name = name.split('.')[0];
     let content = (widget as CodeMirrorWidget).editor.getDoc().getValue();
-    return Promise.resolve({ path, content, name,
-                             type: 'file', format: 'text'});
+    return Promise.resolve({ path: model.path, content, name,
+                             type: 'file', format: 'text' });
   }
 
 }
@@ -271,9 +295,9 @@ namespace AbstractFileHandler {
    * An attached property with the widget path.
    */
   export
-  const pathProperty = new Property<Widget, string>({
-    name: 'path',
-    value: ''
+  const modelProperty = new Property<Widget, IContentsModel>({
+    name: 'model',
+    value: null
   });
 
 
@@ -282,7 +306,7 @@ namespace AbstractFileHandler {
    * widget.
    */
   export
-  const finishedSignal = new Signal<AbstractFileHandler, string>();
+  const finishedSignal = new Signal<AbstractFileHandler, IContentsModel>();
 }
 
 
