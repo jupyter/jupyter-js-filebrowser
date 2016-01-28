@@ -7,7 +7,7 @@
   "dependencies": {
     "codemirror": "^5.10.0",
     "jupyter-js-domutils": "^0.1.1",
-    "jupyter-js-services": "^0.4.0",
+    "jupyter-js-services": "^0.4.3",
     "jupyter-js-utils": "^0.2.7",
     "moment": "^2.10.6",
     "phosphor-disposable": "^1.0.5",

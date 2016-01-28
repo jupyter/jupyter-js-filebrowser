@@ -4,7 +4,7 @@
 
 import {
   IContentsManager, IContentsModel, IContentsOpts, INotebookSessionManager,
-  INotebookSession, ISessionId, KernelStatus
+  INotebookSession, ISessionId, KernelStatus, getKernelSpecs, IKernelSpecId
 } from 'jupyter-js-services';
 
 import {
@@ -98,6 +98,16 @@ class FileBrowserModel implements IDisposable {
    */
   get sessionIds(): ISessionId[] {
     return this._sessionIds.slice();
+  }
+
+  /**
+   * Get a the list of available kernel specs.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get kernelSpecs(): IKernelSpecId[] {
+    return this._kernelSpecs.slice();
   }
 
   /**
@@ -270,6 +280,16 @@ class FileBrowserModel implements IDisposable {
   }
 
   /**
+   * Start a new session on a notebook.
+   */
+  startSession(path: string, kernel: string): Promise<INotebookSession> {
+    return this._sessionManager.startNew({
+      notebookPath: path,
+      kernelName: kernel
+    });
+  }
+
+  /**
    * Perform the actual upload.
    */
   private _upload(file: File): Promise<IContentsModel> {
@@ -336,6 +356,16 @@ class FileBrowserModel implements IDisposable {
           }));
         }
       }
+      if (this._kernelSpecs.length === 0) {
+        promises.push(this._sessionManager.getSpecs().then(specs => {
+          for (let key in specs.kernelspecs) {
+            this._kernelSpecs.push(specs.kernelspecs[key]);
+          }
+          this._kernelSpecs.sort((a, b) => {
+            return a.spec.display_name.localeCompare(b.spec.display_name);
+          });
+        }));
+      }
       return Promise.all(promises).then(() => {});
     });
   }
@@ -346,6 +376,7 @@ class FileBrowserModel implements IDisposable {
   private _sessionIds: ISessionId[] = [];
   private _sessionManager: INotebookSessionManager = null;
   private _model: IContentsModel = null;
+  private _kernelSpecs: IKernelSpecId[] = [];
 }
 
 

@@ -19,6 +19,10 @@ import {
 } from 'phosphor-messaging';
 
 import {
+  ISignal, Signal
+} from 'phosphor-signaling';
+
+import {
   Widget
 } from 'phosphor-widget';
 
@@ -77,17 +81,6 @@ class FileButtons extends Widget {
     let upload = this._buttons[Private.Button.Upload];
     let input = upload.getElementsByTagName('input')[0];
     upload.onchange = this._handleUploadEvent.bind(this);
-
-    // Create the "new" menu.
-    let handler = (item: MenuItem) => {
-      let type = item.text.toLowerCase();
-      if (type === 'text file') type = 'file';
-      this._model.newUntitled(type).catch(error =>
-        utils.showErrorMessage(this, 'New File Error', error)
-       ).then(() => this._model.refresh());
-    };
-    this._newMenu = Private.createNewItemMenu(handler);
-
   }
 
   /**
@@ -163,6 +156,9 @@ class FileButtons extends Widget {
       this._model.refresh();
     } else if (index === Private.Button.New) {
       let rect = this._buttons[index].getBoundingClientRect();
+      if (!this._newMenu) {
+        this._newMenu = Private.createNewItemMenu(this);
+      }
       this._newMenu.popup(rect.left, rect.bottom, false, true);
     }
   }
@@ -205,6 +201,23 @@ class FileButtons extends Widget {
   }
 
   /**
+   * Get the model used by the widget.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get model(): FileBrowserModel {
+    return this._model;
+  }
+
+  /**
+   * Get the open requested signal.
+   */
+  get openRequested(): ISignal<FileButtons, string> {
+    return Private.openRequestedSignal.bind(this);
+  }
+
+  /**
    * Handle a file upload event.
    */
   private _handleUploadEvent(event: Event): void {
@@ -241,6 +254,12 @@ class FileButtons extends Widget {
  * The namespace for the buttons private data.
  */
 namespace Private {
+  /**
+   * A signal emitted when the an open is requested.
+   */
+  export
+  const openRequestedSignal = new Signal<FileButtons, string>();
+
   /**
    * Button item list enum.
    */
@@ -291,20 +310,57 @@ namespace Private {
    * Create the "new" menu.
    */
   export
-  function createNewItemMenu(handler: (item: MenuItem) => void): Menu {
-    return new Menu([
-      new MenuItem({
-        text: 'Notebook',
-        handler: handler,
-      }),
+  function createNewItemMenu(widget: FileButtons): Menu {
+    // Create the "new" menu.
+    let handler = (item: MenuItem) => {
+      let type = item.text.toLowerCase();
+      if (type === 'text file') type = 'file';
+      if (type === 'terminal') {
+        widget.openRequested.emit('new.terminal');
+        return;
+      }
+      widget.model.newUntitled(type).then(contents => {
+        widget.openRequested.emit(contents.path);
+        widget.model.refresh();
+      },
+      error =>
+        utils.showErrorMessage(widget, 'New File Error', error)
+      );
+    };
+    let items: MenuItem[] = [
       new MenuItem({
         text: 'Text File',
         handler: handler,
       }),
       new MenuItem({
-        text: 'Directory',
+        text: 'Folder',
         handler: handler,
-      })
-    ]);
+      }),
+      new MenuItem({
+        text: 'Terminal',
+        handler: handler
+      }),
+      new MenuItem({
+        type: MenuItem.Separator
+      }),
+      new MenuItem({
+        text: 'Notebooks',
+        disabled: true
+      }),
+    ]
+    for (var spec of widget.model.kernelSpecs) {
+      items.push(new MenuItem({
+        text: spec.spec.display_name,
+        handler: () => {
+          widget.model.newUntitled('notebook').then(contents => {
+            widget.model.startSession(contents.path, spec.name).then(() => {
+              widget.openRequested.emit(contents.path);
+              widget.model.refresh();
+            });
+          });
+        }
+      }));
+    }
+    return new Menu(items);
   }
 }
