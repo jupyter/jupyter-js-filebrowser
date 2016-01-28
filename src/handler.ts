@@ -173,6 +173,10 @@ abstract class AbstractFileHandler implements IMessageFilter {
 
   /**
    * Get file contents given a path.
+   *
+   * #### Notes
+   * Subclasses are free to use any or none of the information in
+   * the model.
    */
   protected abstract getContents(model: IContentsModel): Promise<IContentsModel>;
 
@@ -183,6 +187,10 @@ abstract class AbstractFileHandler implements IMessageFilter {
 
   /**
    * Populate a widget from `IContentsModel`.
+   *
+   * #### Notes
+   * Subclasses are free to use any or none of the information in
+   * the model.
    */
   protected abstract setState(widget: Widget, model: IContentsModel): Promise<void>;
 
@@ -237,7 +245,7 @@ class FileHandler extends AbstractFileHandler {
    * the model.
    */
   protected getContents(model: IContentsModel): Promise<IContentsModel> {
-    return this.manager.get(model.path, { type: model.type });
+    return this.manager.get(model.path, { type: 'file', format: 'text' });
   }
 
   /**
