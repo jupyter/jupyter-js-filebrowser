@@ -1057,7 +1057,8 @@ class DirListing extends Widget {
    * Allow the user to rename item on a given row.
    */
   private _doRename(): Promise<string> {
-    let row = utils.findElement(this.node, SELECTED_CLASS);
+    let listing = utils.findElement(this.node, LIST_AREA_CLASS);
+    let row = utils.findElement(listing, SELECTED_CLASS);
     let fileCell = utils.findElement(row, ITEM_FILE_CLASS);
     let text = utils.findElement(row, ITEM_TEXT_CLASS);
     let original = text.textContent;
