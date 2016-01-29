@@ -6,16 +6,20 @@
 'use strict';
 
 import {
-  CodeMirrorWidget
-} from 'phosphor-codemirror';
-
-import {
   getConfigOption
 } from 'jupyter-js-utils';
 
 import {
   ContentsManager, ISessionOptions, NotebookSessionManager
 } from 'jupyter-js-services';
+
+import {
+  CodeMirrorWidget
+} from 'phosphor-codemirror';
+
+import {
+  SimpleCommand
+} from 'phosphor-command';
 
 import {
   DockPanel
@@ -70,54 +74,66 @@ function main(): void {
   keymapManager.add([{
     sequence: ['Enter'],
     selector: '.jp-DirListing',
-    handler: () => {
-      fbWidget.open();
-      return true;
-    }
+    command: new SimpleCommand({
+      handler: () => {
+        fbWidget.open();
+        return true;
+      }
+     })
   }, {
     sequence: ['Ctrl N'], // Add emacs keybinding for select next.
     selector: '.jp-DirListing',
-    handler: () => {
-      fbWidget.selectNext();
-      return true;
-    }
+    command: new SimpleCommand({
+      handler: () => {
+        fbWidget.selectNext();
+        return true;
+      }
+    })
   }, {
     sequence: ['Ctrl P'], // Add emacs keybinding for select previous.
     selector: '.jp-DirListing',
-    handler: () => {
-      fbWidget.selectPrevious();
-      return true;
-    }
+    command: new SimpleCommand({
+      handler: () => {
+        fbWidget.selectPrevious();
+        return true;
+      }
+     })
   }, {
     sequence: ['Accel S'],
     selector: '.jp-CodeMirrorWidget',
-    handler: () => {
-      let widget = handler.currentWidget;
-      if (widget) {
-        handler.save(widget);
-        return true;
+    command: new SimpleCommand({
+      handler: () => {
+        let widget = handler.currentWidget;
+        if (widget) {
+          handler.save(widget);
+          return true;
+        }
       }
-    }
+     })
   }, {
     sequence: ['Accel R'],
     selector: '.jp-CodeMirrorWidget',
-    handler: () => {
-      let widget = handler.currentWidget;
-      if (widget) {
-        handler.revert(widget);
-        return true;
+    command: new SimpleCommand({
+      handler: () => {
+        let widget = handler.currentWidget;
+        if (widget) {
+          handler.revert(widget);
+          return true;
+        }
       }
-    }
+    })
   }, {
     sequence: ['Ctrl W'],
     selector: '.jp-CodeMirrorWidget',
-    handler: () => {
-      let widget = handler.currentWidget;
-      if (widget) {
-        handler.close(widget);
-        return true;
+    command: new SimpleCommand({
+      handler: () => {
+        let widget = handler.currentWidget;
+        if (widget) {
+          handler.close(widget);
+          return true;
+        }
       }
-    }
+    })
   }]);
 
   window.addEventListener('keydown', (event) => {
