@@ -13,6 +13,9 @@ import {
   ContentsManager, ISessionOptions, NotebookSessionManager
 } from 'jupyter-js-services';
 
+import * as arrays
+ from 'phosphor-arrays';
+
 import {
   CodeMirrorWidget
 } from 'phosphor-codemirror';
@@ -49,7 +52,7 @@ import {
 
 function getCurrentWidget(handler: FileHandler): Widget {
   for (let w of handler.widgets) {
-    if (w.hasClass('jp-mod-selected')) {
+    if (w.hasClass('jp-mod-focus')) {
       return w;
     }
   }
@@ -151,13 +154,16 @@ function main(): void {
   });
 
   document.addEventListener('focus', (event) => {
-    for (let w of handler.widgets) {
-      if (w.node.contains(event.target as HTMLElement)) {
-        w.addClass('jp-mod-selected');
-      } else {
-        w.removeClass('jp-mod-selected');
-      }
+    // If the widget belongs to the handler, update the focused widget.
+    let widget = arrays.find(handler.widgets,
+      w => { return w.node.contains(event.target as HTMLElement); });
+    if (!widget || widget.hasClass('jp-mod-focus')) {
+      return;
     }
+    for (let w of handler.widgets) {
+      w.removeClass('jp-mod-focus');
+    }
+    widget.addClass('jp-mod-focus');
   }, true);
 
   let contextMenu = new Menu([
