@@ -60,15 +60,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Construct a new source file handler.
    */
   constructor(manager: IContentsManager) {
-    this.manager = manager;
-  }
-
-  /**
-   * Get the currently focused widget, or `null`.
-   */
-  get currentWidget(): Widget {
-    return arrays.find(this.widgets,
-      w => w.node.contains(document.activeElement as HTMLElement));
+    this._manager = manager;
   }
 
   /**
@@ -83,6 +75,26 @@ abstract class AbstractFileHandler implements IMessageFilter {
    */
   get mimeTypes(): string[] {
     return []
+  }
+
+  /**
+   * Get the current set of widgets managed by the handler.
+   *
+   * #### Notes
+   * This is a read-only property
+   */
+  get widgets(): Widget[] {
+    return this._widgets.slice();
+  }
+
+  /**
+   * Get the contents manager used by the handler.
+   *
+   * #### Notes
+   * This is a read-only property
+   */
+  get manager(): IContentsManager {
+    return this._manager;
   }
 
   /**
@@ -110,7 +122,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
     widget.title.closable = true;
     widget.title.changed.connect(this.titleChanged, this);
     AbstractFileHandler.modelProperty.set(widget, model);
-    this.widgets.push(widget);
+    this._widgets.push(widget);
     installMessageFilter(widget, this);
 
     this.getContents(model).then(contents => {
@@ -157,7 +169,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
       return false;
     }
     widget.dispose();
-    this.widgets.splice(index, 1);
+    this._widgets.splice(index, 1);
     return true;
   }
 
@@ -227,8 +239,8 @@ abstract class AbstractFileHandler implements IMessageFilter {
     }
   }
 
-  protected manager: IContentsManager;
-  protected widgets: Widget[] = [];
+  private _manager: IContentsManager;
+  private _widgets: Widget[] = [];
 }
 
 
