@@ -84,7 +84,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * This is a read-only property
    */
   get widgets(): Widget[] {
-    return this._widgets.splice();
+    return this._widgets.slice();
   }
 
   /**
