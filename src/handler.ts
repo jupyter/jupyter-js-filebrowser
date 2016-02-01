@@ -80,7 +80,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
   /**
    * Get the current set of widgets managed by the handler.
    *
-   * #### Notest
+   * #### Notes
    * This is a read-only property
    */
   get widgets(): Widget[] {
@@ -90,7 +90,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
   /**
    * Get the contents manager used by the handler.
    *
-   * #### Notest
+   * #### Notes
    * This is a read-only property
    */
   get manager(): IContentsManager {
