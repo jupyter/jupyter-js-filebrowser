@@ -46,6 +46,16 @@ import {
 } from '../../lib';
 
 
+
+function getCurrentWidget(handler: FileHandler): Widget {
+  for (let w of handler.widgets) {
+    if (w.hasClass('jp-mod-selected')) {
+      return w;
+    }
+  }
+}
+
+
 function main(): void {
 
   let baseUrl = getConfigOption('baseUrl');
@@ -103,7 +113,7 @@ function main(): void {
     selector: '.jp-CodeMirrorWidget',
     command: new SimpleCommand({
       handler: () => {
-        let widget = handler.currentWidget;
+        let widget = getCurrentWidget(handler);
         if (widget) {
           handler.save(widget);
           return true;
@@ -115,7 +125,7 @@ function main(): void {
     selector: '.jp-CodeMirrorWidget',
     command: new SimpleCommand({
       handler: () => {
-        let widget = handler.currentWidget;
+        let widget = getCurrentWidget(handler);
         if (widget) {
           handler.revert(widget);
           return true;
@@ -127,7 +137,7 @@ function main(): void {
     selector: '.jp-CodeMirrorWidget',
     command: new SimpleCommand({
       handler: () => {
-        let widget = handler.currentWidget;
+        let widget = getCurrentWidget(handler);
         if (widget) {
           handler.close(widget);
           return true;
@@ -139,6 +149,16 @@ function main(): void {
   window.addEventListener('keydown', (event) => {
     keymapManager.processKeydownEvent(event);
   });
+
+  document.addEventListener('focus', (event) => {
+    for (let w of handler.widgets) {
+      if (w.node.contains(event.target as HTMLElement)) {
+        w.addClass('jp-mod-selected');
+      } else {
+        w.removeClass('jp-mod-selected');
+      }
+    }
+  }, true);
 
   let contextMenu = new Menu([
     new MenuItem({

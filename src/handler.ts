@@ -60,7 +60,7 @@ abstract class AbstractFileHandler implements IMessageFilter {
    * Construct a new source file handler.
    */
   constructor(manager: IContentsManager) {
-    this.manager = manager;
+    this._manager = manager;
   }
 
   /**
