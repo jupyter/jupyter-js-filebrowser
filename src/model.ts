@@ -262,12 +262,12 @@ class FileBrowserModel implements IDisposable {
     if (overwrite) {
       return this._upload(file);
     }
-
-    return this._contentsManager.get(file.name, {}).then(() => {
-      throw new Error(`"${file.name}" already exists`);
-      return null;
-    }, () => this._upload(file)
-    );
+    return new Promise((resolve, reject) => {
+      this._contentsManager.get(file.name, {}).then(() => {
+        reject(new Error(`"${file.name}" already exists`));
+      }, () => { resolve(this._upload(file)); }
+      );
+    });
   }
 
   /**
