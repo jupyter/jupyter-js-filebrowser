@@ -985,7 +985,7 @@ class DirListing extends Widget {
           if (this._noSelectTimer === -1) {
             this._doRename();
           }
-        });
+        }, RENAME_DURATION);
       }
 
       // Add the selected class to current row, and remove from all others.
