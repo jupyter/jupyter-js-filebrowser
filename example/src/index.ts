@@ -6,12 +6,16 @@
 'use strict';
 
 import {
-  getConfigOption
-} from 'jupyter-js-utils';
+  FileHandler
+} from 'jupyter-js-docmanager';
 
 import {
   ContentsManager, ISessionOptions, NotebookSessionManager
 } from 'jupyter-js-services';
+
+import {
+  getConfigOption
+} from 'jupyter-js-utils';
 
 import * as arrays
  from 'phosphor-arrays';
@@ -45,7 +49,7 @@ import {
 } from 'phosphor-widget';
 
 import {
-  FileBrowserWidget, FileBrowserModel, FileHandler
+  FileBrowserWidget, FileBrowserModel
 } from '../../lib';
 
 
