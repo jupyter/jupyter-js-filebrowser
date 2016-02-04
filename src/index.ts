@@ -4,6 +4,5 @@
 
 export * from './model';
 export * from './browser';
-export * from './handler';
 
 import './index.css';
