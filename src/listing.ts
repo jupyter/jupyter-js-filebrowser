@@ -210,7 +210,7 @@ class DirListing extends Widget {
     node.appendChild(header);
     node.appendChild(body);
     body.appendChild(contents);
-    node.tabIndex = 1;
+    contents.tabIndex = 0;
     return node;
   }
 
@@ -467,7 +467,6 @@ class DirListing extends Widget {
    * not be called directly by user code.
    */
   handleEvent(event: Event): void {
-    console.log(event.type);
     switch (event.type) {
     case 'mousedown':
       this._evtMousedown(event as MouseEvent);
@@ -828,7 +827,7 @@ class DirListing extends Widget {
    * Handle the `'copy'` event for the widget.
    */
   private _evtCopy(event: ClipboardEvent): void {
-    if (!this.node.contains(event.target as HTMLElement) &&
+    if (event.target === this._editNode ||
         !this.node.contains(document.activeElement as HTMLElement)) {
       return;
     }
@@ -841,7 +840,7 @@ class DirListing extends Widget {
    * Handle the `'cut'` event for the widget.
    */
   private _evtCut(event: ClipboardEvent): void {
-    if (!this.node.contains(event.target as HTMLElement) &&
+    if (event.target === this._editNode ||
         !this.node.contains(document.activeElement as HTMLElement)) {
       return;
     }
@@ -854,7 +853,7 @@ class DirListing extends Widget {
    * Handle the `'paste'` event for the widget.
    */
   private _evtPaste(event: ClipboardEvent): void {
-    if (!this.node.contains(event.target as HTMLElement) &&
+    if (event.target === this._editNode ||
         !this.node.contains(document.activeElement as HTMLElement)) {
       return;
     }
