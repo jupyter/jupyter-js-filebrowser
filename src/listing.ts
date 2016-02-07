@@ -467,6 +467,7 @@ class DirListing extends Widget {
    * not be called directly by user code.
    */
   handleEvent(event: Event): void {
+    console.log(event.type);
     switch (event.type) {
     case 'mousedown':
       this._evtMousedown(event as MouseEvent);
@@ -488,6 +489,15 @@ class DirListing extends Widget {
       break;
     case 'scroll':
       this._evtScroll(event as MouseEvent);
+      break;
+    case 'copy':
+      this._evtCopy(event as ClipboardEvent);
+      break;
+    case 'cut':
+      this._evtCut(event as ClipboardEvent);
+      break;
+    case 'paste':
+      this._evtPaste(event as ClipboardEvent);
       break;
     case 'p-dragenter':
       this._evtDragEnter(event as IDragEvent);
@@ -516,6 +526,9 @@ class DirListing extends Widget {
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
     list.addEventListener('scroll', this);
+    document.addEventListener('copy', this);
+    document.addEventListener('cut', this);
+    document.addEventListener('paste', this);
     node.addEventListener('p-dragenter', this);
     node.addEventListener('p-dragleave', this);
     node.addEventListener('p-dragover', this);
@@ -534,6 +547,9 @@ class DirListing extends Widget {
     node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
     list.removeEventListener('scroll', this);
+    document.removeEventListener('copy', this);
+    document.removeEventListener('cut', this);
+    document.removeEventListener('paste', this);
     node.removeEventListener('p-dragenter', this);
     node.removeEventListener('p-dragleave', this);
     node.removeEventListener('p-dragover', this);
@@ -805,6 +821,47 @@ class DirListing extends Widget {
 
       }
       node = node.parentElement;
+    }
+  }
+
+  /**
+   * Handle the `'copy'` event for the widget.
+   */
+  private _evtCopy(event: ClipboardEvent): void {
+    if (!this.node.contains(event.target as HTMLElement) &&
+        !this.node.contains(document.activeElement as HTMLElement)) {
+      return;
+    }
+    this.copy();
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  /**
+   * Handle the `'cut'` event for the widget.
+   */
+  private _evtCut(event: ClipboardEvent): void {
+    if (!this.node.contains(event.target as HTMLElement) &&
+        !this.node.contains(document.activeElement as HTMLElement)) {
+      return;
+    }
+    this.cut();
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  /**
+   * Handle the `'paste'` event for the widget.
+   */
+  private _evtPaste(event: ClipboardEvent): void {
+    if (!this.node.contains(event.target as HTMLElement) &&
+        !this.node.contains(document.activeElement as HTMLElement)) {
+      return;
+    }
+    if (this._clipboard.length) {
+      this.paste();
+      event.stopPropagation();
+      event.preventDefault();
     }
   }
 
