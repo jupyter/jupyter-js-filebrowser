@@ -1228,7 +1228,7 @@ namespace Private {
     parent.replaceChild(edit, text);
     edit.value = text.textContent;
     edit.focus();
-    let index = edit.value.indexOf('.');
+    let index = edit.value.lastIndexOf('.');
     if (index === -1) {
       edit.setSelectionRange(0, edit.value.length);
     } else {
