@@ -262,6 +262,13 @@ class DirListing extends Widget {
   }
 
   /**
+   * Get the contents node for the listing.
+   */
+  get contentsNode(): HTMLElement {
+    return utils.findElement(this.node, LIST_AREA_CLASS);
+  }
+
+  /**
    * Get the open requested signal.
    */
   get openRequested(): ISignal<DirListing, IContentsModel> {
@@ -564,7 +571,7 @@ class DirListing extends Widget {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
-    let content = utils.findElement(this.node, LIST_AREA_CLASS);
+    let content = this.contentsNode;
     let subtype = this.constructor as typeof DirListing;
 
     // Remove any excess item nodes.
@@ -827,8 +834,7 @@ class DirListing extends Widget {
    * Handle the `'copy'` event for the widget.
    */
   private _evtCopy(event: ClipboardEvent): void {
-    if (event.target === this._editNode ||
-        !this.node.contains(document.activeElement as HTMLElement)) {
+    if (document.activeElement !== this.contentsNode) {
       return;
     }
     this.copy();
@@ -840,8 +846,7 @@ class DirListing extends Widget {
    * Handle the `'cut'` event for the widget.
    */
   private _evtCut(event: ClipboardEvent): void {
-    if (event.target === this._editNode ||
-        !this.node.contains(document.activeElement as HTMLElement)) {
+    if (document.activeElement !== this.contentsNode) {
       return;
     }
     this.cut();
@@ -853,8 +858,7 @@ class DirListing extends Widget {
    * Handle the `'paste'` event for the widget.
    */
   private _evtPaste(event: ClipboardEvent): void {
-    if (event.target === this._editNode ||
-        !this.node.contains(document.activeElement as HTMLElement)) {
+    if (document.activeElement !== this.contentsNode) {
       return;
     }
     if (this._clipboard.length) {
@@ -1113,7 +1117,7 @@ class DirListing extends Widget {
    * Allow the user to rename item on a given row.
    */
   private _doRename(): Promise<string> {
-    let listing = utils.findElement(this.node, LIST_AREA_CLASS);
+    let listing = this.contentsNode;
     let row = utils.findElement(listing, SELECTED_CLASS);
     let fileCell = utils.findElement(row, ITEM_FILE_CLASS);
     let text = utils.findElement(row, ITEM_TEXT_CLASS);
