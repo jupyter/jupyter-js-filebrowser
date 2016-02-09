@@ -210,7 +210,7 @@ class DirListing extends Widget {
     node.appendChild(header);
     node.appendChild(body);
     body.appendChild(contents);
-    node.tabIndex = 1;
+    contents.tabIndex = 0;
     return node;
   }
 
@@ -259,6 +259,13 @@ class DirListing extends Widget {
    */
   get isDisposed(): boolean {
     return this._model === null;
+  }
+
+  /**
+   * Get the contents node for the listing.
+   */
+  get contentsNode(): HTMLElement {
+    return utils.findElement(this.node, LIST_AREA_CLASS);
   }
 
   /**
@@ -489,6 +496,15 @@ class DirListing extends Widget {
     case 'scroll':
       this._evtScroll(event as MouseEvent);
       break;
+    case 'copy':
+      this._evtCopy(event as ClipboardEvent);
+      break;
+    case 'cut':
+      this._evtCut(event as ClipboardEvent);
+      break;
+    case 'paste':
+      this._evtPaste(event as ClipboardEvent);
+      break;
     case 'p-dragenter':
       this._evtDragEnter(event as IDragEvent);
       break;
@@ -516,6 +532,9 @@ class DirListing extends Widget {
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
     list.addEventListener('scroll', this);
+    document.addEventListener('copy', this);
+    document.addEventListener('cut', this);
+    document.addEventListener('paste', this);
     node.addEventListener('p-dragenter', this);
     node.addEventListener('p-dragleave', this);
     node.addEventListener('p-dragover', this);
@@ -534,6 +553,9 @@ class DirListing extends Widget {
     node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
     list.removeEventListener('scroll', this);
+    document.removeEventListener('copy', this);
+    document.removeEventListener('cut', this);
+    document.removeEventListener('paste', this);
     node.removeEventListener('p-dragenter', this);
     node.removeEventListener('p-dragleave', this);
     node.removeEventListener('p-dragover', this);
@@ -549,7 +571,7 @@ class DirListing extends Widget {
     // Fetch common variables.
     let items = this._model.items;
     let nodes = this._items;
-    let content = utils.findElement(this.node, LIST_AREA_CLASS);
+    let content = this.contentsNode;
     let subtype = this.constructor as typeof DirListing;
 
     // Remove any excess item nodes.
@@ -809,6 +831,44 @@ class DirListing extends Widget {
   }
 
   /**
+   * Handle the `'copy'` event for the widget.
+   */
+  private _evtCopy(event: ClipboardEvent): void {
+    if (document.activeElement !== this.contentsNode) {
+      return;
+    }
+    this.copy();
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  /**
+   * Handle the `'cut'` event for the widget.
+   */
+  private _evtCut(event: ClipboardEvent): void {
+    if (document.activeElement !== this.contentsNode) {
+      return;
+    }
+    this.cut();
+    event.stopPropagation();
+    event.preventDefault();
+  }
+
+  /**
+   * Handle the `'paste'` event for the widget.
+   */
+  private _evtPaste(event: ClipboardEvent): void {
+    if (document.activeElement !== this.contentsNode) {
+      return;
+    }
+    if (this._clipboard.length) {
+      this.paste();
+      event.stopPropagation();
+      event.preventDefault();
+    }
+  }
+
+  /**
    * Handle the `'p-dragenter'` event for the widget.
    */
   private _evtDragEnter(event: IDragEvent): void {
@@ -1057,7 +1117,7 @@ class DirListing extends Widget {
    * Allow the user to rename item on a given row.
    */
   private _doRename(): Promise<string> {
-    let listing = utils.findElement(this.node, LIST_AREA_CLASS);
+    let listing = this.contentsNode;
     let row = utils.findElement(listing, SELECTED_CLASS);
     let fileCell = utils.findElement(row, ITEM_FILE_CLASS);
     let text = utils.findElement(row, ITEM_TEXT_CLASS);
