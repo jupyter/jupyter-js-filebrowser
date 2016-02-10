@@ -56,29 +56,10 @@ class FileBrowserModel implements IDisposable {
    * This is a read-only property.
    */
   get path(): string {
+    if (!this._model) {
+      return '';
+    }
     return this._model.path;
-  }
-
-  /**
-   * Get the current items.
-   */
-  get items(): IContentsModel[] {
-    let items = this._model.content.slice() as IContentsModel[];
-    if (this._sortKey === 'name') {
-      // Use the original order.
-    } else if (this._sortKey === 'last_modified') {
-      items.sort((a, b) => {
-        let valA = new Date(a.last_modified).getTime();
-        let valB = new Date(b.last_modified).getTime();
-        return valB - valA;
-      });
-    }
-
-    // Reverse the order if descending.
-    if (!this._ascending) {
-      items.reverse();
-    }
-    return items;
   }
 
   /**
@@ -148,6 +129,31 @@ class FileBrowserModel implements IDisposable {
    */
   set sortKey(value: string) {
     this._sortKey = value;
+  }
+
+  /**
+   * Get the sorted items.
+   */
+  getSortedItems(): IContentsModel[] {
+    if (!this._model) {
+      return [];
+    }
+    let items = this._model.content.slice() as IContentsModel[];
+    if (this._sortKey === 'name') {
+      // Use the original order.
+    } else if (this._sortKey === 'last_modified') {
+      items.sort((a, b) => {
+        let valA = new Date(a.last_modified).getTime();
+        let valB = new Date(b.last_modified).getTime();
+        return valB - valA;
+      });
+    }
+
+    // Reverse the order if descending.
+    if (!this._ascending) {
+      items.reverse();
+    }
+    return items;
   }
 
   /**
