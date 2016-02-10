@@ -135,6 +135,9 @@ class FileBrowserModel implements IDisposable {
     if (path !== '') {
       path = normalizePath(this._model.path, path);
     }
+    if (this._kernelSpecs.length === 0) {
+      this._getKernelSpecs();
+    }
     return this._contentsManager.get(path, {}).then(contents => {
       this._model = contents;
       return this._findSessions().then(() => this.refreshed.emit(void 0)
@@ -330,7 +333,7 @@ class FileBrowserModel implements IDisposable {
   /**
    * Get the notebook sessions for the current directory.
    */
-  _findSessions(): Promise<void> {
+  private _findSessions(): Promise<void> {
     this._sessionIds = [];
     let notebooks = this._model.content.filter((content: IContentsModel) => { return content.type === 'notebook'; });
     if (!notebooks.length) {
@@ -356,18 +359,22 @@ class FileBrowserModel implements IDisposable {
           }));
         }
       }
-      if (this._kernelSpecs.length === 0) {
-        promises.push(this._sessionManager.getSpecs().then(specs => {
-          for (let key in specs.kernelspecs) {
-            this._kernelSpecs.push(specs.kernelspecs[key]);
-          }
-          this._kernelSpecs.sort((a, b) => {
-            return a.spec.display_name.localeCompare(b.spec.display_name);
-          });
-        }));
-      }
       return Promise.all(promises).then(() => {});
     });
+  }
+
+  /**
+   * Load the list of kernel specs.
+   */
+  private _getKernelSpecs(): void {
+    this._sessionManager.getSpecs().then(specs => {
+      for (let key in specs.kernelspecs) {
+        this._kernelSpecs.push(specs.kernelspecs[key]);
+      }
+      this._kernelSpecs.sort((a, b) => {
+        return a.spec.display_name.localeCompare(b.spec.display_name);
+      });
+    }, error => console.error(error));
   }
 
   private _max_upload_size_mb = 15;
