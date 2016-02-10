@@ -317,7 +317,7 @@ namespace Private {
       if (type === 'text file') type = 'file';
       if (type === 'folder') type = 'directory';
       widget.model.newUntitled(type).then(contents => {
-        widget.openRequested.emit(contents);
+        if (type !== 'directory') widget.openRequested.emit(contents);
         widget.model.refresh();
       },
       error =>
