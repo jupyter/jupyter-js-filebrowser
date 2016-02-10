@@ -35,6 +35,7 @@ class FileBrowserModel implements IDisposable {
   constructor(contentsManager: IContentsManager, sessionManager: INotebookSessionManager) {
     this._contentsManager = contentsManager;
     this._sessionManager = sessionManager;
+    this._getKernelSpecs();
     this.cd('');
   }
 
@@ -134,9 +135,6 @@ class FileBrowserModel implements IDisposable {
     }
     if (path !== '') {
       path = normalizePath(this._model.path, path);
-    }
-    if (this._kernelSpecs.length === 0) {
-      this._getKernelSpecs();
     }
     return this._contentsManager.get(path, {}).then(contents => {
       this._model = contents;
