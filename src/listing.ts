@@ -510,16 +510,17 @@ class DirListing extends Widget {
   protected onAfterAttach(msg: Message): void {
     super.onAfterAttach(msg);
     let node = this.node;
-    let list = utils.findElement(this.node, LIST_CONTAINER_CLASS);
+    let container = utils.findElement(node, LIST_CONTAINER_CLASS);
+    let list = utils.findElement(node, LIST_AREA_CLASS);
     node.addEventListener('mousedown', this);
     node.addEventListener('keydown', this);
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
-    list.addEventListener('scroll', this);
-    node.addEventListener('p-dragenter', this);
-    node.addEventListener('p-dragleave', this);
-    node.addEventListener('p-dragover', this);
-    node.addEventListener('p-drop', this);
+    container.addEventListener('scroll', this);
+    list.addEventListener('p-dragenter', this);
+    list.addEventListener('p-dragleave', this);
+    list.addEventListener('p-dragover', this);
+    list.addEventListener('p-drop', this);
   }
 
   /**
@@ -528,16 +529,17 @@ class DirListing extends Widget {
   protected onBeforeDetach(msg: Message): void {
     super.onBeforeDetach(msg);
     let node = this.node;
-    let list = utils.findElement(this.node, LIST_CONTAINER_CLASS);
+    let container = utils.findElement(node, LIST_CONTAINER_CLASS);
+    let list = utils.findElement(node, LIST_AREA_CLASS);
     node.removeEventListener('mousedown', this);
     node.removeEventListener('keydown', this);
     node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
-    list.removeEventListener('scroll', this);
-    node.removeEventListener('p-dragenter', this);
-    node.removeEventListener('p-dragleave', this);
-    node.removeEventListener('p-dragover', this);
-    node.removeEventListener('p-drop', this);
+    container.removeEventListener('scroll', this);
+    list.removeEventListener('p-dragenter', this);
+    list.removeEventListener('p-dragleave', this);
+    list.removeEventListener('p-dragover', this);
+    list.removeEventListener('p-drop', this);
     document.removeEventListener('mousemove', this, true);
     document.removeEventListener('mouseup', this, true);
   }
