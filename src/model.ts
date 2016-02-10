@@ -302,11 +302,11 @@ class FileBrowserModel implements IDisposable {
     if (overwrite) {
       return this._upload(file);
     }
-    return new Promise((resolve, reject) => {
-      this._contentsManager.get(file.name, {}).then(() => {
-        reject(new Error(`"${file.name}" already exists`));
-      }, () => { resolve(this._upload(file)); }
-      );
+
+    return this._contentsManager.get(file.name, {}).then(() => {
+      return Private.typedThrow<IContentsModel>(`"${file.name}" already exists`);
+    }, () => {
+      return this._upload(file);
     });
   }
 
@@ -498,5 +498,13 @@ namespace Private {
       path = root;
     }
     return path;
+  }
+
+  /**
+   * Work around TS 1.8 type inferencing in promises which only throw.
+   */
+  export
+  function typedThrow<T>(msg: string): T {
+    throw new Error(msg);
   }
 }
