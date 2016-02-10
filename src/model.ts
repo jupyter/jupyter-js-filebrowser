@@ -19,6 +19,9 @@ import {
   ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
+import * as utils
+  from './utils';
+
 
 /**
  * An implementation of a file browser view model.
@@ -60,14 +63,22 @@ class FileBrowserModel implements IDisposable {
    * Get the current items.
    */
   get items(): IContentsModel[] {
-    return this._model.content.slice();
-  }
+    let items = this._model.content.slice() as IContentsModel[];
+    if (this._sortKey === 'name') {
+      // Use the original order.
+    } else if (this._sortKey === 'last_modified') {
+      items.sort((a, b) => {
+        let valA = new Date(a.last_modified).getTime();
+        let valB = new Date(b.last_modified).getTime();
+        return valB - valA;
+      });
+    }
 
-  /**
-   * Set the current items.
-   */
-  set items(value: IContentsModel[]) {
-    this._model.content = value;
+    // Reverse the order if descending.
+    if (!this._ascending) {
+      items.reverse();
+    }
+    return items;
   }
 
   /**
@@ -109,6 +120,34 @@ class FileBrowserModel implements IDisposable {
    */
   get kernelSpecs(): IKernelSpecId[] {
     return this._kernelSpecs.slice();
+  }
+
+  /**
+   * Get whether the items are sorted in ascending order.
+   */
+  get sortAscending(): boolean {
+    return this._ascending;
+  }
+
+  /**
+   * Set whether the items are sorted in ascending order.
+   */
+  set sortAscending(value: boolean) {
+    this._ascending = value;
+  }
+
+  /**
+   * Get which key the items are sorted on.
+   */
+  get sortKey(): string {
+    return this._sortKey;
+  }
+
+  /**
+   * Set which key the items are sorted on.
+   */
+  set sortKey(value: string) {
+    this._sortKey = value;
   }
 
   /**
@@ -375,6 +414,7 @@ class FileBrowserModel implements IDisposable {
     }, error => console.error(error));
   }
 
+
   private _max_upload_size_mb = 15;
   private _selectedIndices: number[] = [];
   private _contentsManager: IContentsManager = null;
@@ -382,6 +422,8 @@ class FileBrowserModel implements IDisposable {
   private _sessionManager: INotebookSessionManager = null;
   private _model: IContentsModel = null;
   private _kernelSpecs: IKernelSpecId[] = [];
+  private _sortKey = 'name';
+  private _ascending = true;
 }
 
 

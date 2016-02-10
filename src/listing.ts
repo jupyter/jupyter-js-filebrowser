@@ -575,25 +575,6 @@ class DirListing extends Widget {
       }
     });
 
-    // Get the proper sort order of the items.
-    let sorter = utils.findElement(this.node, HEADER_FILE_CLASS);
-    if (sorter.classList.contains(SELECTED_CLASS)) {
-      // Keep the order from the contents manager.
-    } else {
-      sorter = utils.findElement(this.node, HEADER_TIME_CLASS);
-      items.sort((a, b) => {
-        let valA = new Date(a.last_modified).getTime();
-        let valB = new Date(b.last_modified).getTime();
-        return valB - valA;
-      });
-    }
-    // Reverse the order if descending.
-    if (sorter.classList.contains(DESCENDING_CLASS)) {
-      items.reverse();
-    }
-    // Update the model items to be sorted.
-    this._model.items = items;
-
     // Update the node state to match the model contents.
     for (let i = 0, n = items.length; i < n; ++i) {
       subtype.updateItem(items[i], nodes[i]);
@@ -652,14 +633,21 @@ class DirListing extends Widget {
             if (node.classList.contains(SELECTED_CLASS)) {
               if (node.classList.contains(DESCENDING_CLASS)) {
                 node.classList.remove(DESCENDING_CLASS);
+                this._model.sortAscending = true;
               } else {
                 node.classList.add(DESCENDING_CLASS);
+                this._model.sortAscending = false;
               }
             }
             node.classList.add(SELECTED_CLASS);
           } else {
             node.classList.remove(SELECTED_CLASS);
           }
+        }
+        if (index === 0) {
+          this._model.sortKey = 'name';
+        } else {
+          this._model.sortKey = 'last_modified';
         }
         this.update();
       }
