@@ -315,14 +315,7 @@ namespace Private {
     let handler = (item: MenuItem) => {
       let type = item.text.toLowerCase();
       if (type === 'text file') type = 'file';
-      if (type === 'terminal') {
-        widget.openRequested.emit({
-          name: 'new',
-          path: 'new.terminal',
-          type: 'terminal',
-        });
-        return;
-      }
+      if (type === 'folder') type = 'directory';
       widget.model.newUntitled(type).then(contents => {
         widget.openRequested.emit(contents);
         widget.model.refresh();
@@ -339,10 +332,6 @@ namespace Private {
       new MenuItem({
         text: 'Folder',
         handler: handler,
-      }),
-      new MenuItem({
-        text: 'Terminal',
-        handler: handler
       }),
       new MenuItem({
         type: MenuItem.Separator
