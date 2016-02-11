@@ -3,60 +3,72 @@
 | Distributed under the terms of the Modified BSD License.
 |----------------------------------------------------------------------------*/
 .jp-FileBrowser {
-  background-color: #F5F5F5;
   color: #757575;
+  background-color: #F5F5F5;
   font: 13px Helvetica, Arial, sans-serif;
-  height: 500px;
 }
 
 
 .jp-BreadCrumbs-item {
-  margin-left: 4px;
-  margin-right: 4px;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  margin: 0px 4px;
+  padding: 4px 0px;
   border: 1px solid transparent;
   cursor: pointer;
 }
 
 
 .jp-FileButtons {
-  padding-left: 4px;
-  padding-right: 4px;
-  padding-bottom: 4px;
+  margin-bottom: 8px;
+  padding: 0px 4px;
 }
 
 
-.jp-FileButtons-icon {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-
-.jp-FileButtons-item {
-  background-color: #FAFAFA;
-  font-size: 16px;
-  border: 1px solid #757575;
-  height: 30px;
-  border-radius: 3px;
-  margin-right: 3px;
+.jp-FileButtons-button {
   max-width: 100px;
-}
-
-
-.jp-FileButtons-item:focus {
+  padding: 4px 6px;
+  color: #757575;
+  background-color: #FFFFFF;
+  border: 1px solid #E0E0E0;
+  font-size: 16px;
   outline: 0;
 }
 
 
-.jp-FileButtons-item:hover {
-  background-color: #EEEEEE;
+.jp-FileButtons-button::-moz-focus-inner {
+  border: 0;
 }
 
 
-.jp-FileButtons-drop {
-  margin-left: -0.5em;
-  color: #757575;
+.jp-FileButtons-button:hover {
+  background-color: #E7F4FF;
+  border-color: #2196F3;
+  z-index: 1; /* raise overlapping border */
+}
+
+
+.jp-FileButtons-button:active,
+.jp-FileButtons-button.jp-id-create.jp-mod-active {
+  background-color: #C4E5FF;
+  border-color: #2196F3;
+  z-index: 1; /* raise overlapping border */
+}
+
+
+.jp-FileButtons-button.jp-id-create {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+
+.jp-FileButtons-button.jp-id-upload {
+  margin-left: -1px; /* overlap borders */
+}
+
+
+.jp-FileButtons-button.jp-id-refresh {
+  margin-left: -1px; /* overlap borders */
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
 }
 
 
@@ -183,18 +195,6 @@
 }
 
 
-.jp-FileButtons-item {
-  color: #757575;
-  cursor: pointer;
-}
-
-
-.jp-FileButtons-item.jp-mod-selected {
-  background-color: #2196F3;
-  color: #F5F5F5;
-}
-
-
 .jp-DirListing-item.jp-mod-drop-target {
   border: 1px solid #757575;
 }
@@ -247,11 +247,6 @@
 }
 
 
-.p-SplitPanel {
-  height: 400px;
-}
-
-
 .jp-Dialog {
   padding-left: 3px;
   background: rgba(245, 245, 245, .6);
@@ -298,6 +293,11 @@
 
 .jp-Dialog-close {
   line-height: 21px;
+}
+
+
+.p-SplitPanel {
+  height: 400px;
 }
 
 
