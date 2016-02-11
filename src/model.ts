@@ -7,12 +7,15 @@ import {
   INotebookSession, ISessionId, KernelStatus, getKernelSpecs, IKernelSpecId
 } from 'jupyter-js-services';
 
+import * as arrays
+  from 'phosphor-arrays';
+
 import {
   IDisposable
 } from 'phosphor-disposable';
 
 import {
-  IChangedArgs
+  IChangedArgs, Property
 } from 'phosphor-properties';
 
 import {
@@ -63,17 +66,24 @@ class FileBrowserModel implements IDisposable {
   }
 
   /**
-   * Get the selected indices.
+   * Get the selected names.
    */
-  get selected(): number[] {
-    return this._selectedIndices.slice();
+  get selectedNames(): string[] {
+    return Private.selectedProperty.get(this);
   }
 
   /**
-   * Set the selected indices.
+   * Set the selected names.
    */
-  set selected(value: number[]) {
-    this._selectedIndices = value.slice();
+  set selectedNames(value: string[]) {
+    Private.selectedProperty.set(this, value);
+  }
+
+  /**
+   * Get the selection changed signal.
+   */
+  get selectionChanged(): ISignal<FileBrowserModel, IChangedArgs<string[]>> {
+    return Private.selectionChangedSignal.bind(this);
   }
 
   /**
@@ -181,10 +191,25 @@ class FileBrowserModel implements IDisposable {
     if (path !== '') {
       path = normalizePath(this._model.path, path);
     }
+    let selected = this.selectedNames.slice();
+    if (path !== this.path) {
+      selected = [];
+    }
     return this._contentsManager.get(path, {}).then(contents => {
       this._model = contents;
-      return this._findSessions().then(() => this.refreshed.emit(void 0)
-      );
+      let newSelection: string[] = [];
+      let content = contents.content as IContentsModel[];
+      for (let name of selected) {
+        let index = arrays.findIndex(content, (value, index) => {
+          return value.name === name;
+        });
+        if (index !== -1) newSelection.push(name);
+      }
+      selected = newSelection;
+      return this._findSessions();
+    }).then(() => {
+      this.selectedNames = selected;
+      this.refreshed.emit(void 0);
     });
   }
 
@@ -424,7 +449,6 @@ class FileBrowserModel implements IDisposable {
     }, error => console.error(error));
   }
 
-
   private _max_upload_size_mb = 15;
   private _selectedIndices: number[] = [];
   private _contentsManager: IContentsManager = null;
@@ -446,6 +470,22 @@ namespace Private {
    */
   export
   const refreshedSignal = new Signal<FileBrowserModel, void>();
+
+  /**
+   * A signal emitted when the selection changes.
+   */
+  export
+  const selectionChangedSignal = new Signal<FileBrowserModel, IChangedArgs<string[]>>();
+
+  /**
+   * An attached property with the model selected indices.
+   */
+  export
+  const selectedProperty = new Property<FileBrowserModel, string[]>({
+    name: 'selectedNames',
+    value: [],
+    notify: selectionChangedSignal
+  });
 
   /**
    * Parse the content of a `FileReader`.

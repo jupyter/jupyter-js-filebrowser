@@ -6,6 +6,9 @@ import {
   IContentsModel
 } from 'jupyter-js-services';
 
+import * as arrays
+ from 'phosphor-arrays';
+
 import {
   Message
 } from 'phosphor-messaging';
@@ -167,8 +170,8 @@ class FileBrowserWidget extends Widget {
   open(): void {
     let foundDir = false;
     let items = this._model.getSortedItems();
-    for (let index of this._model.selected) {
-      let item = items[index];
+    for (let name of this._model.selectedNames) {
+      let item = arrays.find(items, (value, index) => value.name === name);
       if (item.type === 'directory' && !foundDir) {
         foundDir = true;
         this._model.cd(item.name).catch(error =>

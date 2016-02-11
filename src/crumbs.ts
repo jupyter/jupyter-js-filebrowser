@@ -233,10 +233,9 @@ class BreadCrumbs extends Widget {
     // Move all of the items.
     let promises: Promise<void>[] = [];
     let items = this._model.getSortedItems();
-    for (let index of this._model.selected) {
-      var original = items[index].name;
-      var newPath = path + original;
-      promises.push(this._model.rename(original, newPath).catch(error => {
+    for (let name of this._model.selectedNames) {
+      var newPath = path + name;
+      promises.push(this._model.rename(name, newPath).catch(error => {
         if (error.xhr) {
           error.message = `${error.xhr.status}: error.statusText`;
         }
@@ -249,7 +248,7 @@ class BreadCrumbs extends Widget {
           return showDialog(options).then(button => {
             if (button.text === 'OK') {
               return this._model.delete(newPath).then(() => {
-                return this._model.rename(original, newPath).then(() => {
+                return this._model.rename(name, newPath).then(() => {
                   return this._model.refresh();
                 });
               });
