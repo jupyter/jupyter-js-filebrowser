@@ -340,9 +340,12 @@ namespace Private {
         type: MenuItem.Separator
       })
     ];
+    // TODO the kernels below are suffixed with "Notebook" as a
+    // temporary measure until we can update the Menu widget to
+    // show text in a separator for a "Notebooks" group.
     let extra = widget.model.kernelSpecs.map(spec => {
       return new MenuItem({
-        text: `Notebook - ${spec.spec.display_name}`,
+        text: `${spec.spec.display_name} Notebook`,
         handler: () => { createNewNotebook(widget, spec); }
       });
     });
