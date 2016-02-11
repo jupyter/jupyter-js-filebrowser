@@ -5,7 +5,6 @@
 .jp-FileBrowser {
   display: flex;
   flex-direction: column;
-  z-index: 0;
 }
 
 
@@ -14,48 +13,36 @@
 }
 
 
-.jp-FileButtons-upload {
-  flex: 0 0 auto;
-  position: relative;
-  overflow: hidden;
-}
-
-
-.jp-FileButtons-upload input {
-  position: absolute;
-  top: 0;
-  right: 0;
-  margin: 0;
-  padding: 0;
-  font-size: 20px;
-  cursor: pointer;
-  opacity: 0;
-  filter: alpha(opacity=0);
-}
-
-
 .jp-FileButtons {
   flex: 0 0 auto;
   display: flex;
   flex-direction: row;
-  align-items: center;
   justify-content: center;
-  margin: 0;
 }
 
 
-.jp-FileButtons-item {
-  display: flex;
+.jp-FileButtons-button {
   flex: 1 1 auto;
-  text-align: center;
-  vertical-align: middle;
 }
 
 
-.jp-FileButtons-icon {
+.jp-FileButtons-buttonContent {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+}
+
+
+.jp-FileButtons-buttonIcon {
   margin-left: auto;
   margin-right: auto;
 }
+
+
+.jp-FileButtons-dropdownIcon {
+  margin-left: -0.5em;
+}
+
 
 .jp-DirListing {
   flex: 1 1 auto;
@@ -76,9 +63,6 @@
   overflow: hidden;
   white-space: nowrap;
 }
-
-
-
 
 
 .jp-DirListing-headerFile {
