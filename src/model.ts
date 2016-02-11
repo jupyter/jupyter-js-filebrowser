@@ -192,6 +192,8 @@ class FileBrowserModel implements IDisposable {
    * Refresh the current directory.
    */
   refresh(): Promise<void> {
+    // Refresh the list of kernelspecs and our directory listing.
+    this._getKernelSpecs();
     return this.cd('.');
   }
 
@@ -411,12 +413,14 @@ class FileBrowserModel implements IDisposable {
    */
   private _getKernelSpecs(): void {
     this._sessionManager.getSpecs().then(specs => {
+      let kernelSpecs: IKernelSpecId[] = [];
       for (let key in specs.kernelspecs) {
-        this._kernelSpecs.push(specs.kernelspecs[key]);
+        kernelSpecs.push(specs.kernelspecs[key]);
       }
-      this._kernelSpecs.sort((a, b) => {
+      kernelSpecs.sort((a, b) => {
         return a.spec.display_name.localeCompare(b.spec.display_name);
       });
+      this._kernelSpecs = kernelSpecs;
     }, error => console.error(error));
   }
 
