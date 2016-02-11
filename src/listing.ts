@@ -343,9 +343,9 @@ class DirListing extends Widget {
    */
   delete(): Promise<void> {
     let promises: Promise<void>[] = [];
+    let items = this._model.getSortedItems();
     for (let index of this._model.selected) {
-      let item = this._model.items[index];
-      promises.push(this._model.delete(item.name));
+      promises.push(this._model.delete(items[index].name));
     }
     return Promise.all(promises).then(
       () => this._model.refresh(),
@@ -358,8 +358,9 @@ class DirListing extends Widget {
    */
   duplicate(): Promise<void> {
     let promises: Promise<IContentsModel>[] = [];
+    let items = this._model.getSortedItems();
     for (let index of this._model.selected) {
-      let item = this._model.items[index];
+      let item = items[index];
       if (item.type !== 'directory') {
         promises.push(this._model.copy(item.path, this._model.path));
       }
@@ -374,8 +375,9 @@ class DirListing extends Widget {
    * Download the currently selected item(s).
    */
   download(): Promise<void> {
+    let items = this._model.getSortedItems();
     for (let index of this._model.selected) {
-      let item = this._model.items[index];
+      let item = items[index];
       if (item.type !== 'directory') {
         return this._model.download(item.path).catch(error =>
           utils.showErrorMessage(this, 'Download file', error)
@@ -389,7 +391,8 @@ class DirListing extends Widget {
    */
   shutdownKernels(): Promise<void> {
     let promises: Promise<void>[] = [];
-    let paths = this._model.items.map(item => item.path);
+    let items = this._model.getSortedItems();
+    let paths = items.map(item => item.path);
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
       if (this._items[index].classList.contains(SELECTED_CLASS)) {
@@ -549,7 +552,7 @@ class DirListing extends Widget {
    */
   protected onUpdateRequest(msg: Message): void {
     // Fetch common variables.
-    let items = this._model.items;
+    let items = this._model.getSortedItems();
     let nodes = this._items;
     let content = utils.findElement(this.node, LIST_AREA_CLASS);
     let subtype = this.constructor as typeof DirListing;
@@ -588,7 +591,7 @@ class DirListing extends Widget {
         let index = prevSelected.indexOf(text.textContent);
         if (index !== -1) {
           this._items[index].classList.add(SELECTED_CLASS);
-          let path = '/' + this._model.items[index].path;
+          let path = '/' + items[index].path;
           if (this._isCut && (this._clipboard.indexOf(path) !== -1)) {
             this._items[index].classList.add(CUT_CLASS);
           }
@@ -649,6 +652,7 @@ class DirListing extends Widget {
         } else {
           this._model.sortKey = 'last_modified';
         }
+        this._model.selected = [];
         this.update();
       }
       return;
@@ -779,11 +783,12 @@ class DirListing extends Widget {
 
     // Find a valid double click target.
     let node = event.target as HTMLElement;
+    let items = this._model.getSortedItems();
     while (node && node !== this.node) {
       if (node.classList.contains(ITEM_CLASS)) {
         // Open the selected item.
         let index = this._items.indexOf(node);
-        let item = this._model.items[index];
+        let item = items[index];
         if (item.type === 'directory') {
           this._model.cd(item.name).catch(error =>
             utils.showErrorMessage(this, 'Change Directory Error', error)
@@ -864,12 +869,13 @@ class DirListing extends Widget {
 
     // Get the path based on the target node.
     let index = this._items.indexOf(target);
-    var path = this._model.items[index].name + '/';
+    let items = this._model.getSortedItems();
+    var path = items[index].name + '/';
 
     // Move all of the items.
     let promises: Promise<IContentsModel>[] = [];
     for (let index of this._model.selected) {
-      var original = this._model.items[index].name;
+      var original = items[index].name;
       var newPath = path + original;
       promises.push(this._model.rename(original, newPath).catch(error => {
         if (error.message.indexOf('409') !== -1) {
@@ -922,7 +928,7 @@ class DirListing extends Widget {
     });
     this._drag.mimeData.setData(utils.CONTENTS_MIME, null);
     if (this._widgetFactory && selected.length === 1) {
-      let item = this._model.items[selected[0]];
+      let item = this._model.getSortedItems()[selected[0]];
       if (item.type !== 'directory') {
         this._drag.mimeData.setData(FACTORY_MIME, () => {
           return this._widgetFactory(item);
@@ -943,7 +949,7 @@ class DirListing extends Widget {
    */
   private _handleFileSelect(event: MouseEvent): void {
     // Fetch common variables.
-    let items = this._model.items;
+    let items = this._model.getSortedItems();
     let nodes = this._items;
     let index = utils.hitTestNodes(this._items, event.clientX, event.clientY);
     let target = this._items[index];
@@ -992,11 +998,11 @@ class DirListing extends Widget {
   private _updateSelected(): void {
     // Set the selected items on the model.
     let selected: number[] = [];
-    let items = this._model.items;
+    let items = this._model.getSortedItems();
     for (let i = 0; i < this._items.length; i++) {
       if (this._items[i].classList.contains(SELECTED_CLASS)) {
         var name = items[i].name;
-        let index = arrays.findIndex(this._model.items, item => {
+        let index = arrays.findIndex(items, item => {
           return item.name === name;
         });
         selected.push(index);
@@ -1023,8 +1029,9 @@ class DirListing extends Widget {
   private _copy(isCut: boolean): void {
     this._clipboard = []
     this._isCut = isCut;
+    let items = this._model.getSortedItems();
     for (let index of this._model.selected) {
-      var item = this._model.items[index];
+      var item = items[index];
       let row = arrays.find(this._items, row => {
         let text = utils.findElement(row, ITEM_TEXT_CLASS);
         return text.textContent === item.name;
