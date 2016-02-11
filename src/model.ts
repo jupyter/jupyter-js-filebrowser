@@ -186,6 +186,8 @@ class FileBrowserModel implements IDisposable {
    * Refresh the current directory.
    */
   refresh(): Promise<void> {
+    // Refresh the list of kernelspecs and our directory listing.
+    this._getKernelSpecs();
     return this.cd('.');
   }
 
