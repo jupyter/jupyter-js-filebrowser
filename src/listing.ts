@@ -782,11 +782,12 @@ class DirListing extends Widget {
 
     // Find a valid double click target.
     let node = event.target as HTMLElement;
+    let items = this._model.getSortedItems();
     while (node && node !== this.node) {
       if (node.classList.contains(ITEM_CLASS)) {
         // Open the selected item.
         let index = this._items.indexOf(node);
-        let item = this._model.getSortedItems()[index];
+        let item = items[index];
         if (item.type === 'directory') {
           this._model.cd(item.name).catch(error =>
             utils.showErrorMessage(this, 'Change Directory Error', error)
