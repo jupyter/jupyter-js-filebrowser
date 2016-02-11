@@ -652,6 +652,7 @@ class DirListing extends Widget {
         } else {
           this._model.sortKey = 'last_modified';
         }
+        this._model.selected = [];
         this.update();
       }
       return;
