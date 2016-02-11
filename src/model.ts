@@ -406,6 +406,7 @@ class FileBrowserModel implements IDisposable {
    * Load the list of kernel specs.
    */
   private _getKernelSpecs(): void {
+    this._kernelSpecs = [];
     this._sessionManager.getSpecs().then(specs => {
       for (let key in specs.kernelspecs) {
         this._kernelSpecs.push(specs.kernelspecs[key]);
