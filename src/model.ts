@@ -128,7 +128,7 @@ class FileBrowserModel implements IDisposable {
    * This is a no-op if the name is not valid or already selected.
    */
   select(name: string): void {
-    if (name in this._selection && !this._selection[name]) {
+    if (!this._selection[name]) {
       this._selection[name] = true;
       this.selectionChanged.emit(void 0);
     }
@@ -141,7 +141,7 @@ class FileBrowserModel implements IDisposable {
    * This is a no-op if the name is not valid or not selected.
    */
   deselect(name: string): void {
-    if (name in this._selection && this._selection[name]) {
+    if (this._selection[name]) {
       this._selection[name] = false;
       this.selectionChanged.emit(void 0);
     }
