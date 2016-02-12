@@ -8,6 +8,10 @@ import {
 } from 'jupyter-js-services';
 
 import {
+  IDisposable
+} from 'phosphor-disposable';
+
+import {
   ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
