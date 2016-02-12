@@ -7,13 +7,6 @@ import {
   INotebookSession, ISessionId, KernelStatus, getKernelSpecs, IKernelSpecId
 } from 'jupyter-js-services';
 
-import * as arrays
-  from 'phosphor-arrays';
-
-import {
-  IDisposable
-} from 'phosphor-disposable';
-
 import {
   ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
