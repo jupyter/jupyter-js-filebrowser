@@ -34,8 +34,9 @@ class FileBrowserModel implements IDisposable {
   constructor(contentsManager: IContentsManager, sessionManager: INotebookSessionManager) {
     this._contentsManager = contentsManager;
     this._sessionManager = sessionManager;
+    this._model = { path: '', name: '/', type: 'directory', content: [] };
     this._getKernelSpecs();
-    this.cd('');
+    this.cd();
   }
 
   /**
@@ -52,9 +53,6 @@ class FileBrowserModel implements IDisposable {
    * This is a read-only property.
    */
   get path(): string {
-    if (!this._model) {
-      return '';
-    }
     return this._model.path;
   }
 
@@ -200,13 +198,9 @@ class FileBrowserModel implements IDisposable {
    *
    * @returns A promise with the contents of the directory.
    */
-  cd(path: string): Promise<void> {
-    let normalizePath = Private.normalizePath;
-    if (path === '.' && this._model === null) {
-      path = '';
-    }
+  cd(path = ''): Promise<void> {
     if (path !== '') {
-      path = normalizePath(this._model.path, path);
+      path = Private.normalizePath(this._model.path, path);
     }
     let changed = false;
     let previous = this._selection;
@@ -342,7 +336,6 @@ class FileBrowserModel implements IDisposable {
    * request to the server.
    */
   upload(file: File, overwrite?: boolean): Promise<IContentsModel> {
-
     // Skip large files with a warning.
     if (file.size > this._max_upload_size_mb * 1024 * 1024) {
       let msg = `Cannot upload file (>${this._max_upload_size_mb} MB) `;
@@ -385,7 +378,7 @@ class FileBrowserModel implements IDisposable {
    * Sort the model items.
    */
   private _sort(): void {
-    if (!this._model) {
+    if (!this._unsortedNames) {
       return;
     }
     let items = this._model.content.slice() as IContentsModel[];
@@ -501,7 +494,7 @@ class FileBrowserModel implements IDisposable {
   private _contentsManager: IContentsManager = null;
   private _sessionIds: ISessionId[] = [];
   private _sessionManager: INotebookSessionManager = null;
-  private _model: IContentsModel = null;
+  private _model: IContentsModel;
   private _kernelSpecs: IKernelSpecId[] = [];
   private _selection: { [key: string]: boolean; } = Object.create(null);
   private _sortKey = 'name';
