@@ -34,7 +34,7 @@ class FileBrowserModel implements IDisposable {
   constructor(contentsManager: IContentsManager, sessionManager: INotebookSessionManager) {
     this._contentsManager = contentsManager;
     this._sessionManager = sessionManager;
-    this._selection = {};
+    this._selection = Object.create(null);
     this._getKernelSpecs();
     this.cd('');
   }
@@ -142,7 +142,7 @@ class FileBrowserModel implements IDisposable {
    */
   deselect(name: string): void {
     if (this._selection[name]) {
-      this._selection[name] = false;
+      delete this._selection[name];
       this.selectionChanged.emit(void 0);
     }
   }
@@ -161,22 +161,14 @@ class FileBrowserModel implements IDisposable {
    * Get the list of selected names.
    */
   getSelected(): string[] {
-    let output: string[] = [];
-    for (let key in this._selection) {
-      if (this._selection[key]) {
-        output.push(key);
-      }
-    }
-    return output;
+    return Object.keys(this._selection);
   }
 
   /**
    * Clear the selected items.
    */
   clearSelected(): void {
-    for (let key in this._selection) {
-      this._selection[key] = false;
-    }
+    this._selection = Object.create(null);
     this.selectionChanged.emit(void 0);
   }
 
@@ -231,24 +223,23 @@ class FileBrowserModel implements IDisposable {
       path = normalizePath(this._model.path, path);
     }
     let changed = false;
+    let previous = this._selection;
     if (path !== this.path) {
-      this._selection = {};
-      changed = true;
+      previous = Object.create(null);
     }
-    let selection = this._selection;
+    let selection = Object.create(null);
     return this._contentsManager.get(path, {}).then(contents => {
       this._model = contents;
       let content = contents.content as IContentsModel[];
       let names = content.map((value, index) => value.name);
       for (let name of names) {
-        if (!selection[name]) {
-          changed = true;
-          selection[name] = false;
+        if (previous[name]) {
+          selection[name] = true;
         }
       }
       return this._findSessions();
     }).then(() => {
-      if (changed) this.selectionChanged.emit(void 0);
+      this.selectionChanged.emit(void 0);
       this.refreshed.emit(void 0);
     });
   }
