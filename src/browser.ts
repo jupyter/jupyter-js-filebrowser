@@ -6,9 +6,6 @@ import {
   IContentsModel
 } from 'jupyter-js-services';
 
-import * as arrays
- from 'phosphor-arrays';
-
 import {
   Message
 } from 'phosphor-messaging';
