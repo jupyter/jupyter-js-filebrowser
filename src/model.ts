@@ -104,6 +104,7 @@ class FileBrowserModel implements IDisposable {
    */
   set sortAscending(value: boolean) {
     this._ascending = value;
+    this._sort();
   }
 
   /**
@@ -118,6 +119,17 @@ class FileBrowserModel implements IDisposable {
    */
   set sortKey(value: string) {
     this._sortKey = value;
+    this._sort();
+  }
+
+  /**
+   * Get the sorted list of items.
+   *
+   * #### Notes
+   * This is a read-only property and should be treated as immutable.
+   */
+  get sortedItems(): IContentsModel[] {
+    return this._model.content;
   }
 
   /**
@@ -172,31 +184,6 @@ class FileBrowserModel implements IDisposable {
   }
 
   /**
-   * Get the sorted items.
-   */
-  getSortedItems(): IContentsModel[] {
-    if (!this._model) {
-      return [];
-    }
-    let items = this._model.content.slice() as IContentsModel[];
-    if (this._sortKey === 'name') {
-      // Use the original order.
-    } else if (this._sortKey === 'last_modified') {
-      items.sort((a, b) => {
-        let valA = new Date(a.last_modified).getTime();
-        let valB = new Date(b.last_modified).getTime();
-        return valB - valA;
-      });
-    }
-
-    // Reverse the order if descending.
-    if (!this._ascending) {
-      items.reverse();
-    }
-    return items;
-  }
-
-  /**
    * Dispose of the resources held by the view model.
    */
   dispose(): void {
@@ -236,6 +223,8 @@ class FileBrowserModel implements IDisposable {
           selection[name] = true;
         }
       }
+      this._unsortedNames = content.map((value, index) => value.name);
+      if (this._sortKey !== 'name' || !this._ascending) this._sort();
       return this._findSessions();
     }).then(() => {
       this.selectionChanged.emit(void 0);
@@ -393,6 +382,35 @@ class FileBrowserModel implements IDisposable {
   }
 
   /**
+   * Sort the model items.
+   */
+  private _sort(): void {
+    if (!this._model) {
+      return;
+    }
+    let items = this._model.content.slice() as IContentsModel[];
+    if (this._sortKey === 'name') {
+      items.sort((a, b) => {
+        let indexA = this._unsortedNames.indexOf(a.name);
+        let indexB = this._unsortedNames.indexOf(b.name);
+        return indexA - indexB;
+      });
+    } else if (this._sortKey === 'last_modified') {
+      items.sort((a, b) => {
+        let valA = new Date(a.last_modified).getTime();
+        let valB = new Date(b.last_modified).getTime();
+        return valB - valA;
+      });
+    }
+
+    // Reverse the order if descending.
+    if (!this._ascending) {
+      items.reverse();
+    }
+    this._model.content = items;
+  }
+
+  /**
    * Perform the actual upload.
    */
   private _upload(file: File): Promise<IContentsModel> {
@@ -488,6 +506,7 @@ class FileBrowserModel implements IDisposable {
   private _selection: { [key: string]: boolean; } = Object.create(null);
   private _sortKey = 'name';
   private _ascending = true;
+  private _unsortedNames: string[] = [];
 }
 
 

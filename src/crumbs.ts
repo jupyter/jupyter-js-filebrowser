@@ -232,7 +232,7 @@ class BreadCrumbs extends Widget {
 
     // Move all of the items.
     let promises: Promise<void>[] = [];
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     for (let item of items) {
       var name = item.name;
       if (!this._model.isSelected(name)) {

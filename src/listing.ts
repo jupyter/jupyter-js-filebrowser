@@ -3,12 +3,12 @@
 'use strict';
 
 import {
-  IContentsModel
-} from 'jupyter-js-services';
+  showDialog
+} from 'jupyter-js-domutils';
 
 import {
-  okButton, showDialog
-} from 'jupyter-js-domutils';
+  IContentsModel
+} from 'jupyter-js-services';
 
 import * as moment
   from 'moment';
@@ -21,24 +21,12 @@ import {
 } from 'phosphor-disposable';
 
 import {
-  hitTest
-} from 'phosphor-domutil';
-
-import {
   Drag, DropAction, DropActions, IDragEvent, MimeData
 } from 'phosphor-dragdrop';
 
 import {
   Message
 } from 'phosphor-messaging';
-
-import {
-  NodeWrapper
-} from 'phosphor-nodewrapper';
-
-import {
-  IChangedArgs
-} from 'phosphor-properties';
 
 import {
   ISignal, Signal
@@ -49,8 +37,8 @@ import {
 } from 'phosphor-widget';
 
 import {
-  FileBrowserModel, FileBrowserWidget
-} from './index';
+  FileBrowserModel
+} from './model';
 
 import * as utils
   from './utils';
@@ -61,94 +49,84 @@ import {
 
 
 /**
- * The class name added to FileBrowser list area.
+ * The class name added to DirListing widget.
  */
-const DIRLISTING_CLASS = 'jp-DirListing';
+const DIR_LISTING_CLASS = 'jp-DirListing';
 
 /**
- * The class name added to FileBrowser list header area.
+ * The class name added to a dir listing header node.
  */
-const LIST_HEADER_CLASS = 'jp-DirListing-header';
+const HEADER_CLASS = 'jp-DirListing-header';
 
 /**
- * The class name added to FileBrowser list header file item.
- */
-const HEADER_TEXT_CLASS = 'jp-DirListing-headerText';
-
-/**
- * The class name added to FileBrowser list header items.
+ * The class name added to a dir listing list header cell.
  */
 const HEADER_ITEM_CLASS = 'jp-DirListing-headerItem';
 
 /**
- * The class name added to FileBrowser list header modified item.
+ * The class name added to a header cell text node.
  */
-const HEADER_ICON_CLASS = 'jp-DirListing-headerIcon';
+const HEADER_ITEM_TEXT_CLASS = 'jp-DirListing-headerItemText';
 
 /**
- * The class name added to FileBrowser list header file item.
+ * The class name added to a header cell icon node.
  */
-const HEADER_FILE_CLASS = 'jp-DirListing-headerFile';
+const HEADER_ITEM_ICON_CLASS = 'jp-DirListing-headerItemIcon';
 
 /**
- * The class name added to FileBrowser list header modified item.
+ * The class name added to the dir listing content node.
  */
-const HEADER_TIME_CLASS = 'jp-DirListing-headerTime';
+const CONTENT_CLASS = 'jp-DirListing-content';
 
 /**
- * The class name added to the Filebrowser list area container.
- */
-const LIST_CONTAINER_CLASS = 'jp-DirListing-container';
-
-/**
- * The class name added to FileBrowser list area.
- */
-const LIST_AREA_CLASS = 'jp-DirListing-list';
-
-/**
- * The class name added to FileBrowser items.
+ * The class name added to dir listing content item.
  */
 const ITEM_CLASS = 'jp-DirListing-item';
 
 /**
- * The class name added to FileBrowser item files.
+ * The class name added to the listing item text cell.
  */
-const ITEM_FILE_CLASS = 'jp-DirListing-itemFile';
+const ITEM_TEXT_CLASS = 'jp-DirListing-itemText';
 
 /**
- * The class name added to a row icon.
+ * The class name added to the listing item icon cell.
  */
-const ITEM_ICON_CLASS = 'jp-DirListing-itemFileIcon';
+const ITEM_ICON_CLASS = 'jp-DirListing-itemIcon';
 
 /**
- * The class name added to a row text.
+ * The class name added to the listing item modified cell.
  */
-const ITEM_TEXT_CLASS = 'jp-DirListing-itemFileText';
+const ITEM_MODIFIED_CLASS = 'jp-DirListing-itemModified';
 
 /**
- * The class name added to a row filename editor.
+ * The class name added to the dir listing editor node.
  */
-const ITEM_EDIT_CLASS = 'jp-DirListing-itemFileEdit';
+const EDITOR_CLASS = 'jp-DirListing-editor';
 
 /**
- * The class name added to a row last modified text.
+ * The class name added to the name column header cell.
  */
-const ITEM_TIME_CLASS = 'jp-DirListing-itemModified';
+const NAME_ID_CLASS = 'jp-id-name';
 
 /**
- * The class name added to a file icon.
+ * The class name added to the modified column header cell.
  */
-const FILE_ICON_CLASS = 'jp-DirListing-fileIcon';
+const MODIFIED_ID_CLASS = 'jp-id-modified';
 
 /**
- * The class name added to a folder icon.
+ * The class name added to a file type content item.
  */
-const FOLDER_ICON_CLASS = 'jp-DirListing-folderIcon';
+const FILE_TYPE_CLASS = 'jp-type-file';
 
 /**
- * The class name added to a notebook icon.
+ * The class name added to a folder type content item.
  */
-const NOTEBOOK_ICON_CLASS = 'jp-DirListing-nbIcon';
+const FOLDER_TYPE_CLASS = 'jp-type-folder';
+
+/**
+ * The class name added to a notebook type content item.
+ */
+const NOTEBOOK_TYPE_CLASS = 'jp-type-notebook';
 
 /**
  * The class name added to the widget when there are items on the clipboard.
@@ -192,40 +170,125 @@ const FACTORY_MIME = 'application/x-phosphor-widget-factory';
 
 
 /**
- * A widget which host a file list area.
+ * A widget which hosts a file list area.
  */
 export
 class DirListing extends Widget {
-
   /**
-   * Create a new node for the file list.
+   * Create the DOM node for a dir listing.
    */
   static createNode(): HTMLElement {
     let node = document.createElement('div');
-    let header = Private.createHeader();
-    let body = document.createElement('div');
-    let contents = document.createElement('ul');
-    body.className = LIST_CONTAINER_CLASS;
-    contents.className = LIST_AREA_CLASS;
+    let content = document.createElement('ul');
+    let header = this.createHeaderNode();
+    content.className = CONTENT_CLASS;
     node.appendChild(header);
-    node.appendChild(body);
-    body.appendChild(contents);
+    node.appendChild(content);
     node.tabIndex = 1;
     return node;
   }
 
   /**
-   * Create a file item.
+   * Create the header node for a dir listing.
+   *
+   * @returns A new DOM node to use as the dir listing header.
+   *
+   * #### Notes
+   * This method may be reimplemented to create custom headers.
    */
-  static createItem(): HTMLElement {
-    return Private.createItemNode();
+  static createHeaderNode(): HTMLElement {
+    let node = document.createElement('div');
+    let name = createItemNode('Name');
+    let modified = createItemNode('Last Modified');
+    node.className = HEADER_CLASS;
+    name.classList.add(NAME_ID_CLASS);
+    name.classList.add(SELECTED_CLASS);
+    modified.classList.add(MODIFIED_ID_CLASS);
+    node.appendChild(name);
+    node.appendChild(modified);
+    return node;
+
+    function createItemNode(label: string): HTMLElement {
+      let node = document.createElement('div');
+      let text = document.createElement('span');
+      let icon = document.createElement('span');
+      node.className = HEADER_ITEM_CLASS;
+      text.className = HEADER_ITEM_TEXT_CLASS;
+      icon.className = HEADER_ITEM_ICON_CLASS;
+      text.textContent = label;
+      node.appendChild(text);
+      node.appendChild(icon);
+      return node;
+    }
   }
 
   /**
-   * Update a file item.
+   * Create a new item node for a dir listing.
+   *
+   * @returns A new DOM node to use as a content item.
+   *
+   * #### Notes
+   * This method may be reimplemented to create custom items.
    */
-  static updateItem(item: IContentsModel, node: HTMLElement) {
-    Private.updateItemNode(item, node);
+  static createItemNode(): HTMLElement {
+    let node = document.createElement('li');
+    let icon = document.createElement('span');
+    let text = document.createElement('span');
+    let modified = document.createElement('span');
+    node.className = ITEM_CLASS;
+    icon.className = ITEM_ICON_CLASS;
+    text.className = ITEM_TEXT_CLASS;
+    modified.className = ITEM_MODIFIED_CLASS;
+    node.appendChild(icon);
+    node.appendChild(text);
+    node.appendChild(modified);
+    return node;
+  }
+
+  /**
+   * Update an item node to reflect the current state of a model.
+   *
+   * @param node - A node created by a call to [[createItemNode]].
+   *
+   * @param model - The model object to use for the item state.
+   *
+   * #### Notes
+   * This is called automatically when the item should be updated.
+   *
+   * If the [[createItemNode]] method is reimplemented, this method
+   * should also be reimplemented so that the item state is properly
+   * updated.
+   */
+  static updateItemNode(node: HTMLElement, model: IContentsModel) {
+    let icon = node.firstChild as HTMLElement;
+    let text = icon.nextSibling as HTMLElement;
+    let modified = text.nextSibling as HTMLElement;
+
+    let type: string;
+    switch (model.type) {
+    case 'directory':
+      type = FOLDER_TYPE_CLASS;
+      break;
+    case 'notebook':
+      type = NOTEBOOK_TYPE_CLASS;
+      break;
+    default:
+      type = FILE_TYPE_CLASS;
+      break;
+    }
+
+    let modText = '';
+    let modTitle = '';
+    if (model.last_modified) {
+      let time = moment(model.last_modified).fromNow();
+      modText = time === 'a few seconds ago' ? 'seconds ago' : time;
+      modTitle = moment(model.last_modified).format("YYYY-MM-DD HH:mm");
+    }
+
+    node.className = `${ITEM_CLASS} ${type}`;
+    text.textContent = model.name;
+    modified.textContent = modText;
+    modified.title = modTitle;
   }
 
   /**
@@ -235,12 +298,12 @@ class DirListing extends Widget {
    */
   constructor(model: FileBrowserModel) {
     super();
-    this.addClass(DIRLISTING_CLASS);
+    this.addClass(DIR_LISTING_CLASS);
     this._model = model;
-    this._model.refreshed.connect(this.update, this);
-    this._model.selectionChanged.connect(this.update, this);
+    this._model.refreshed.connect(this._onModelRefreshed, this);
+    this._model.selectionChanged.connect(this._onSelectionChanged, this);
     this._editNode = document.createElement('input');
-    this._editNode.className = ITEM_EDIT_CLASS;
+    this._editNode.className = EDITOR_CLASS;
   }
 
   /**
@@ -253,13 +316,6 @@ class DirListing extends Widget {
     this._drag = null;
     this._dragData = null;
     super.dispose();
-  }
-
-  /**
-   * Should get whether the directory listing is disposed.
-   */
-  get isDisposed(): boolean {
-    return this._model === null;
   }
 
   /**
@@ -281,6 +337,34 @@ class DirListing extends Widget {
    */
   set widgetFactory(factory: (model: IContentsModel) => Widget) {
     this._widgetFactory = factory;
+  }
+
+  /**
+   * Get the dir listing header node.
+   *
+   * #### Notes
+   * This is the node which holds the header cells.
+   *
+   * Modifying this node directly can lead to undefined behavior.
+   *
+   * This is a read-only property.
+   */
+  get headerNode(): HTMLElement {
+    return utils.findElement(this.node, HEADER_CLASS);
+  }
+
+  /**
+   * Get the dir listing content node.
+   *
+   * #### Notes
+   * This is the node which holds the item nodes.
+   *
+   * Modifying this node directly can lead to undefined behavior.
+   *
+   * This is a read-only property.
+   */
+  get contentNode(): HTMLElement {
+    return utils.findElement(this.node, CONTENT_CLASS);
   }
 
   /**
@@ -341,7 +425,7 @@ class DirListing extends Widget {
    */
   delete(): Promise<void> {
     let promises: Promise<void>[] = [];
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     for (let item of items) {
       if (this._model.isSelected(item.name)) {
         promises.push(this._model.delete(name));
@@ -358,7 +442,7 @@ class DirListing extends Widget {
    */
   duplicate(): Promise<void> {
     let promises: Promise<IContentsModel>[] = [];
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     for (let item of items) {
       if (!this._model.isSelected(item.name)) {
         continue;
@@ -377,7 +461,7 @@ class DirListing extends Widget {
    * Download the currently selected item(s).
    */
   download(): Promise<void> {
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     for (let item of items) {
       if (!this._model.isSelected(item.name)) {
         continue;
@@ -395,7 +479,7 @@ class DirListing extends Widget {
    */
   shutdownKernels(): Promise<void> {
     let promises: Promise<void>[] = [];
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     let paths = items.map(item => item.path);
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
@@ -417,7 +501,7 @@ class DirListing extends Widget {
   selectNext(keepExisting = false): void {
     let index = -1;
     let selected = this._model.getSelected();
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     if (selected.length === 1 || keepExisting) {
       // Select the next item.
       let name = selected[selected.length - 1];
@@ -449,7 +533,7 @@ class DirListing extends Widget {
   selectPrevious(keepExisting = false): void {
     let index = -1;
     let selected = this._model.getSelected();
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     if (selected.length === 1 || keepExisting) {
       // Select the previous item.
       let name = selected[0];
@@ -527,17 +611,16 @@ class DirListing extends Widget {
   protected onAfterAttach(msg: Message): void {
     super.onAfterAttach(msg);
     let node = this.node;
-    let container = utils.findElement(node, LIST_CONTAINER_CLASS);
-    let list = utils.findElement(node, LIST_AREA_CLASS);
+    let content = utils.findElement(node, CONTENT_CLASS);
     node.addEventListener('mousedown', this);
     node.addEventListener('keydown', this);
     node.addEventListener('click', this);
     node.addEventListener('dblclick', this);
-    container.addEventListener('scroll', this);
-    list.addEventListener('p-dragenter', this);
-    list.addEventListener('p-dragleave', this);
-    list.addEventListener('p-dragover', this);
-    list.addEventListener('p-drop', this);
+    content.addEventListener('scroll', this);
+    content.addEventListener('p-dragenter', this);
+    content.addEventListener('p-dragleave', this);
+    content.addEventListener('p-dragover', this);
+    content.addEventListener('p-drop', this);
   }
 
   /**
@@ -546,17 +629,16 @@ class DirListing extends Widget {
   protected onBeforeDetach(msg: Message): void {
     super.onBeforeDetach(msg);
     let node = this.node;
-    let container = utils.findElement(node, LIST_CONTAINER_CLASS);
-    let list = utils.findElement(node, LIST_AREA_CLASS);
+    let content = utils.findElement(node, CONTENT_CLASS);
     node.removeEventListener('mousedown', this);
     node.removeEventListener('keydown', this);
     node.removeEventListener('click', this);
     node.removeEventListener('dblclick', this);
-    container.removeEventListener('scroll', this);
-    list.removeEventListener('p-dragenter', this);
-    list.removeEventListener('p-dragleave', this);
-    list.removeEventListener('p-dragover', this);
-    list.removeEventListener('p-drop', this);
+    content.removeEventListener('scroll', this);
+    content.removeEventListener('p-dragenter', this);
+    content.removeEventListener('p-dragleave', this);
+    content.removeEventListener('p-dragover', this);
+    content.removeEventListener('p-drop', this);
     document.removeEventListener('mousemove', this, true);
     document.removeEventListener('mouseup', this, true);
   }
@@ -566,9 +648,9 @@ class DirListing extends Widget {
    */
   protected onUpdateRequest(msg: Message): void {
     // Fetch common variables.
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     let nodes = this._items;
-    let content = utils.findElement(this.node, LIST_AREA_CLASS);
+    let content = utils.findElement(this.node, CONTENT_CLASS);
     let subtype = this.constructor as typeof DirListing;
 
     this.removeClass(MULTI_SELECTED_CLASS);
@@ -582,14 +664,14 @@ class DirListing extends Widget {
 
     // Add any missing item nodes.
     while (nodes.length < items.length) {
-      let node = subtype.createItem();
+      let node = subtype.createItemNode();
       nodes.push(node);
       content.appendChild(node);
     }
 
     // Update the node states to match the model contents.
     for (let i = 0, n = items.length; i < n; ++i) {
-      subtype.updateItem(items[i], nodes[i]);
+      subtype.updateItemNode(nodes[i], items[i]);
       if (this._model.isSelected(items[i].name)) {
         nodes[i].classList.add(SELECTED_CLASS);
         if (this._isCut && this._model.path === this._prevPath) {
@@ -611,14 +693,9 @@ class DirListing extends Widget {
     let paths = items.map(item => item.path);
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
-      let node = utils.findElement(this._items[index], NOTEBOOK_ICON_CLASS);
+      let node = this._items[index];
       node.classList.add(RUNNING_CLASS);
-      (node as HTMLElement).title = sessionId.kernel.name;
-    }
-    if (this._model.sessionIds.length) {
-      content.classList.add(RUNNING_CLASS);
-    } else {
-      content.classList.remove(RUNNING_CLASS);
+      node.title = sessionId.kernel.name;
     }
 
     this._prevPath = this._model.path;
@@ -628,49 +705,60 @@ class DirListing extends Widget {
    * Handle the `'click'` event for the widget.
    */
   private _evtClick(event: MouseEvent) {
-    let index = utils.hitTestNodes(this._items, event.clientX, event.clientY);
-    if (index !== -1) {
-      // Update our selection.
-      this._handleFileSelect(event);
+    let target = event.target as HTMLElement;
+
+    let header = this.headerNode;
+    if (header.contains(target)) {
+
+      let children = header.getElementsByClassName(HEADER_ITEM_CLASS);
+      let name = children[0] as HTMLElement;
+      let modified = children[1] as HTMLElement;
+
+      if (name.contains(target)) {
+        if (this._model.sortKey === 'name') {
+          let flag = !this._model.sortAscending;
+          this._model.sortAscending = flag;
+          if (flag) name.classList.remove(DESCENDING_CLASS);
+          else name.classList.add(DESCENDING_CLASS);
+        } else {
+          this._model.sortKey = 'name';
+          this._model.sortAscending = true;
+          name.classList.remove(DESCENDING_CLASS);
+        }
+        name.classList.add(SELECTED_CLASS);
+        modified.classList.remove(SELECTED_CLASS);
+        modified.classList.remove(DESCENDING_CLASS);
+      } else if (modified.contains(target)) {
+        if (this._model.sortKey === 'last_modified') {
+          let flag = !this._model.sortAscending;
+          this._model.sortAscending = flag;
+          if (flag) modified.classList.remove(DESCENDING_CLASS);
+          else modified.classList.add(DESCENDING_CLASS);
+        } else {
+          this._model.sortKey = 'last_modified';
+          this._model.sortAscending = true;
+          modified.classList.remove(DESCENDING_CLASS);
+        }
+        modified.classList.add(SELECTED_CLASS);
+        name.classList.remove(SELECTED_CLASS);
+        name.classList.remove(DESCENDING_CLASS);
+      }
+
       return;
     }
-    let header = utils.findElement(this.node, LIST_HEADER_CLASS);
-    index = utils.hitTestNodes(header.childNodes, event.clientX,
-      event.clientY);
-    if (index !== -1) {
-      for (let i = 0; i < header.childNodes.length; i++) {
-        let node = header.childNodes[i] as HTMLElement;
-        if (i === index) {
-          if (node.classList.contains(SELECTED_CLASS)) {
-            if (node.classList.contains(DESCENDING_CLASS)) {
-              node.classList.remove(DESCENDING_CLASS);
-              this._model.sortAscending = true;
-            } else {
-              node.classList.add(DESCENDING_CLASS);
-              this._model.sortAscending = false;
-            }
-          }
-          node.classList.add(SELECTED_CLASS);
-        } else {
-          node.classList.remove(SELECTED_CLASS);
-        }
-      }
-      if (index === 0) {
-        this._model.sortKey = 'name';
-      } else {
-        this._model.sortKey = 'last_modified';
-      }
-      this.update();
+
+    let content = this.contentNode;
+    if (content.contains(target)) {
+      this._handleFileSelect(event);
     }
+
   }
 
   /**
    * Handle the `'scroll'` event for the widget.
    */
   private _evtScroll(event: MouseEvent): void {
-    let list = utils.findElement(this.node, LIST_CONTAINER_CLASS);
-    let header = utils.findElement(this.node, LIST_HEADER_CLASS);
-    header.scrollLeft = list.scrollLeft;
+    this.headerNode.scrollLeft = this.contentNode.scrollLeft;
   }
 
   /**
@@ -782,26 +870,22 @@ class DirListing extends Widget {
     this._editNode.blur();
 
     // Find a valid double click target.
-    let node = event.target as HTMLElement;
-    let items = this._model.getSortedItems();
-    while (node && node !== this.node) {
-      if (node.classList.contains(ITEM_CLASS)) {
-        // Open the selected item.
-        let index = this._items.indexOf(node);
-        let item = items[index];
-        if (item.type === 'directory') {
-          this._model.cd(item.name).catch(error =>
-            utils.showErrorMessage(this, 'Change Directory Error', error)
-          );
-        } else {
-          this.openRequested.emit(item);
-          return;
-        }
+    let target = event.target as HTMLElement;
+    let i = arrays.findIndex(this._items, node => node.contains(target));
+    if (i === -1) {
+      return;
+    }
 
-      }
-      node = node.parentElement;
+    let item = this._model.sortedItems[i];
+    if (item.type === 'directory') {
+      this._model.cd(item.name).catch(error =>
+        utils.showErrorMessage(this, 'Change Directory Error', error)
+      );
+    } else {
+      this.openRequested.emit(item);
     }
   }
+
 
   /**
    * Handle the `'p-dragenter'` event for the widget.
@@ -809,14 +893,19 @@ class DirListing extends Widget {
   private _evtDragEnter(event: IDragEvent): void {
     if (event.mimeData.hasData(utils.CONTENTS_MIME)) {
       let index = utils.hitTestNodes(this._items, event.clientX, event.clientY);
-      let target = this._items[index];
-      if (utils.findElement(target, FOLDER_ICON_CLASS) &&
-          !target.classList.contains(SELECTED_CLASS)) {
-        target.classList.add(utils.DROP_TARGET_CLASS);
-        event.preventDefault();
-        event.stopPropagation();
+      if (index === -1) {
         return;
       }
+      let target = this._items[index];
+      if (!target.classList.contains(FOLDER_TYPE_CLASS)) {
+        return;
+      }
+      if (target.classList.contains(SELECTED_CLASS)) {
+        return;
+      }
+      target.classList.add(utils.DROP_TARGET_CLASS);
+      event.preventDefault();
+      event.stopPropagation();
     }
   }
 
@@ -869,7 +958,7 @@ class DirListing extends Widget {
 
     // Get the path based on the target node.
     let index = this._items.indexOf(target);
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     var path = items[index].name + '/';
 
     // Move all of the items.
@@ -909,7 +998,7 @@ class DirListing extends Widget {
   private _startDrag(index: number, clientX: number, clientY: number): void {
     let selectedNames = this._model.getSelected();
     let source = this._items[index];
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     let item: IContentsModel = null;
 
     // If the source node is not selected, use just that node.
@@ -955,7 +1044,7 @@ class DirListing extends Widget {
    */
   private _handleFileSelect(event: MouseEvent): void {
     // Fetch common variables.
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     let nodes = this._items;
     let index = utils.hitTestNodes(this._items, event.clientX, event.clientY);
 
@@ -998,7 +1087,7 @@ class DirListing extends Widget {
    */
   private _handleMultiSelect(selected: string[], index: number): void {
     // Find the "nearest selected".
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     let nearestIndex = -1;
     for (let i = 0; i < this._items.length; i++) {
       if (i === index) {
@@ -1035,7 +1124,7 @@ class DirListing extends Widget {
    */
   private _copy(): void {
     this._clipboard = []
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     for (var item of items) {
       if (!this._model.isSelected(item.name)) {
         continue;
@@ -1056,12 +1145,12 @@ class DirListing extends Widget {
    * Allow the user to rename item on a given row.
    */
   private _doRename(): Promise<string> {
-    let listing = utils.findElement(this.node, LIST_AREA_CLASS);
-    let items = this._model.getSortedItems();
+    let listing = utils.findElement(this.node, CONTENT_CLASS);
+    let items = this._model.sortedItems;
     let name = this._model.getSelected()[0];
     let index = arrays.findIndex(items, (value, index) => value.name === name);
     let row = this._items[index];
-    let fileCell = utils.findElement(row, ITEM_FILE_CLASS);
+    let fileCell = utils.findElement(row, FILE_TYPE_CLASS);
     let text = utils.findElement(row, ITEM_TEXT_CLASS);
     let original = text.textContent;
 
@@ -1108,7 +1197,7 @@ class DirListing extends Widget {
    */
   private _selectItem(index: number, top: boolean, keepExisting: boolean) {
     // Selected the given row(s)
-    let items = this._model.getSortedItems();
+    let items = this._model.sortedItems;
     if (!keepExisting) {
       this._model.clearSelected();
     }
@@ -1121,6 +1210,20 @@ class DirListing extends Widget {
       this._items[index].scrollIntoView(top);
     }
     this._isCut = false;
+  }
+
+  /**
+   * Handle the `refreshed` signal from the model.
+   */
+  private _onModelRefreshed(): void {
+    this.update();
+  }
+
+  /**
+   * Handle the `selectionChanged` signal from the model.
+   */
+  private _onSelectionChanged(): void {
+    this.update();
   }
 
   private _model: FileBrowserModel = null;
@@ -1146,78 +1249,6 @@ namespace Private {
    */
   export
   const openRequestedSignal = new Signal<DirListing, IContentsModel>();
-
-  /**
-   * Create an uninitialized DOM node for an IContentsModel.
-   */
-  export
-  function createItemNode(): HTMLElement {
-    let node = document.createElement('li');
-    node.className = ITEM_CLASS;
-    let fnode = document.createElement('div');
-    fnode.className = ITEM_FILE_CLASS;
-    let inode = document.createElement('span');
-    inode.className = ITEM_ICON_CLASS;
-    let tnode = document.createElement('span');
-    tnode.className = ITEM_TEXT_CLASS;
-    let mnode = document.createElement('span');
-    mnode.className = ITEM_TIME_CLASS;
-    fnode.appendChild(inode);
-    fnode.appendChild(tnode);
-    node.appendChild(fnode);
-    node.appendChild(mnode);
-    return node;
-  }
-
-  /**
-   * Create the icon node class name for an IContentsModel.
-   */
-  function createIconClass(item: IContentsModel): string {
-    if (item.type === 'directory') {
-      return ITEM_ICON_CLASS + ' ' + FOLDER_ICON_CLASS;
-    } else if (item.type === 'notebook') {
-      return ITEM_ICON_CLASS + ' ' + NOTEBOOK_ICON_CLASS;
-    } else {
-      return ITEM_ICON_CLASS + ' ' + FILE_ICON_CLASS;
-    }
-  }
-
-  /**
-   * Create the text node content for an IContentsModel.
-   */
-  function populateText(item: IContentsModel, node: HTMLElement): void {
-    node.textContent = item.name;
-  }
-
-  /**
-   * Create the last modified node content for an IContentsModel.
-   */
-  function populateModified(item: IContentsModel, node: HTMLElement): void {
-    if (item.last_modified) {
-      let text = moment(item.last_modified).fromNow();
-      node.textContent = text === 'a few seconds ago' ? 'seconds ago' : text;
-      node.title = moment(item.last_modified).format("YYYY-MM-DD HH:mm")
-    } else {
-      node.textContent = '';
-      node.title = '';
-    }
-  }
-
-  /**
-   * Update the node state for an IContentsModel.
-   */
-  export
-  function updateItemNode(item: IContentsModel, node: HTMLElement): void {
-    let icon = node.firstChild.firstChild as HTMLElement;
-    let text = (node.firstChild as HTMLElement).children[1] as HTMLElement;
-    let modified = node.lastChild as HTMLElement;
-    icon.className = createIconClass(item);
-    populateText(item, text);
-    populateModified(item, modified);
-    node.classList.remove(SELECTED_CLASS);
-    node.classList.remove(CUT_CLASS);
-    node.classList.remove(RUNNING_CLASS);
-  }
 
   /**
    * Handle editing text on a node.
@@ -1278,40 +1309,5 @@ namespace Private {
     let elemTop = rect.top;
     let elemBottom = elemTop + rect.height;
     return ((elemBottom <= containerBottom) && (elemTop >= containerTop));
-  }
-
-  /**
-   * Create the header node.
-   */
-  export
-  function createHeader(): HTMLElement {
-    let files = document.createElement('div');
-    files.className = HEADER_FILE_CLASS;
-    files.classList.add(HEADER_ITEM_CLASS);
-    files.classList.add(SELECTED_CLASS);
-    let fileText = document.createElement('span');
-    fileText.className = HEADER_TEXT_CLASS;
-    fileText.textContent = 'Name';
-    let fileIcon = document.createElement('span');
-    fileIcon.className = `fa ${HEADER_ICON_CLASS}`;
-    files.appendChild(fileText);
-    files.appendChild(fileIcon);
-
-    let modified = document.createElement('div');
-    modified.className = HEADER_TIME_CLASS;
-    modified.classList.add(HEADER_ITEM_CLASS);
-    let modText = document.createElement('span');
-    modText.className = HEADER_TEXT_CLASS;
-    modText.textContent = 'Last Modified';
-    let modIcon = document.createElement('span');
-    modIcon.className = `fa ${HEADER_ICON_CLASS}`;
-    modified.appendChild(modText);
-    modified.appendChild(modIcon);
-
-    let header = document.createElement('div');
-    header.className = LIST_HEADER_CLASS;
-    header.appendChild(files);
-    header.appendChild(modified);
-    return header;
   }
 }
