@@ -294,18 +294,15 @@ class DirListing extends Widget {
    * Cut the selected items.
    */
   cut(): void {
-    this._copy(true);
+    this._isCut = true;
+    this._copy();
   }
 
   /**
    * Copy the selected items.
    */
   copy(): void {
-    // Remove any cut modifiers.
-    for (let item of this._items) {
-      item.classList.remove(CUT_CLASS);
-    }
-    this._copy(false);
+    this._copy();
   }
 
   /**
@@ -345,8 +342,10 @@ class DirListing extends Widget {
   delete(): Promise<void> {
     let promises: Promise<void>[] = [];
     let items = this._model.getSortedItems();
-    for (let name of this._model.selectedNames) {
-      promises.push(this._model.delete(name));
+    for (let item of items) {
+      if (this._model.isSelected(item.name)) {
+        promises.push(this._model.delete(name));
+      }
     }
     return Promise.all(promises).then(
       () => this._model.refresh(),
@@ -360,8 +359,10 @@ class DirListing extends Widget {
   duplicate(): Promise<void> {
     let promises: Promise<IContentsModel>[] = [];
     let items = this._model.getSortedItems();
-    for (let name of this._model.selectedNames) {
-      let item = arrays.find(items, (value, index) => value.name === name);
+    for (let item of items) {
+      if (!this._model.isSelected(item.name)) {
+        continue;
+      }
       if (item.type !== 'directory') {
         promises.push(this._model.copy(item.path, this._model.path));
       }
@@ -377,8 +378,10 @@ class DirListing extends Widget {
    */
   download(): Promise<void> {
     let items = this._model.getSortedItems();
-    for (let name of this._model.selectedNames) {
-      let item = arrays.find(items, (value, index) => value.name === name);
+    for (let item of items) {
+      if (!this._model.isSelected(item.name)) {
+        continue;
+      }
       if (item.type !== 'directory') {
         return this._model.download(item.path).catch(error =>
           utils.showErrorMessage(this, 'Download file', error)
@@ -396,7 +399,7 @@ class DirListing extends Widget {
     let paths = items.map(item => item.path);
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
-      if (this._items[index].classList.contains(SELECTED_CLASS)) {
+      if (this._model.isSelected(items[index].name)) {
         promises.push(this._model.shutdown(sessionId));
       }
     }
@@ -413,7 +416,7 @@ class DirListing extends Widget {
    */
   selectNext(keepExisting = false): void {
     let index = -1;
-    let selected = this._model.selectedNames;
+    let selected = this._model.getSelected();
     let items = this._model.getSortedItems();
     if (selected.length === 1 || keepExisting) {
       // Select the next item.
@@ -445,7 +448,7 @@ class DirListing extends Widget {
    */
   selectPrevious(keepExisting = false): void {
     let index = -1;
-    let selected = this._model.selectedNames;
+    let selected = this._model.getSelected();
     let items = this._model.getSortedItems();
     if (selected.length === 1 || keepExisting) {
       // Select the previous item.
@@ -567,7 +570,9 @@ class DirListing extends Widget {
     let nodes = this._items;
     let content = utils.findElement(this.node, LIST_AREA_CLASS);
     let subtype = this.constructor as typeof DirListing;
-    let selectedNames = this._model.selectedNames;
+
+    this.node.classList.remove(MULTI_SELECTED_CLASS);
+    this.node.classList.remove(SELECTED_CLASS);
 
     // Remove any excess item nodes.
     while (nodes.length > items.length) {
@@ -582,29 +587,23 @@ class DirListing extends Widget {
       content.appendChild(node);
     }
 
-    let className = SELECTED_CLASS;
-    if (this._isCut && this._model.path === this._prevPath) {
-      className += ` ${CUT_CLASS}`;
-    }
-
     // Update the node states to match the model contents.
     for (let i = 0, n = items.length; i < n; ++i) {
       subtype.updateItem(items[i], nodes[i]);
-      let index = selectedNames.indexOf(items[i].name);
-      if (index !== -1) {
-        nodes[i].classList.add(className);
+      if (this._model.isSelected(items[i].name)) {
+        nodes[i].classList.add(SELECTED_CLASS);
+        if (this._isCut && this._model.path === this._prevPath) {
+          nodes[i].classList.add(CUT_CLASS);
+        }
       }
     }
 
     // Handle the selectors on the widget node.
-    if (selectedNames.length <= 1) {
-      this.node.classList.remove(MULTI_SELECTED_CLASS);
-    } else {
+    let selectedNames = this._model.getSelected();
+    if (selectedNames.length > 1) {
       this.node.classList.add(MULTI_SELECTED_CLASS);
     }
-    if (!selectedNames.length) {
-      this.node.classList.remove(SELECTED_CLASS);
-    } else {
+    if (selectedNames.length) {
       this.node.classList.add(SELECTED_CLASS);
     }
 
@@ -875,7 +874,11 @@ class DirListing extends Widget {
 
     // Move all of the items.
     let promises: Promise<IContentsModel>[] = [];
-    for (let name of this._model.selectedNames) {
+    for (let item of items) {
+      if (!this._model.isSelected(item.name)) {
+        continue;
+      }
+      let name = item.name;
       var newPath = path + name;
       promises.push(this._model.rename(name, newPath).catch(error => {
         if (error.message.indexOf('409') !== -1) {
@@ -904,7 +907,7 @@ class DirListing extends Widget {
    * Start a drag event.
    */
   private _startDrag(index: number, clientX: number, clientY: number): void {
-    let selectedNames = this._model.selectedNames;
+    let selectedNames = this._model.getSelected();
     let source = this._items[index];
     let items = this._model.getSortedItems();
     let item: IContentsModel = null;
@@ -958,21 +961,20 @@ class DirListing extends Widget {
 
     clearTimeout(this._selectTimer);
 
-    let selected = this._model.selectedNames;
     let name = items[index].name;
+    let selected = this._model.getSelected();
 
     // Handle toggling.
     if (event.metaKey || event.ctrlKey) {
-      let selectedIndex = selected.indexOf(name);
-      if (selectedIndex !== -1) {
-        selected.splice(selectedIndex, 1);
+      if (this._model.isSelected(name)) {
+        this._model.deselect(name);
       } else {
-        selected.push(name);
+        this._model.select(name);
       }
 
     // Handle multiple select.
     } else if (event.shiftKey) {
-      selected = this._handleMultiSelect(selected, index);
+      this._handleMultiSelect(selected, index);
 
     // Default to selecting the only the item.
     } else {
@@ -984,16 +986,17 @@ class DirListing extends Widget {
           }
         }, RENAME_DURATION);
       }
-      selected = [name];
+      this._model.clearSelected();
+      this._model.select(name);
     }
-    this._model.selectedNames = selected;
+    this._isCut = false;
     this.update();
   }
 
   /**
    * Handle a multiple select on a file item node.
    */
-  private _handleMultiSelect(selected: string[], index: number): string[] {
+  private _handleMultiSelect(selected: string[], index: number): void {
     // Find the "nearest selected".
     let items = this._model.getSortedItems();
     let nearestIndex = -1;
@@ -1022,38 +1025,31 @@ class DirListing extends Widget {
     for (let i = 0; i < this._items.length; i++) {
       if (nearestIndex >= i && index <= i ||
           nearestIndex <= i && index >= i) {
-        let name = items[i].name;
-        selected.push(name);
+        this._model.select(items[i].name);
       }
     }
-    return selected;
   }
 
   /**
    * Copy the selected items, and optionally cut as well.
    */
-  private _copy(isCut: boolean): void {
+  private _copy(): void {
     this._clipboard = []
-    this._isCut = isCut;
     let items = this._model.getSortedItems();
-    for (let name of this._model.selectedNames) {
-      var item = arrays.find(items, (value, index) => value.name === name);
+    for (let item of items) {
+      if (!this._model.isSelected(item.name)) {
+        continue;
+      }
       let row = arrays.find(this._items, row => {
         let text = utils.findElement(row, ITEM_TEXT_CLASS);
         return text.textContent === item.name;
       });
       if (item.type !== 'directory') {
-        if (isCut) row.classList.add(CUT_CLASS);
         // Store the absolute path of the item.
         this._clipboard.push('/' + item.path)
       }
     }
-    // Add the clipboard class to allow "Paste" actions.
-    if (this._clipboard.length) {
-      this.node.classList.add(CLIPBOARD_CLASS);
-    } else {
-      this.node.classList.remove(CLIPBOARD_CLASS);
-    }
+    this.update();
   }
 
   /**
@@ -1061,7 +1057,10 @@ class DirListing extends Widget {
    */
   private _doRename(): Promise<string> {
     let listing = utils.findElement(this.node, LIST_AREA_CLASS);
-    let row = utils.findElement(listing, SELECTED_CLASS);
+    let items = this._model.getSortedItems();
+    let name = this._model.getSelected()[0];
+    let index = arrays.findIndex(items, (value, index) => value.name === name);
+    let row = this._items[index];
     let fileCell = utils.findElement(row, ITEM_FILE_CLASS);
     let text = utils.findElement(row, ITEM_TEXT_CLASS);
     let original = text.textContent;
@@ -1109,21 +1108,19 @@ class DirListing extends Widget {
    */
   private _selectItem(index: number, top: boolean, keepExisting: boolean) {
     // Selected the given row(s)
-    let selection = this._model.selectedNames;
     let items = this._model.getSortedItems();
     if (!keepExisting) {
-      selection = [];
+      this._model.clearSelected();
     }
     let name = items[index].name;
-    selection.push(name);
+    this._model.select(name);
     if (index === 0) {
       this.node.scrollTop = 0;
     }
     if (!Private.isScrolledIntoView(this._items[index], this.node)) {
       this._items[index].scrollIntoView(top);
     }
-    this._model.selectedNames = selection;
-    this.update();
+    this._isCut = false;
   }
 
   private _model: FileBrowserModel = null;

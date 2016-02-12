@@ -170,8 +170,10 @@ class FileBrowserWidget extends Widget {
   open(): void {
     let foundDir = false;
     let items = this._model.getSortedItems();
-    for (let name of this._model.selectedNames) {
-      let item = arrays.find(items, (value, index) => value.name === name);
+    for (let item of items) {
+      if (!this._model.isSelected(item.name)) {
+        continue;
+      }
       if (item.type === 'directory' && !foundDir) {
         foundDir = true;
         this._model.cd(item.name).catch(error =>
