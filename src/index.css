@@ -21,11 +21,6 @@
 }
 
 
-.jp-FileButtons-button {
-  flex: 1 1 auto;
-}
-
-
 .jp-FileButtons-buttonContent {
   display: flex;
   flex-direction: row;
@@ -52,80 +47,23 @@
 
 
 .jp-DirListing-header {
-  display: flex;
   flex: 0 0 auto;
-  overflow: hidden;
-}
-
-
-.jp-DirListing-headerItem {
   display: flex;
+  flex-direction: row;
   overflow: hidden;
-  white-space: nowrap;
 }
 
 
-.jp-DirListing-headerFile {
-  flex-grow: 1;
-  flex-shrink: 0;
-}
-
-
-.jp-DirListing-headerTime {
-  flex-grow: 0;
-  flex-shrink: 0;
-}
-
-
-.jp-DirListing-container {
+.jp-DirListing-content {
   flex: 1 1 auto;
-  overflow-y: auto;
-  overflow-x: auto;
-}
-
-
-.jp-DirListing-list {
-  display: table;
-  width: 100%;
   margin: 0;
   padding: 0;
-  border-spacing: 0;
   list-style-type: none;
-}
-
-
-.jp-DirListing-itemFileEdit {
-  z-index: 10000;
+  overflow: auto;
 }
 
 
 .jp-DirListing-item {
-  display: table-row;
-  position: relative;
-}
-
-
-.jp-DirListing-itemFile {
-  display: table-cell;
-  position: relative;
-}
-
-
-.jp-DirListing-itemFileIcon {
-  text-align: center;
-}
-
-
-.jp-DirListing-itemFileText {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-
-.jp-DirListing-itemModified {
-  display: table-cell;
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: right;
+  display: flex;
+  flex-direction: row;
 }
