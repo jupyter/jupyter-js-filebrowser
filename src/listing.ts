@@ -743,7 +743,7 @@ class DirListing extends Widget {
         name.classList.remove(SELECTED_CLASS);
         name.classList.remove(DESCENDING_CLASS);
       }
-
+      this.update();
       return;
     }
 
