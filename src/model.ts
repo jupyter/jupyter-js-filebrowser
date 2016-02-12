@@ -34,7 +34,6 @@ class FileBrowserModel implements IDisposable {
   constructor(contentsManager: IContentsManager, sessionManager: INotebookSessionManager) {
     this._contentsManager = contentsManager;
     this._sessionManager = sessionManager;
-    this._selection = Object.create(null);
     this._getKernelSpecs();
     this.cd('');
   }
@@ -486,7 +485,7 @@ class FileBrowserModel implements IDisposable {
   private _sessionManager: INotebookSessionManager = null;
   private _model: IContentsModel = null;
   private _kernelSpecs: IKernelSpecId[] = [];
-  private _selection: { [key: string]: boolean; } = null;
+  private _selection: { [key: string]: boolean; } = Object.create(null);
   private _sortKey = 'name';
   private _ascending = true;
 }
