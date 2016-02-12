@@ -12,10 +12,6 @@ import {
 } from 'phosphor-disposable';
 
 import {
-  IChangedArgs
-} from 'phosphor-properties';
-
-import {
   ISignal, Signal, clearSignalData
 } from 'phosphor-signaling';
 
@@ -63,17 +59,10 @@ class FileBrowserModel implements IDisposable {
   }
 
   /**
-   * Get the selected indices.
+   * Get the selection changed signal.
    */
-  get selected(): number[] {
-    return this._selectedIndices.slice();
-  }
-
-  /**
-   * Set the selected indices.
-   */
-  set selected(value: number[]) {
-    this._selectedIndices = value.slice();
+  get selectionChanged(): ISignal<FileBrowserModel, void> {
+    return Private.selectionChangedSignal.bind(this);
   }
 
   /**
@@ -132,6 +121,57 @@ class FileBrowserModel implements IDisposable {
   }
 
   /**
+   * Select an item by name.
+   *
+   * #### Notes
+   * This is a no-op if the name is not valid or already selected.
+   */
+  select(name: string): void {
+    if (!this._selection[name]) {
+      this._selection[name] = true;
+      this.selectionChanged.emit(void 0);
+    }
+  }
+
+  /**
+   * De-select an item by name.
+   *
+   * #### Notes
+   * This is a no-op if the name is not valid or not selected.
+   */
+  deselect(name: string): void {
+    if (this._selection[name]) {
+      delete this._selection[name];
+      this.selectionChanged.emit(void 0);
+    }
+  }
+
+  /**
+   * Check whether an item is selected.
+   *
+   * #### Notes
+   * Returns `true` for a valid name that is selected, `false` otherwise.
+   */
+  isSelected(name: string): boolean {
+    return !!this._selection[name];
+  }
+
+  /**
+   * Get the list of selected names.
+   */
+  getSelected(): string[] {
+    return Object.keys(this._selection);
+  }
+
+  /**
+   * Clear the selected items.
+   */
+  clearSelected(): void {
+    this._selection = Object.create(null);
+    this.selectionChanged.emit(void 0);
+  }
+
+  /**
    * Get the sorted items.
    */
   getSortedItems(): IContentsModel[] {
@@ -162,7 +202,7 @@ class FileBrowserModel implements IDisposable {
   dispose(): void {
     this._model = null;
     this._contentsManager = null;
-    this._selectedIndices = null;
+    this._selection = null;
     clearSignalData(this);
   }
 
@@ -181,10 +221,25 @@ class FileBrowserModel implements IDisposable {
     if (path !== '') {
       path = normalizePath(this._model.path, path);
     }
+    let changed = false;
+    let previous = this._selection;
+    if (path !== this.path) {
+      previous = Object.create(null);
+    }
+    let selection = Object.create(null);
     return this._contentsManager.get(path, {}).then(contents => {
       this._model = contents;
-      return this._findSessions().then(() => this.refreshed.emit(void 0)
-      );
+      let content = contents.content as IContentsModel[];
+      let names = content.map((value, index) => value.name);
+      for (let name of names) {
+        if (previous[name]) {
+          selection[name] = true;
+        }
+      }
+      return this._findSessions();
+    }).then(() => {
+      this.selectionChanged.emit(void 0);
+      this.refreshed.emit(void 0);
     });
   }
 
@@ -424,14 +479,13 @@ class FileBrowserModel implements IDisposable {
     }, error => console.error(error));
   }
 
-
   private _max_upload_size_mb = 15;
-  private _selectedIndices: number[] = [];
   private _contentsManager: IContentsManager = null;
   private _sessionIds: ISessionId[] = [];
   private _sessionManager: INotebookSessionManager = null;
   private _model: IContentsModel = null;
   private _kernelSpecs: IKernelSpecId[] = [];
+  private _selection: { [key: string]: boolean; } = Object.create(null);
   private _sortKey = 'name';
   private _ascending = true;
 }
@@ -446,6 +500,12 @@ namespace Private {
    */
   export
   const refreshedSignal = new Signal<FileBrowserModel, void>();
+
+  /**
+   * A signal emitted when the selection changes.
+   */
+  export
+  const selectionChangedSignal = new Signal<FileBrowserModel, void>();
 
   /**
    * Parse the content of a `FileReader`.
