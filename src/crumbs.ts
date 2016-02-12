@@ -234,7 +234,7 @@ class BreadCrumbs extends Widget {
     let promises: Promise<void>[] = [];
     let items = this._model.getSortedItems();
     for (let item of items) {
-      let name = item.name;
+      var name = item.name;
       if (!this._model.isSelected(name)) {
         continue;
       }

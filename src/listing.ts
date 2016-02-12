@@ -878,7 +878,7 @@ class DirListing extends Widget {
       if (!this._model.isSelected(item.name)) {
         continue;
       }
-      let name = item.name;
+      var name = item.name;
       var newPath = path + name;
       promises.push(this._model.rename(name, newPath).catch(error => {
         if (error.message.indexOf('409') !== -1) {
@@ -1036,7 +1036,7 @@ class DirListing extends Widget {
   private _copy(): void {
     this._clipboard = []
     let items = this._model.getSortedItems();
-    for (let item of items) {
+    for (var item of items) {
       if (!this._model.isSelected(item.name)) {
         continue;
       }
