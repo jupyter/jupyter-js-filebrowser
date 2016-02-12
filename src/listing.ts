@@ -329,7 +329,7 @@ class DirListing extends Widget {
 
     this._clipboard = [];
     this._isCut = false;
-    this.node.classList.remove(CLIPBOARD_CLASS);
+    this.removeClass(CLIPBOARD_CLASS);
     return Promise.all(promises).then(
       () => this._model.refresh(),
       error => utils.showErrorMessage(this, 'Paste Error', error)
@@ -571,8 +571,8 @@ class DirListing extends Widget {
     let content = utils.findElement(this.node, LIST_AREA_CLASS);
     let subtype = this.constructor as typeof DirListing;
 
-    this.node.classList.remove(MULTI_SELECTED_CLASS);
-    this.node.classList.remove(SELECTED_CLASS);
+    this.removeClass(MULTI_SELECTED_CLASS);
+    this.removeClass(SELECTED_CLASS);
 
     // Remove any excess item nodes.
     while (nodes.length > items.length) {
@@ -601,10 +601,10 @@ class DirListing extends Widget {
     // Handle the selectors on the widget node.
     let selectedNames = this._model.getSelected();
     if (selectedNames.length > 1) {
-      this.node.classList.add(MULTI_SELECTED_CLASS);
+      this.addClass(MULTI_SELECTED_CLASS);
     }
     if (selectedNames.length) {
-      this.node.classList.add(SELECTED_CLASS);
+      this.addClass(SELECTED_CLASS);
     }
 
     // Handle notebook session statuses.
