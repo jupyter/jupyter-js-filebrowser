@@ -516,13 +516,7 @@ class DirListing extends Widget {
       let name = selected[selected.length - 1];
       index = arrays.findIndex(items, (value, index) => value.name === name);
     }
-    if (index !== -1) {
-      if (index === 0) {
-        this._selectItem(index, true, keepExisting);
-      } else {
-        this._selectItem(index, false, keepExisting);
-      }
-    }
+    if (index !== -1) this._selectItem(index, keepExisting);
   }
 
   /**
@@ -548,13 +542,7 @@ class DirListing extends Widget {
       let name = selected[0];
       index = arrays.findIndex(items, (value, index) => value.name === name);
     }
-    if (index !== -1) {
-      if (index === this._items.length - 1) {
-        this._selectItem(index, false, keepExisting);
-      } else {
-        this._selectItem(index, true, keepExisting);
-      }
-    }
+    if (index !== -1) this._selectItem(index, keepExisting);
   }
 
   /**
@@ -1195,7 +1183,7 @@ class DirListing extends Widget {
   /**
    * Select a given item.
    */
-  private _selectItem(index: number, top: boolean, keepExisting: boolean) {
+  private _selectItem(index: number, keepExisting: boolean) {
     // Selected the given row(s)
     let items = this._model.sortedItems;
     if (!keepExisting) {
@@ -1203,12 +1191,7 @@ class DirListing extends Widget {
     }
     let name = items[index].name;
     this._model.select(name);
-    if (index === 0) {
-      this.node.scrollTop = 0;
-    }
-    if (!Private.isScrolledIntoView(this._items[index], this.node)) {
-      this._items[index].scrollIntoView(top);
-    }
+    Private.scrollIfNeeded(this.contentNode, this._items[index]);
     this._isCut = false;
   }
 
@@ -1296,18 +1279,20 @@ namespace Private {
   }
 
   /**
-   * Check whether an element is scrolled into view.
+   * Scroll an element into view if needed.
+   *
+   * @param area - The scroll area element.
+   *
+   * @param elem - The element of interest.
    */
   export
-  function isScrolledIntoView(elem: HTMLElement, container: HTMLElement): boolean {
-    // http://stackoverflow.com/a/488073
-    let rect = container.getBoundingClientRect();
-    let containerTop = rect.top;
-    let containerBottom = containerTop + rect.height;
-
-    rect = elem.getBoundingClientRect();
-    let elemTop = rect.top;
-    let elemBottom = elemTop + rect.height;
-    return ((elemBottom <= containerBottom) && (elemTop >= containerTop));
+  function scrollIfNeeded(area: HTMLElement, elem: HTMLElement): void {
+    let ar = area.getBoundingClientRect();
+    let er = elem.getBoundingClientRect();
+    if (er.top < ar.top) {
+      area.scrollTop -= ar.top - er.top;
+    } else if (er.bottom > ar.bottom) {
+      area.scrollTop += er.bottom - ar.bottom;
+    }
   }
 }
