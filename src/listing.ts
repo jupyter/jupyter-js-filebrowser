@@ -846,6 +846,11 @@ class DirListing extends Widget {
       return;
     }
 
+    // Do nothing if any modifier keys are pressed.
+    if (event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) {
+      return;
+    }
+
     // Stop the event propagation.
     event.preventDefault();
     event.stopPropagation();
