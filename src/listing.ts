@@ -426,11 +426,16 @@ class DirListing extends Widget {
   delete(): Promise<void> {
     let promises: Promise<void>[] = [];
     let items = this._model.sortedItems;
-    for (let item of items) {
-      if (this._model.isSelected(item.name)) {
-        promises.push(this._model.delete(name));
+    if (this._softSelection) {
+      promises.push(this._model.delete(this._softSelection));
+    } else {
+      for (let item of items) {
+        if (this._model.isSelected(item.name)) {
+          promises.push(this._model.delete(item.name));
+        }
       }
     }
+
     return Promise.all(promises).then(
       () => this._model.refresh(),
       error => utils.showErrorMessage(this, 'Delete file', error)
@@ -444,7 +449,9 @@ class DirListing extends Widget {
     let promises: Promise<IContentsModel>[] = [];
     let items = this._model.sortedItems;
     for (let item of items) {
-      if (!this._model.isSelected(item.name)) {
+      if (!this._softSelection && !this._model.isSelected(item.name)) {
+        continue;
+      } else if (this._softSelection !== item.name) {
         continue;
       }
       if (item.type !== 'directory') {
@@ -463,7 +470,9 @@ class DirListing extends Widget {
   download(): Promise<void> {
     let items = this._model.sortedItems;
     for (let item of items) {
-      if (!this._model.isSelected(item.name)) {
+      if (!this._softSelection && !this._model.isSelected(item.name)) {
+        continue;
+      } else if (this._softSelection !== item.name) {
         continue;
       }
       if (item.type !== 'directory') {
@@ -483,7 +492,9 @@ class DirListing extends Widget {
     let paths = items.map(item => item.path);
     for (let sessionId of this._model.sessionIds) {
       let index = paths.indexOf(sessionId.notebook.path);
-      if (this._model.isSelected(items[index].name)) {
+      if (!this._softSelection && this._model.isSelected(items[index].name)) {
+        promises.push(this._model.shutdown(sessionId));
+      } else if (this._softSelection === items[index].name) {
         promises.push(this._model.shutdown(sessionId));
       }
     }
@@ -769,6 +780,12 @@ class DirListing extends Widget {
     if (index == -1) {
       return;
     }
+    this._softSelection = '';
+    let items = this._model.sortedItems;
+    let selected = this._model.getSelected();
+    if (selected.indexOf(items[index].name) == -1) {
+      this._softSelection = items[index].name;
+    }
 
     // Left mouse press for drag start.
     if (event.button === 0) {
@@ -957,12 +974,17 @@ class DirListing extends Widget {
     // Move all of the items.
     let promises: Promise<IContentsModel>[] = [];
     for (let item of items) {
-      if (!this._model.isSelected(item.name)) {
+      if (!this._softSelection && !this._model.isSelected(item.name)) {
+        continue;
+      } else if (this._softSelection !== item.name) {
         continue;
       }
       var name = item.name;
       var newPath = path + name;
       promises.push(this._model.rename(name, newPath).catch(error => {
+        if (error.xhr) {
+          error.message = `${error.xhr.statusText} ${error.xhr.status}`;
+        }
         if (error.message.indexOf('409') !== -1) {
           let options = {
             title: 'Overwrite file?',
@@ -997,6 +1019,7 @@ class DirListing extends Widget {
     // If the source node is not selected, use just that node.
     if (!source.classList.contains(SELECTED_CLASS)) {
       item = items[index];
+      selectedNames = [item.name];
     } else if (selectedNames.length === 1) {
       let name = selectedNames[0];
       item = arrays.find(items, (value, index) => value.name === name);
@@ -1229,6 +1252,7 @@ class DirListing extends Widget {
   private _prevPath = '';
   private _clipboard: string[] = [];
   private _widgetFactory: (model: IContentsModel) => Widget = null;
+  private _softSelection = '';
 }
 
 
