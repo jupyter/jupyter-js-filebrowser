@@ -1147,6 +1147,10 @@ class DirListing extends Widget {
     let text = utils.findElement(row, ITEM_TEXT_CLASS);
     let original = text.textContent;
 
+    if (!fileCell) {
+      return;
+    }
+
     return Private.doRename(fileCell as HTMLElement, text, this._editNode).then(changed => {
       if (!changed) {
         return original;
