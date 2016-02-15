@@ -451,7 +451,8 @@ class DirListing extends Widget {
     for (let item of items) {
       if (!this._softSelection && !this._model.isSelected(item.name)) {
         continue;
-      } else if (this._softSelection !== item.name) {
+      }
+      if (this._softSelection !== item.name) {
         continue;
       }
       if (item.type !== 'directory') {
@@ -472,7 +473,8 @@ class DirListing extends Widget {
     for (let item of items) {
       if (!this._softSelection && !this._model.isSelected(item.name)) {
         continue;
-      } else if (this._softSelection !== item.name) {
+      }
+      if (this._softSelection !== item.name) {
         continue;
       }
       if (item.type !== 'directory') {
@@ -976,7 +978,8 @@ class DirListing extends Widget {
     for (let item of items) {
       if (!this._softSelection && !this._model.isSelected(item.name)) {
         continue;
-      } else if (this._softSelection !== item.name) {
+      }
+      if (this._softSelection !== item.name) {
         continue;
       }
       var name = item.name;
@@ -1142,7 +1145,10 @@ class DirListing extends Widget {
     this._clipboard = []
     let items = this._model.sortedItems;
     for (var item of items) {
-      if (!this._model.isSelected(item.name)) {
+      if (!this._softSelection && !this._model.isSelected(item.name)) {
+        continue;
+      }
+      if (this._softSelection !== item.name) {
         continue;
       }
       let row = arrays.find(this._items, row => {
