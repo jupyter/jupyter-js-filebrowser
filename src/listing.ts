@@ -447,14 +447,7 @@ class DirListing extends Widget {
    */
   duplicate(): Promise<void> {
     let promises: Promise<IContentsModel>[] = [];
-    let items = this._model.sortedItems;
-    for (let item of items) {
-      if (!this._softSelection && !this._model.isSelected(item.name)) {
-        continue;
-      }
-      if (this._softSelection !== item.name) {
-        continue;
-      }
+    for (let item of this._getSelectedItems()) {
       if (item.type !== 'directory') {
         promises.push(this._model.copy(item.path, this._model.path));
       }
@@ -469,14 +462,7 @@ class DirListing extends Widget {
    * Download the currently selected item(s).
    */
   download(): Promise<void> {
-    let items = this._model.sortedItems;
-    for (let item of items) {
-      if (!this._softSelection && !this._model.isSelected(item.name)) {
-        continue;
-      }
-      if (this._softSelection !== item.name) {
-        continue;
-      }
+    for (let item of this._getSelectedItems()) {
       if (item.type !== 'directory') {
         return this._model.download(item.path).catch(error =>
           utils.showErrorMessage(this, 'Download file', error)
@@ -706,6 +692,7 @@ class DirListing extends Widget {
    * Handle the `'click'` event for the widget.
    */
   private _evtClick(event: MouseEvent) {
+    this._softSelection = '';
     let target = event.target as HTMLElement;
 
     let header = this.headerNode;
@@ -1139,18 +1126,23 @@ class DirListing extends Widget {
   }
 
   /**
+   * Get the currently selected items.
+   */
+  private _getSelectedItems(): IContentsModel[] {
+    let items = this._model.sortedItems;
+    if (!this._softSelection) {
+      return items.filter(item => this._model.isSelected(item.name));
+    } else {
+      return items.filter(item => item.name === this._softSelection);
+    }
+  }
+
+  /**
    * Copy the selected items, and optionally cut as well.
    */
   private _copy(): void {
     this._clipboard = []
-    let items = this._model.sortedItems;
-    for (var item of items) {
-      if (!this._softSelection && !this._model.isSelected(item.name)) {
-        continue;
-      }
-      if (this._softSelection !== item.name) {
-        continue;
-      }
+    for (var item of this._getSelectedItems()) {
       let row = arrays.find(this._items, row => {
         let text = utils.findElement(row, ITEM_TEXT_CLASS);
         return text.textContent === item.name;
