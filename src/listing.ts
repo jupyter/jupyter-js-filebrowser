@@ -1132,9 +1132,8 @@ class DirListing extends Widget {
     let items = this._model.sortedItems;
     if (!this._softSelection) {
       return items.filter(item => this._model.isSelected(item.name));
-    } else {
-      return items.filter(item => item.name === this._softSelection);
     }
+    return items.filter(item => item.name === this._softSelection);
   }
 
   /**
