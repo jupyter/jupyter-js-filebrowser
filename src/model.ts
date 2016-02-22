@@ -7,9 +7,16 @@ import {
   INotebookSession, ISessionId, KernelStatus, getKernelSpecs, IKernelSpecId
 } from 'jupyter-js-services';
 
+import * as arrays
+  from 'phosphor-arrays';
+
 import {
   IDisposable
 } from 'phosphor-disposable';
+
+import {
+  IChangedArgs
+} from 'phosphor-properties';
 
 import {
   ISignal, Signal, clearSignalData
@@ -44,6 +51,20 @@ class FileBrowserModel implements IDisposable {
    */
   get refreshed(): ISignal<FileBrowserModel, void> {
     return Private.refreshedSignal.bind(this);
+  }
+
+  /**
+   * Get the file open requested signal.
+   */
+  get openRequested(): ISignal<FileBrowserModel, IContentsModel> {
+    return Private.openRequestedSignal.bind(this);
+  }
+
+  /**
+   * Get the file path changed signal.
+   */
+  get fileChanged(): ISignal<FileBrowserModel, IChangedArgs<string>> {
+    return Private.fileChangedSignal.bind(this);
   }
 
   /**
@@ -261,7 +282,13 @@ class FileBrowserModel implements IDisposable {
   delete(path: string): Promise<void> {
     let normalizePath = Private.normalizePath;
     path = normalizePath(this._model.path, path);
-    return this._contentsManager.delete(path);
+    return this._contentsManager.delete(path).then(() => {
+      this.fileChanged.emit({
+        name: 'file',
+        oldValue: path,
+        newValue: void 0
+      });
+    });
   }
 
   /**
@@ -305,6 +332,22 @@ class FileBrowserModel implements IDisposable {
   }
 
   /**
+   * Open a file in the current by name.
+   */
+  open(name: string): Promise<void> {
+    let item = arrays.find(this.sortedItems, value => value.name === name);
+    if (!item) {
+      return Promise.reject(new Error(`No file named: '${name}'`));
+    }
+    if (item.type === 'directory') {
+      return this.cd(name);
+    } else {
+      this.openRequested.emit(item);
+      return Promise.resolve(void 0);
+    }
+  }
+
+  /**
    * Rename a file or directory.
    *
    * @param path - The path to the original file.
@@ -318,8 +361,14 @@ class FileBrowserModel implements IDisposable {
     let normalizePath = Private.normalizePath;
     path = normalizePath(this._model.path, path);
     newPath = normalizePath(this._model.path, newPath);
-
-    return this._contentsManager.rename(path, newPath);
+    return this._contentsManager.rename(path, newPath).then(contents => {
+      this.fileChanged.emit({
+        name: 'file',
+        oldValue: path,
+        newValue: newPath
+      });
+      return contents;
+    })
   }
 
   /**
@@ -508,10 +557,22 @@ class FileBrowserModel implements IDisposable {
  */
 namespace Private {
   /**
-   * A signal emitted when a refresh occurs.
+   * A signal emitted when a model refresh occurs.
    */
   export
   const refreshedSignal = new Signal<FileBrowserModel, void>();
+
+  /**
+   * A signal emitted when a file open is requested.
+   */
+  export
+  const openRequestedSignal = new Signal<FileBrowserModel, IContentsModel>();
+
+  /**
+   * A signal emitted when the a file changes path.
+   */
+  export
+  const fileChangedSignal = new Signal<FileBrowserModel, IChangedArgs<string>>();
 
   /**
    * A signal emitted when the selection changes.

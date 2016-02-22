@@ -15,10 +15,6 @@ import {
 } from 'phosphor-menus';
 
 import {
-  ISignal, Signal
-} from 'phosphor-signaling';
-
-import {
   Widget
 } from 'phosphor-widget';
 
@@ -113,13 +109,6 @@ class FileButtons extends Widget {
   }
 
   /**
-   * A signal emitted when a file open is requested.
-   */
-  get openRequested(): ISignal<FileButtons, IContentsModel> {
-    return Private.openRequestedSignal.bind(this);
-  }
-
-  /**
    * Get the model used by the widget.
    *
    * #### Notes
@@ -203,12 +192,6 @@ class FileButtons extends Widget {
  */
 namespace Private {
   /**
-   * A signal emitted when a file open is requested.
-   */
-  export
-  const openRequestedSignal = new Signal<FileButtons, IContentsModel>();
-
-  /**
    * An object which holds the button nodes for a file buttons widget.
    */
   export
@@ -287,8 +270,7 @@ namespace Private {
   export
   function createNewFile(widget: FileButtons): void {
     widget.model.newUntitled('file').then(contents => {
-      widget.openRequested.emit(contents);
-      widget.model.refresh();
+      widget.model.refresh().then(() => widget.model.open(contents.name));
     }).catch(error => {
       utils.showErrorMessage(widget, 'New File Error', error);
     });
@@ -315,8 +297,7 @@ namespace Private {
       let started = widget.model.startSession(contents.path, spec.name);
       return started.then(() => contents);
     }).then(contents => {
-      widget.openRequested.emit(contents);
-      widget.model.refresh();
+      widget.model.refresh().then(() => widget.model.open(contents.name));
     }).catch(error => {
       utils.showErrorMessage(widget, 'New Notebook Error', error);
     });
