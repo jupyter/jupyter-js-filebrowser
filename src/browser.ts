@@ -15,14 +15,6 @@ import {
 } from 'phosphor-panel';
 
 import {
-  IChangedArgs
-} from 'phosphor-properties';
-
-import {
-  ISignal, Signal
-} from 'phosphor-signaling';
-
-import {
   Widget
 } from 'phosphor-widget';
 
@@ -89,13 +81,7 @@ class FileBrowserWidget extends Widget {
     this._model.refreshed.connect(this._handleRefresh, this)
     this._crumbs = new BreadCrumbs(model);
     this._buttons = new FileButtons(model);
-    this._buttons.openRequested.connect((buttons, contents) => {
-      this.openRequested.emit(contents);
-    });
     this._listing = new DirListing(model);
-    this._listing.openRequested.connect((listing, contents) => {
-      this.openRequested.emit(contents);
-    });
 
     this._crumbs.addClass(CRUMBS_CLASS);
     this._buttons.addClass(BUTTON_CLASS);
@@ -128,13 +114,6 @@ class FileBrowserWidget extends Widget {
    */
   get model(): FileBrowserModel {
     return this._model;
-  }
-
-  /**
-   * Get the open requested signal.
-   */
-  get openRequested(): ISignal<FileBrowserWidget, IContentsModel> {
-    return Private.openRequestedSignal.bind(this);
   }
 
   /**
@@ -173,11 +152,11 @@ class FileBrowserWidget extends Widget {
       }
       if (item.type === 'directory' && !foundDir) {
         foundDir = true;
-        this._model.cd(item.name).catch(error =>
+        this._model.open(item.name).catch(error =>
           showErrorMessage(this, 'Open directory', error)
         );
       } else {
-        this.openRequested.emit(item);
+        this.model.open(item.name);
       }
     }
   }
@@ -297,16 +276,4 @@ class FileBrowserWidget extends Widget {
   private _buttons: FileButtons = null;
   private _listing: DirListing = null;
   private _timeoutId = -1;
-}
-
-
-/**
- * The namespace for the file browser private data.
- */
-namespace Private {
-  /**
-   * A signal emitted when the an open is requested.
-   */
-  export
-  const openRequestedSignal = new Signal<FileBrowserWidget, IContentsModel>();
 }

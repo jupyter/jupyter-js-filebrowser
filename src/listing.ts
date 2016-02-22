@@ -29,10 +29,6 @@ import {
 } from 'phosphor-messaging';
 
 import {
-  ISignal, Signal
-} from 'phosphor-signaling';
-
-import {
   Widget
 } from 'phosphor-widget';
 
@@ -316,13 +312,6 @@ class DirListing extends Widget {
     this._drag = null;
     this._dragData = null;
     super.dispose();
-  }
-
-  /**
-   * Get the open requested signal.
-   */
-  get openRequested(): ISignal<DirListing, IContentsModel> {
-    return Private.openRequestedSignal.bind(this);
   }
 
   /**
@@ -881,7 +870,7 @@ class DirListing extends Widget {
         utils.showErrorMessage(this, 'Change Directory Error', error)
       );
     } else {
-      this.openRequested.emit(item);
+      this._model.open(item.name);
     }
   }
 
@@ -1257,12 +1246,6 @@ class DirListing extends Widget {
  * The namespace for the listing private data.
  */
 namespace Private {
-  /**
-   * A signal emitted when the an open is requested.
-   */
-  export
-  const openRequestedSignal = new Signal<DirListing, IContentsModel>();
-
   /**
    * Handle editing text on a node.
    *
