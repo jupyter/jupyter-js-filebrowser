@@ -336,7 +336,7 @@ class FileBrowserModel implements IDisposable {
    */
   open(name: string): Promise<void> {
     let item = arrays.find(this.sortedItems, value => value.name === name);
-    if (!name) {
+    if (!item) {
       return Promise.reject(new Error(`No file named: '${name}'`));
     }
     if (item.type === 'directory') {

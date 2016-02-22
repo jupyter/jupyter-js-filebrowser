@@ -78,7 +78,7 @@ function main(): void {
   panel.addChild(dock);
   dock.spacing = 8;
 
-  fbWidget.openRequested.connect((fb, model) => {
+  fbModel.openRequested.connect((fbModel, model) => {
     let editor = handler.open(model);
     dock.insertTabAfter(editor);
   });

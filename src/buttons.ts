@@ -270,8 +270,7 @@ namespace Private {
   export
   function createNewFile(widget: FileButtons): void {
     widget.model.newUntitled('file').then(contents => {
-      this.model.open(contents.name);
-      widget.model.refresh();
+      widget.model.refresh().then(() => widget.model.open(contents.name));
     }).catch(error => {
       utils.showErrorMessage(widget, 'New File Error', error);
     });
@@ -298,8 +297,7 @@ namespace Private {
       let started = widget.model.startSession(contents.path, spec.name);
       return started.then(() => contents);
     }).then(contents => {
-      this.model.open(contents.name);
-      widget.model.refresh();
+      widget.model.refresh().then(() => widget.model.open(contents.name));
     }).catch(error => {
       utils.showErrorMessage(widget, 'New Notebook Error', error);
     });
