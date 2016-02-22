@@ -865,13 +865,9 @@ class DirListing extends Widget {
     }
 
     let item = this._model.sortedItems[i];
-    if (item.type === 'directory') {
-      this._model.cd(item.name).catch(error =>
-        utils.showErrorMessage(this, 'Change Directory Error', error)
-      );
-    } else {
-      this._model.open(item.name);
-    }
+    this._model.open(item.name).catch(error =>
+        utils.showErrorMessage(this, 'File Open Error', error)
+    );
   }
 
 
