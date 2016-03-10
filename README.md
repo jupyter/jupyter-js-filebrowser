@@ -1,5 +1,5 @@
-Jupyter JS Filebrowser
-======================
+DEPRECATED -Jupyter JS Filebrowser
+==================================
 
 File browser for Jupyter.
 
